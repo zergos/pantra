@@ -1,0 +1,29 @@
+<h1 ref:caption>Mini app tester</h1>
+
+<Menu ref:menu caption="Main menu">
+    <MenuItem caption="Test" action="do_test" on:click="do_demo" />
+</Menu>
+<div ref:mdi_container />
+<DataTable ref:table src="TestTable"></DataTable>
+
+<button on:click="do_demo">Demo</button>
+<button on:click="do_demo2">Demo2</button>
+
+<style>
+    h1 {color: green;}
+</style>
+
+<python>
+from core.ctx import *
+
+def do_test(node):
+    refs.mdi_container.render("Hello")
+
+def do_demo(node):
+    refs.caption.attributes.style = "color: red;"
+    refs.caption.render("123")
+
+def do_demo2(node):
+    refs.table.update()
+
+</python>

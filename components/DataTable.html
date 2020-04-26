@@ -1,0 +1,107 @@
+﻿<div class="table-container">
+    <table>
+        <colgroup>
+            <col span="{len(columns)}" style="width: {100//len(columns)}%">
+        </colgroup>
+        <thead ref:thead>
+            <tr ref:head_row>
+                {#for column in columns}
+                <th class="sortable" on:click="do_sort" on:drag="do_reorder">{{column.title}}</th>
+                {/for}
+            </tr>
+        </thead>
+        <tbody ref:tbody>
+        {#for row in get_rows()}
+            <tr>
+                {#for cell in row.values()}
+                <td>{{fmt(cell)}}</td>
+                {/for}
+            </tr>
+        {/for}
+        </tbody>
+    </table>
+</div>
+
+<python>
+from datetime import datetime
+from pony.orm import *
+from core.ctx import *
+import db.models
+
+src: str
+columns: Optional[List] = None
+
+def render():
+    global columns
+    if columns is None:
+        entity = getattr(db.models, src)
+        columns = entity._attrs_with_columns_
+
+@db_session
+def get_rows():
+    entity = getattr(db.models, src)
+    col_order = [c.name for c in columns]
+    query = entity.select()
+    if order_by > 0:
+        query = query.order_by(columns[order_by-1])
+    elif order_by < 0:
+        query = query.order_by(desc(columns[order_by+1]))
+    for row in query:
+        yield row.to_dict()
+
+def fmt(value):
+    if type(value) == datetime:
+        return f'{value:%x %X}'
+    return value
+
+order_by = 0
+order_node = None
+
+def do_sort(node):
+    global order_by, order_node
+    if order_by != 0:
+        order_node.classes *= "sortable"
+        order_node.update()
+    if order_node != node:
+        order_by = refs.head_row[0].children.index(node) + 1
+        order_node = node
+        node.classes += 'asc'
+    else:
+        order_by = -order_by
+        node.classes += 'asc' if order_by > 0 else 'desc'
+    node.update()
+    refs.tbody.update_tree()
+
+
+class DragReorder(DragController):
+    drag_node: HTMLElement = None
+    source_index: int = 0
+
+    def get_options(self):
+        return DragOptions(1, True, False, 0, refs.thead.metrics.left, 0, refs.thead.metrics.right)
+
+    def start(self, node):
+        self.source_index = node.parent.index(node)
+        self.drag_node = node.clone()
+        self.drag_node.set_metrics(node.metrics)
+        self.drag_node.style.background_color = 'yellow'
+
+    def move(self):
+        self.drag_node.move(self.delta_x, 0)
+
+    def stop(self):
+        global order_by
+        index = 0
+        for i, child in enumerate(refs.head_row.children[0]):
+            if child.metrics.left <= self.drag_node.metrics.left:
+                index = i
+                break
+        if index == self.source_index:
+            return
+        if abs(order_by) == self.source_index + 1:
+            order_by = (index + 1) * (1 - 2 * (order_by<0))
+        columns.insert(index, columns.pop(self.source_index))
+        self.drag_node.remove()
+        refs.tbody.update_tree()
+
+</python>

@@ -1,0 +1,55 @@
+@import 'defaults.scss';
+
+// ##### Common tags #####
+div {
+  box-sizing: border-box;
+}
+
+// ##### Managed tags ####
+loop, condition {
+    display: contents;
+}
+
+// ##### Tables #####
+
+table {
+  table-layout: fixed;
+  width: 100%;
+  border: $table-border;
+  border-collapse: collapse;
+  min-width: $table-min-width;
+  max-width: $table-max-width;
+}
+thead {
+  background-color: $color-caption;
+  color: white;
+}
+th {
+  font-family: $th-font;
+  &.sortable:after {
+      content: '⇅';
+      float: right;
+  }
+  &.sortable.asc:after {
+    content: '⬇';
+    float: right;
+  }
+  &.sortable.desc:after {
+    content: '⬆';
+    float: right;
+  }
+}
+td, th {
+  border: $table-cell-border;
+  padding: 2px 3px 2px 3px;
+  text-overflow:ellipsis;
+  overflow: hidden;
+}
+tr:nth-child(even) {
+  background-color: $color-even-gray;
+}
+.table-container {
+  box-sizing: border-box;
+  overflow: auto;
+  width: 100%;
+}

@@ -1,0 +1,13 @@
+<application>
+  <component name="LanguageInjectionConfiguration">
+    <injection language="Python" injector-id="xml">
+      <display-name>Python script</display-name>
+      <place><![CDATA[xmlTag().withLocalName(string().equalTo("python"))]]></place>
+    </injection>
+    <injection language="SCSS" injector-id="xml">
+      <display-name>style</display-name>
+      <place><![CDATA[xmlTag().withLocalName(string().equalTo("style")).withNamespace(string().equalTo("http://www.w3.org/1999/xhtml"))]]></place>
+      <xpath-condition>lower-case(@type)='text/css'</xpath-condition>
+    </injection>
+  </component>
+</application>
