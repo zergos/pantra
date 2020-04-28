@@ -16,6 +16,7 @@ from core.components.htmlnode import collect_template, collect_styles
 import core.database as db
 from core.serializer import serializer, serializerU
 from core.defaults import *
+from core.workers import start_task_workers, init_async_worker, stop_task_workers
 
 routes = web.RouteTableDef()
 sessions: Dict[str, Any]
@@ -41,7 +42,7 @@ async def get_ws(request: Request):
         if msg.type == WSMsgType.BINARY:
             data = serializer.decode(msg.data)
             if data['Command'] == 'RESTART':
-                ctx = Context(template=collect_template("Main"), shot=ContextShot())
+                ctx = Context("Main", shot=ContextShot())
                 ctx.render.build()
                 ctx.shot.reset()
                 message = {'m': 'c', 'l': ctx}
@@ -93,16 +94,15 @@ async def get_static_scss(request: Request):
 routes.static('/js', os.path.join(BASE_PATH, 'js'))
 routes.static('/css', os.path.join(BASE_PATH, 'css'))
 
-if not os.path.exists(os.path.join(PAGES_PATH, 'page.html')):
-    print('File <page.html> not found')
-    sys.exit(1)
-
-with open(os.path.join(PAGES_PATH, 'page.html'), 'rt', encoding='utf-8-sig') as f:
-    template = f.read()
-
 
 async def startup(app):
     db.connect()
+    start_task_workers()
+    init_async_worker()
+
+
+async def shutdown(app):
+    stop_task_workers()
 
 
 async def main():
@@ -112,6 +112,7 @@ async def main():
     app.add_routes(routes)
 
     app.on_startup.append(startup)
+    app.on_shutdown.append(shutdown)
 
     #web.run_app(app, port=8005)
 
@@ -126,4 +127,13 @@ async def main():
     finally:
         await runner.cleanup()
 
-asyncio.run(main())
+
+if __name__ == '__main__':
+    if not os.path.exists(os.path.join(PAGES_PATH, 'page.html')):
+        print('File <page.html> not found')
+        sys.exit(1)
+
+    with open(os.path.join(PAGES_PATH, 'page.html'), 'rt', encoding='utf-8-sig') as f:
+        template = f.read()
+
+    asyncio.run(main())

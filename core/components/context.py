@@ -1,6 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
+from copy import deepcopy
 from typing import *
 import re
 from dataclasses import dataclass, field
@@ -9,7 +10,7 @@ import ctypes
 from attrdict import AttrDict
 from anytree import NodeMixin
 
-from core.common import UniNode, DynamicString, DynamicClasses
+from core.common import UniNode, DynamicString, DynamicClasses, DynamicStyles
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from logging import getLogger
@@ -46,23 +47,23 @@ class RenderMixin:
     def update_tree(self):
         self.context.render.update(self, True)
 
-    def clone(self, new_parent: Optional[AnyNode] = None):
-        if type(self) == HTMLElement:
-            clone: HTMLElement = HTMLElement(self.tag_name, new_parent, AttrDict(self.attributes))
-            clone.text = self.text
-            clone.
+    def get_metrics(self):
+        pass
 
 
 class Context(UniNode, RenderMixin):
     __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render']
 
-    def __init__(self, template: HTMLTemplate, parent: Optional[AnyNode] = None, shot: Optional['ContextShot'] = None):
+    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional['ContextShot'] = None):
         #self.uid = uuid.UUID()
         self.locals = AttrDict()
         self.server_events = AttrDict()
         self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
         self.slot: Optional['SlotNode'] = None
-        self.template: HTMLTemplate = template
+        if type(template) == HTMLTemplate:
+            self.template: HTMLTemplate = template
+        else:
+            self.template = collect_template(template)
 
         super().__init__(parent=parent)
         RenderMixin.__init__(self, parent, shot)
@@ -83,16 +84,25 @@ class Context(UniNode, RenderMixin):
 
 
 class HTMLElement(HTMLNode, RenderMixin):
-    __slots__ = ['text', 'styles']
+    __slots__ = ['text', 'style']
 
     def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None):
         super().__init__(tag_name=tag_name, parent=parent, attributes=attributes)
         RenderMixin.__init__(self, parent)
-        self.styles: Optional[AttrDict] = None
+        self.style: Optional[Union[DynamicStyles, DynamicString, str]] = None
         self.text: Union[str, DynamicString] = ''
 
     def render(self, content: Union[str, AnyNode]):
         self.context.render(self, content)
+
+    def clone(self, new_parent: Optional[AnyNode] = None) -> 'HTMLElement':
+        clone: HTMLElement = HTMLElement(self.tag_name, new_parent, AttrDict(self.attributes))
+        clone.shot = self.shot
+        clone.text = self.text
+        clone.classes = deepcopy(self.classes)
+        clone.style = deepcopy(self.style)
+        self.shot += clone
+        return clone
 
     def __str__(self):
         return f'HTML: {self.tag_name}'
@@ -175,10 +185,10 @@ class DefaultRenderer:
             self.ctx.refs[name] = node
             return True
         elif attr == 'style':
-            node.styles = AttrDict({
-                expr.split('=')[0].strip(): expr.split('=')[1].strip()
-                for expr in value.split(';') if expr.strip()
-            })
+            if '{' in value:
+                node.style = self.build_string(value)
+            else:
+                node.style = DynamicStyles(value.strip('" '''))
             return True
         return False
 
@@ -238,6 +248,8 @@ class DefaultRenderer:
             except Exception as e:
                 logger.error(
                     f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
+            if 'init' in self.ctx.locals:
+                self.ctx.locals.init()
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
@@ -291,6 +303,8 @@ class DefaultRenderer:
                 node.classes = node.classes()
             elif type(node.classes) == str:
                 node.classes = DynamicClasses(node.classes)
+            if type(node.style) == DynamicString:
+                node.style = node.style()
             if type(node.text) == DynamicString:
                 node.text = node.text()
             node.shot(node)

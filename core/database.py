@@ -1,9 +1,9 @@
-from core.defaults import db_params
+from core.defaults import DB_PARAMS
 from db.models import db
 
 
 def connect():
-    db.connect(**db_params)
+    db.connect(**DB_PARAMS)
 
 
 def disconnect():

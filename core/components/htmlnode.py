@@ -5,7 +5,7 @@ import traceback
 
 from attrdict import AttrDict
 
-from core.common import UniNode
+from core.common import UniNode, DynamicString
 from core.defaults import COMPONENTS_PATH
 
 from logging import getLogger
@@ -21,7 +21,7 @@ class HTMLNode(UniNode):
         super().__init__(parent, children)
         self.tag_name: str = tag_name
         self.attributes: AttrDict = attributes and AttrDict(attributes) or AttrDict()
-        self.classes: Optional[str] = None
+        self.classes: Optional[Union[DynamicString, str]] = None
 
     def __str__(self):
         return self.tag_name

@@ -11,7 +11,7 @@ class HTMLElementSerializer(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text}
+        return {'n': v.tag_name, 'i': id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
 
 
 class ContextSerializer(bsdf.Extension):
@@ -65,7 +65,7 @@ class HTMLElementSerializer2(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': id(v), 'p': id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text}
+        return {'n': v.tag_name, 'i': id(v), 'p': id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
 
 
 class ContextSerializer2(bsdf.Extension):

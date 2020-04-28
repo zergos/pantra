@@ -29,6 +29,8 @@ var HTMLElementSerializer = {
             element.className = v.C;
         if (!!v.t)
             element.innerText = v.t;
+        if (!!v.s)
+            element.setAttribute('style', v.s);
         return element;
     }
 };
@@ -136,6 +138,8 @@ var HTMLElementSerializerU = {
             element.className = v.C;
         if (!!v.t)
             element.innerText = v.t;
+        if (!!v.s)
+            element.setAttribute('style', v.s);
         return element;
     }
 };

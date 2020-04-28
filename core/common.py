@@ -1,5 +1,7 @@
-from anytree import NodeMixin
+from dataclasses import dataclass
 from typing import *
+from anytree import NodeMixin
+from attrdict import AttrDict
 
 __all__ = ['UniNode', 'DynamicString', 'DynamicClasses']
 
@@ -58,3 +60,22 @@ class DynamicClasses(str):
 
     def __mul__(self, other):
         return DynamicClasses(other)
+
+
+class DynamicStyles(AttrDict):
+    def __init__(self, style: str, *args, **kwargs):
+        data = {
+            expr.split('=')[0].strip(): expr.split('=')[1].strip()
+            for expr in style.split(';') if expr.strip()
+        }
+        super().__init__(data)
+
+    def str(self):
+        return ';'.join(f'{k}: {v}' for k, v in self.items())
+
+
+class MetricsData:
+    __slots__ = ['left', 'top', 'right', 'bottom', 'width', 'height']
+
+    def __init__(self):
+        self.left = self.top = self.right = self.bottom = self.width = self.height = 0

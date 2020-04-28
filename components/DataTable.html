@@ -6,7 +6,7 @@
         <thead ref:thead>
             <tr ref:head_row>
                 {#for column in columns}
-                <th class="sortable" on:click="do_sort" on:drag="do_reorder">{{column.title}}</th>
+                <th class="sortable" on:click="do_sort" on:drag="DragReorder">{{column.title}}</th>
                 {/for}
             </tr>
         </thead>
@@ -31,11 +31,10 @@ import db.models
 src: str
 columns: Optional[List] = None
 
-def render():
+def init():
     global columns
-    if columns is None:
-        entity = getattr(db.models, src)
-        columns = entity._attrs_with_columns_
+    entity = getattr(db.models, src)
+    columns = entity._attrs_with_columns_
 
 @db_session
 def get_rows():
@@ -78,7 +77,7 @@ class DragReorder(DragController):
     source_index: int = 0
 
     def get_options(self):
-        return DragOptions(1, True, False, 0, refs.thead.metrics.left, 0, refs.thead.metrics.right)
+        return DragOptions(1, True, False, None, refs.thead.metrics.left, None, refs.thead.metrics.right)
 
     def start(self, node):
         self.source_index = node.parent.index(node)
