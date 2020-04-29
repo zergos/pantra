@@ -1,5 +1,11 @@
+import ctypes
+import traceback
 from collections import namedtuple
 from dataclasses import dataclass
+
+from core.components.context import Context, AnyNode
+from core.oid import get_object
+from core.workers import thread_worker
 
 
 class Controller:
@@ -60,3 +66,23 @@ class DragController(Controller):
 
     def stop(self):
         pass
+
+
+@thread_worker
+def process_click(method: str, oid: int):
+    node = get_object(oid)
+    context = node.context
+    process_click_referred(method, context, node)
+
+
+def process_click_referred(method: str, context: Context, node: AnyNode):
+    if method in context.locals:
+        if callable(context.locals[method]):
+            try:
+                context.locals[method](node)
+            except:
+                node.session.send_error(traceback.format_exc())
+            else:
+                node.session.send_shot(node.shot)
+        else:
+            process_click_referred(context.locals[method], context.parent.context, node)

@@ -11,29 +11,31 @@ from aiohttp.web_request import Request
 from aiohttp_session import setup, get_session
 from aiohttp_session.redis_storage import RedisStorage
 
-from core.components.context import Context, ContextShot, process_click
+from core.components.context import Context, ContextShot, RenderMixin
+from core.components.controllers import process_click
 from core.components.htmlnode import collect_template, collect_styles
 import core.database as db
 from core.serializer import serializer, serializerU
 from core.defaults import *
+from core.session import Session
 from core.workers import start_task_workers, init_async_worker, stop_task_workers
 
 routes = web.RouteTableDef()
-sessions: Dict[str, Any]
 
 
 @routes.get('/')
 async def get_main_page(request: Request):
-    session = await get_session(request)
-    session['start'] = datetime.now().toordinal()
     body = template.replace('{{hostname}}', request.host)
+    body = body.replace('{{session_id}}', Session.gen_session_id())
     return web.Response(body=body, content_type='text/html')
 
 
-@routes.get(r'/ws')
+@routes.get(r'/ws/{session_id:\w+}')
 async def get_ws(request: Request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+
+    session = Session(request.match_info['session_id'], ws)
 
     #token = request.match_info['token']
     ctx: Optional[Context] = None
@@ -41,28 +43,20 @@ async def get_ws(request: Request):
     async for msg in ws:  # type: WSMessage
         if msg.type == WSMsgType.BINARY:
             data = serializer.decode(msg.data)
-            if data['Command'] == 'RESTART':
-                ctx = Context("Main", shot=ContextShot())
+            command = data['Command']
+            if command == 'RESTART':
+                ctx = Context("Main", shot=ContextShot(), session=session)
                 ctx.render.build()
                 ctx.shot.reset()
+                session.root = ctx
                 message = {'m': 'c', 'l': ctx}
                 await ws.send_bytes(serializer.encode(message), None)
 
-            elif data['Command'] == 'CLICK':
-                try:
-                    process_click(data['Data']['method'], int(data['Data']['oid']))
-                except:
-                    message = {'m': 'e', 'l': traceback.format_exc()}
-                    await ws.send_bytes(serializer.encode(message))
-                else:
-                    if ctx.shot.deleted:
-                        message = {'m': 'd', 'l': list(ctx.shot.deleted)}
-                        await ws.send_bytes(serializer.encode(message))
-                    if ctx.shot.updated:
-                        #message = {'m': 'u', 'l': list(dict.fromkeys(ctx.shot.updated))}
-                        message = {'m': 'u', 'l': ctx.shot.updated}
-                        await ws.send_bytes(serializerU.encode(message))
-                    ctx.shot.reset()
+            elif command == 'CLICK':
+                process_click(data['Data']['method'], int(data['Data']['oid']))
+
+            elif command == 'Metrics':
+                RenderMixin._set_metrics(int(data['Data']['oid']), data['Data']['metrics'])
 
         elif msg.type == WSMsgType.ERROR:
             print('ws connection closed with exception %s' %
@@ -107,8 +101,6 @@ async def shutdown(app):
 
 async def main():
     app = web.Application()
-    redis = await aioredis.create_pool(('localhost', 6379))
-    setup(app, RedisStorage(redis))
     app.add_routes(routes)
 
     app.on_startup.append(startup)

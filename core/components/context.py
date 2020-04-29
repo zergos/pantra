@@ -1,4 +1,5 @@
 import os
+import threading
 import uuid
 from contextlib import contextmanager
 from copy import deepcopy
@@ -10,10 +11,15 @@ import ctypes
 from attrdict import AttrDict
 from anytree import NodeMixin
 
-from core.common import UniNode, DynamicString, DynamicClasses, DynamicStyles
+from core.common import UniNode, DynamicString, DynamicClasses, DynamicStyles, MetricsData
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from logging import getLogger
+
+from ..oid import gen_id, get_object
+from ..session import Session
+from ..workers import thread_worker
+
 logger = getLogger(__name__)
 
 AnyNode = Union['HTMLElement', 'Context', 'ConditionNode', 'LoopNode', 'SlotNode', 'TextNode']
@@ -22,8 +28,9 @@ AnyNode = Union['HTMLElement', 'Context', 'ConditionNode', 'LoopNode', 'SlotNode
 class RenderMixin:
     #__slots__ = ['context', 'shot']
 
-    def __init__(self, node: AnyNode, shot: Optional['ContextShot'] = None):
+    def __init__(self, node: AnyNode, shot: Optional['ContextShot'] = None, session: Optional[Session] = None):
         self.shot: 'ContextShot' = shot or node.shot
+        self.session: Session = session or node.session
         self.shot(self)
         if type(self) == Context:
             self.context = self
@@ -47,14 +54,44 @@ class RenderMixin:
     def update_tree(self):
         self.context.render.update(self, True)
 
-    def get_metrics(self):
-        pass
+    @staticmethod
+    def _set_metrics(oid: int, metrics: Dict[str, int]):
+        self = get_object(oid)
+        self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
+        with self._metrics_cv:
+            self._metrics_cv.notify()
+
+    def request_metrics(self):
+        self._metrics_cv = threading.Condition()
+        with self._metrics_cv:
+            self.session.request_metrics(self)
+            self._metrics_cv.wait()
+
+    @property
+    def metrics(self):
+        if hasattr(self, '_metrics'):
+            return self._metrics
+        self.request_metrics()
+        return self._metrics
+
+    def set_metrics(self, m: MetricsData):
+        self.attributes.position = 'fixed'
+        self.attributes.left = m.left
+        self.attributes.top = m.top
+        self.attributes.width = m.width
+        self.attributes.height = m.height
+        self.shot += self
+
+    def move(self, delta_x, delta_y):
+        self.attributes.left += delta_x
+        self.attributes.top += delta_y
+        self.shot += self
 
 
 class Context(UniNode, RenderMixin):
     __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render']
 
-    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional['ContextShot'] = None):
+    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional['ContextShot'] = None, session: Optional[Session] = None):
         #self.uid = uuid.UUID()
         self.locals = AttrDict()
         self.server_events = AttrDict()
@@ -66,7 +103,7 @@ class Context(UniNode, RenderMixin):
             self.template = collect_template(template)
 
         super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent, shot)
+        RenderMixin.__init__(self, parent, shot, session)
         self.render: DefaultRenderer = DefaultRenderer(self)
 
     def __getitem__(self, item: str):
@@ -391,21 +428,11 @@ class ContextShot:
         if not self.frozen:
             self.updated.append(node)
 
+    def __add__(self, other):
+        if not self.frozen:
+            self.updated.append(other)
+
     def __sub__(self, other):
-        self.deleted.add(id(other))
+        self.deleted.add(gen_id(other))
         return self
 
-
-def process_click(method: str, oid: int):
-    node = ctypes.cast(oid, ctypes.py_object).value
-    context = node.context
-    process_click_referred(method, context, node)
-
-
-def process_click_referred(method: str, context: Context, node: AnyNode):
-    if method in context.locals:
-        if callable(context.locals[method]):
-            # WARNING: Blocking process
-            context.locals[method](node)
-        else:
-            process_click_referred(context.locals[method], context.parent.context, node)

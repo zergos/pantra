@@ -2,6 +2,7 @@ import bsdf
 
 from core.common import UniNode
 from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+from core.oid import gen_id
 
 
 class HTMLElementSerializer(bsdf.Extension):
@@ -11,7 +12,7 @@ class HTMLElementSerializer(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
+        return {'n': v.tag_name, 'i': gen_id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
 
 
 class ContextSerializer(bsdf.Extension):
@@ -21,7 +22,7 @@ class ContextSerializer(bsdf.Extension):
         return type(v) == Context
 
     def encode(self, s, v: Context):
-        return {'n': v.template.name, 'i': id(v), 'c': v.children}
+        return {'n': v.template.name, 'i': gen_id(v), 'c': v.children}
 
 
 class ConditionSerializer(bsdf.Extension):
@@ -31,7 +32,7 @@ class ConditionSerializer(bsdf.Extension):
         return type(v) == ConditionNode
 
     def encode(self, s, v: ConditionNode):
-        return {'i': id(v), 'c': v.children}
+        return {'i': gen_id(v), 'c': v.children}
 
 
 class LoopSerializer(bsdf.Extension):
@@ -41,7 +42,7 @@ class LoopSerializer(bsdf.Extension):
         return type(v) == LoopNode
 
     def encode(self, s, v):
-        return {'i': id(v), 'c': v.children}
+        return {'i': gen_id(v), 'c': v.children}
 
 
 class TextSerializer(bsdf.Extension):
@@ -51,7 +52,7 @@ class TextSerializer(bsdf.Extension):
         return type(v) == TextNode
 
     def encode(self, s, v: TextNode):
-        return {'i': id(v), 't': v.text}
+        return {'i': gen_id(v), 't': v.text}
 
 
 serializer = bsdf.BsdfSerializer([HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer],
@@ -65,7 +66,7 @@ class HTMLElementSerializer2(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': id(v), 'p': id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
+        return {'n': v.tag_name, 'i': gen_id(v), 'p': gen_id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
 
 
 class ContextSerializer2(bsdf.Extension):
@@ -75,7 +76,7 @@ class ContextSerializer2(bsdf.Extension):
         return type(v) == Context
 
     def encode(self, s, v: Context):
-        return {'n': v.template.name, 'i': id(v), 'p': id(v.parent)}
+        return {'n': v.template.name, 'i': gen_id(v), 'p': gen_id(v.parent)}
 
 
 class ConditionSerializer2(bsdf.Extension):
@@ -85,7 +86,7 @@ class ConditionSerializer2(bsdf.Extension):
         return type(v) == ConditionNode
 
     def encode(self, s, v: ConditionNode):
-        return {'i': id(v), 'p': id(v.parent)}
+        return {'i': gen_id(v), 'p': gen_id(v.parent)}
 
 
 class LoopSerializer2(bsdf.Extension):
@@ -95,7 +96,7 @@ class LoopSerializer2(bsdf.Extension):
         return type(v) == LoopNode
 
     def encode(self, s, v):
-        return {'i': id(v), 'p': id(v.parent)}
+        return {'i': gen_id(v), 'p': gen_id(v.parent)}
 
 
 class TextSerializer2(bsdf.Extension):
@@ -105,7 +106,7 @@ class TextSerializer2(bsdf.Extension):
         return type(v) == TextNode
 
     def encode(self, s, v: TextNode):
-        return {'i': id(v), 'p': id(v.parent), 't': v.text}
+        return {'i': gen_id(v), 'p': gen_id(v.parent), 't': v.text}
 
 
 serializerU = bsdf.BsdfSerializer([HTMLElementSerializer2, ContextSerializer2, ConditionSerializer2, LoopSerializer2, TextSerializer2],

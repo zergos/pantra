@@ -74,8 +74,12 @@ class DynamicStyles(AttrDict):
         return ';'.join(f'{k}: {v}' for k, v in self.items())
 
 
+@dataclass
 class MetricsData:
     __slots__ = ['left', 'top', 'right', 'bottom', 'width', 'height']
-
-    def __init__(self):
-        self.left = self.top = self.right = self.bottom = self.width = self.height = 0
+    left: int
+    top: int
+    right: int
+    bottom: int
+    width: int
+    height: int

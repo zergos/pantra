@@ -1,5 +1,5 @@
 var ws = new WebSocketClient();
-ws.open(`ws://${hostname}/ws`);
+ws.open(`ws://${hostname}/ws/${session_id}`);
 
 ws.onopen = function (event) {
     let message = {Command: 'RESTART'};
