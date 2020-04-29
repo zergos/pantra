@@ -7,6 +7,7 @@ function send_message(message) {
 
 ws.onopen = function (event) {
     send_message({C: 'RESTART'});
+    drag_mode_active = false;
 };
 
 ws.onmessage = function (data, flags, number) {
@@ -30,9 +31,9 @@ ws.onmessage = function (data, flags, number) {
                 }
             }
         } else if (obj.m === 'm') {
-            let node = document.getElementById(obj.oid);
+            let node = document.getElementById(obj.l);
             let rect = node.getBoundingClientRect();
-            send_message({C: 'M', oid: obj.oid, x: rect.left, y: rect.top, w: rect.width, h: rect.height});
+            send_message({C: 'M', oid: obj.l, x: rect.left, y: rect.top, w: rect.width, h: rect.height});
         } else if (obj.m === 'dm') {
             drag_mode_active = true;
         }

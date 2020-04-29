@@ -20,6 +20,9 @@ class UniNode(NodeMixin):
     def clear(self):
         self._NodeMixin__children_.clear()
 
+    def index(self):
+        return self._NodeMixin__parent._NodeMixin__children.index(self)
+
     def __str__(self):
         return self.__class__.__name__
 
@@ -63,15 +66,18 @@ class DynamicClasses(str):
 
 
 class DynamicStyles(AttrDict):
-    def __init__(self, style: str, *args, **kwargs):
-        data = {
-            expr.split('=')[0].strip(): expr.split('=')[1].strip()
-            for expr in style.split(';') if expr.strip()
-        }
-        super().__init__(data)
+    def __init__(self, style: Optional[str] = None):
+        if style:
+            data = {
+                expr.split('=')[0].strip(): expr.split('=')[1].strip()
+                for expr in style.split(';') if expr.strip()
+            }
+            super().__init__(data)
+        else:
+            super().__init__()
 
-    def str(self):
-        return ';'.join(f'{k}: {v}' for k, v in self.items())
+    def __str__(self):
+        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items())
 
 
 @dataclass
@@ -83,3 +89,20 @@ class MetricsData:
     bottom: int
     width: int
     height: int
+
+
+class Pixels(str):
+    __slots__ = ['value']
+
+    def __new__(cls, value: int):
+        return super().__new__(cls, f'{value}px')
+
+    def __init__(self, value: int):
+        self.value = value
+
+    def __add__(self, other: int):
+        return Pixels(self.value + other)
+
+    def __sub__(self, other: int):
+        return Pixels(self.value - other)
+

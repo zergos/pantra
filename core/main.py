@@ -66,16 +66,16 @@ async def get_ws(request: Request):
                 RenderMixin._set_metrics(int(data['oid']), data)
 
             elif command == 'DD':
-                if process_drag_start(data['method'], int(data['oid']), data['x'], data['y'], data['button']):
-                    await send_message({'m': 'dm'})
+                process_drag_start(ctx, data['method'], int(data['oid']), data['x'], data['y'], data['button'])
 
             elif command == 'DM':
-                process_drag_move(session, data['x'], data['y'])
+                process_drag_move(ctx, data['x'], data['y'])
 
             elif command == 'DU':
-                process_drag_stop(session, data['x'], data['y'])
+                process_drag_stop(ctx, data['x'], data['y'])
 
-            await send_shot()
+            #await send_shot()
+            #print(f'message processed {command}')
 
         elif msg.type == WSMsgType.ERROR:
             print('ws connection closed with exception %s' %

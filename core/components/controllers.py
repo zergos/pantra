@@ -6,11 +6,11 @@ from typing import NamedTuple, Optional
 
 from core.components.context import Context, AnyNode
 from core.oid import get_object
-from core.session import Session
+from core.session import Session, trace_errors
 from core.workers import thread_worker
 
 
-class Controller(ABC):
+class Controller:
     pass
 
 
@@ -24,17 +24,17 @@ class DragOptions(NamedTuple):
     right: Optional[int] = None
 
 
-@dataclass
 class DragController(Controller):
-    from_x: int = 0
-    from_y: int = 0
-    x: int = 0
-    y: int = 0
-    delta_x: int = 0
-    delta_y: int = 0
+    def __init__(self):
+        self.from_x: int = 0
+        self.from_y: int = 0
+        self.x: int = 0
+        self.y: int = 0
+        self.delta_x: int = 0
+        self.delta_y: int = 0
 
-    mode: DragOptions = None
-    in_moving: bool = False
+        self.mode: DragOptions = self.get_options()
+        self.in_moving: bool = False
 
     def __post_init__(self):
         self.mode = self.get_options()
@@ -67,32 +67,36 @@ class DragController(Controller):
         self.in_moving = False
         self.stop()
 
-    @abstractmethod
     def start(self, node):
         return False
 
-    @abstractmethod
     def move(self):
         pass
 
-    @abstractmethod
     def stop(self):
         pass
 
 
-def process_drag_start(method: str, oid: int, x: int, y: int, button: int):
+@thread_worker
+@trace_errors
+def process_drag_start(ctx: Context, method: str, oid: int, x: int, y: int, button: int):
     node: AnyNode = get_object(oid)
     node.session.state.drag: DragController = node.context.locals[method]()
-    return node.session.state.drag._mousedown(node, x, y, button)
+    if node.session.state.drag._mousedown(node, x, y, button):
+        ctx.session.send_message({'m': 'dm'})
 
 
-def process_drag_move(session: Session, x: int, y: int):
-    session.state.drag._mousemove(x, y)
+@thread_worker
+@trace_errors
+def process_drag_move(ctx: Context, x: int, y: int):
+    ctx.session.state.drag._mousemove(x, y)
 
 
-def process_drag_stop(session: Session, x: int, y: int):
-    session.state.drag._mouseup(x, y)
-    delattr(session.state, "drag")
+@thread_worker
+@trace_errors
+def process_drag_stop(ctx: Context, x: int, y: int):
+    ctx.session.state.drag._mouseup()
+    delattr(ctx.session.state, "drag")
 
 
 @thread_worker
@@ -102,12 +106,10 @@ def process_click(method: str, oid: int):
     process_click_referred(method, context, node)
 
 
+@trace_errors
 def process_click_referred(method: str, context: Context, node: AnyNode):
     if method in context.locals:
         if callable(context.locals[method]):
-            try:
-                context.locals[method](node)
-            except:
-                node.session.send_error(traceback.format_exc())
+            context.locals[method](node)
         else:
             process_click_referred(context.locals[method], context.parent.context, node)

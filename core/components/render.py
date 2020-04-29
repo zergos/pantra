@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import threading
 from contextlib import contextmanager
+from copy import deepcopy
 from typing import *
 
-from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData
+from attrdict import AttrDict
+
+from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData, Pixels
 from core.components.htmlnode import HTMLTemplate, collect_template
 from core.oid import gen_id, get_object
 from core.session import Session
@@ -21,14 +24,15 @@ logger = logging.getLogger(__name__)
 class RenderMixin:
     #__slots__ = ['context', 'shot']
 
-    def __init__(self, node: AnyNode, shot: Optional['ContextShot'] = None, session: Optional[Session] = None):
-        self.shot: 'ContextShot' = shot or node.shot
-        self.session: Session = session or node.session
+    def __init__(self, parent: Optional[AnyNode], **kwargs):
+        from core.components.context import Context
+        self.shot: 'ContextShot' = kwargs.get('shot') or parent.shot
+        self.session: Session = kwargs.get('session') or parent.session
         self.shot(self)
         if type(self) == Context:
             self.context = self
         else:
-            self.context = node.context
+            self.context = kwargs.get('context') or parent.context
 
     def empty(self):
         for child in self._NodeMixin__children_:  # type: AnyNode
@@ -39,7 +43,8 @@ class RenderMixin:
     def remove(self):
         self.empty()
         self.shot -= self
-        self.parent.remove(self)
+        if hasattr(self, '_NodeMixin__parent'):
+            self._NodeMixin__parent.remove(self)
 
     def update(self):
         self.context.render.update(self)
@@ -68,17 +73,41 @@ class RenderMixin:
         return self._metrics
 
     def set_metrics(self, m: MetricsData):
-        self.attributes.position = 'fixed'
-        self.attributes.left = m.left
-        self.attributes.top = m.top
-        self.attributes.width = m.width
-        self.attributes.height = m.height
-        self.shot += self
+        self.style.position = 'fixed'
+        self.style.left = Pixels(m.left)
+        self.style.top = Pixels(m.top)
+        self.style.width = Pixels(m.width)
+        self.style.height = Pixels(m.height)
+        self.shot(self)
 
     def move(self, delta_x, delta_y):
-        self.attributes.left += delta_x
-        self.attributes.top += delta_y
-        self.shot += self
+        self.style.left += delta_x
+        self.style.top += delta_y
+        self.shot(self)
+
+    def clone(self, new_parent: Optional[AnyNode] = None) -> 'HTMLElement':
+        from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+        if type(self) == HTMLElement:
+            clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
+            clone.attributes = AttrDict({
+                k: v
+                for k, v in self.attributes.items() if k not in ('on:click', 'on:drag') and not k.startswith('ref:')
+            })
+            clone.text = self.text
+            clone.classes = deepcopy(self.classes)
+            clone.style = deepcopy(self.style)
+        elif type(self) == Context:
+            clone = HTMLElement(self.template.name, new_parent)
+        elif type(self) == LoopNode:
+            clone = HTMLElement('loop', new_parent)
+        elif type(self) == ConditionNode:
+            clone = HTMLElement('condition', new_parent)
+        elif type(self) == TextNode:
+            clone: TextNode = TextNode(new_parent, self.text)
+
+        for child in self.children:
+            clone.append(child.clone(clone))
+        return clone
 
 
 class DefaultRenderer:
@@ -119,6 +148,7 @@ class DefaultRenderer:
         return False
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode], is_root_node: bool = False) -> Optional[AnyNode]:
+        from core.components.context import Context, SlotNode, ConditionNode, Condition, HTMLElement, LoopNode
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
             if template.tag_name == '#if':
@@ -166,6 +196,7 @@ class DefaultRenderer:
                     self.build_node(child, parent)
 
         elif template.tag_name == 'python':
+            saved = dict(self.ctx.locals)
             self.ctx.locals += {'ctx': self.ctx, 'refs': self.ctx.refs}
             try:
                 if not template.code:
@@ -174,8 +205,10 @@ class DefaultRenderer:
             except Exception as e:
                 logger.error(
                     f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
-            if 'init' in self.ctx.locals:
-                self.ctx.locals.init()
+            else:
+                self.ctx.locals.update(saved)
+                if 'init' in self.ctx.locals:
+                    self.ctx.locals.init()
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
@@ -220,6 +253,7 @@ class DefaultRenderer:
             self.update(child, True)
 
     def update(self, node: AnyNode, recursive: bool = False):
+        from core.components.context import HTMLElement, Context, TextNode, ConditionNode, LoopNode
         if type(node) == HTMLElement:
             # attributes, classes and text evaluation
             for k, v in node.attributes.items():
@@ -313,15 +347,15 @@ class ContextShot:
         yield
         self.frozen = False
 
-    def __call__(self, node: AnyNode, *args, **kwargs):
+    def __call__(self, node):
         if not self.frozen:
             self.updated.append(node)
 
     def __add__(self, other):
         if not self.frozen:
             self.updated.append(other)
+        return self
 
     def __sub__(self, other):
         self.deleted.add(gen_id(other))
         return self
-

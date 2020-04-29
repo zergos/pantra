@@ -15,6 +15,7 @@ loop, condition {
 table {
   table-layout: fixed;
   width: 100%;
+  box-sizing: border-box;
   border: $table-border;
   border-collapse: collapse;
   min-width: $table-min-width;

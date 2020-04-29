@@ -6,15 +6,15 @@
         <thead ref:thead>
             <tr ref:head_row>
                 {#for column in columns}
-                <th class="sortable" on:click="do_sort" on:drag="DragReorder">{{column.title}}</th>
+                <th class="sortable" on:drag="DragReorder">{{column.title}}</th>
                 {/for}
             </tr>
         </thead>
         <tbody ref:tbody>
         {#for row in get_rows()}
             <tr>
-                {#for cell in row.values()}
-                <td>{{fmt(cell)}}</td>
+                {#for col in columns}
+                <td>{{fmt(row[col.name])}}</td>
                 {/for}
             </tr>
         {/for}
@@ -39,7 +39,6 @@ def init():
 @db_session
 def get_rows():
     entity = getattr(db.models, src)
-    col_order = [c.name for c in columns]
     query = entity.select()
     if order_by > 0:
         query = query.order_by(columns[order_by-1])
@@ -77,13 +76,15 @@ class DragReorder(DragController):
     source_index: int = 0
 
     def get_options(self):
-        return DragOptions(1, True, False, None, refs.thead.metrics.left, None, refs.thead.metrics.right)
+        return DragOptions(0, True, False, None, refs.thead.metrics.left, None, refs.thead.metrics.right)
 
     def start(self, node):
-        self.source_index = node.parent.index(node)
+        self.source_index = node.index()
         self.drag_node = node.clone()
         self.drag_node.set_metrics(node.metrics)
-        self.drag_node.style.background_color = 'yellow'
+        self.drag_node.style.background_color = 'grey'
+        self.drag_node.style.padding = 0
+        self.drag_node.style.margin = 0
         return True
 
     def move(self):
@@ -92,8 +93,9 @@ class DragReorder(DragController):
     def stop(self):
         global order_by
         index = 0
-        for i, child in enumerate(refs.head_row.children[0]):
-            if child.metrics.left <= self.drag_node.metrics.left:
+        children = refs.head_row.children[0].children
+        for i in range(len(children)):
+            if i == len(children)-1 or children[i].metrics.left <= self.x <= children[i+1].metrics.left:
                 index = i
                 break
         if index == self.source_index:
@@ -102,6 +104,7 @@ class DragReorder(DragController):
             order_by = (index + 1) * (1 - 2 * (order_by<0))
         columns.insert(index, columns.pop(self.source_index))
         self.drag_node.remove()
+        refs.thead.update_tree()
         refs.tbody.update_tree()
 
 </python>

@@ -3,8 +3,8 @@ import typing
 import bsdf
 
 from core.oid import gen_id
-if typing.TYPE_CHECKING:
-    from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+#if typing.TYPE_CHECKING:
+from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
 
 class HTMLElementSerializer(bsdf.Extension):
     name = 'H'
@@ -13,7 +13,7 @@ class HTMLElementSerializer(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': gen_id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
+        return {'n': v.tag_name, 'i': gen_id(v), 'c': v.children, 'a': v.attributes, 'C': v.classes, 't': v.text, 's': v.style and str(v.style)}
 
 
 class ContextSerializer(bsdf.Extension):
@@ -67,7 +67,7 @@ class HTMLElementSerializer2(bsdf.Extension):
         return type(v) == HTMLElement
 
     def encode(self, s, v: HTMLElement):
-        return {'n': v.tag_name, 'i': gen_id(v), 'p': gen_id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text, 's': str(v.style)}
+        return {'n': v.tag_name, 'i': gen_id(v), 'p': gen_id(v.parent), 'a': v.attributes, 'C': v.classes, 't': v.text, 's': v.style and str(v.style)}
 
 
 class ContextSerializer2(bsdf.Extension):

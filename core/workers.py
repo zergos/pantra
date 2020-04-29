@@ -29,7 +29,7 @@ def start_task_workers():
     global task_queue
     task_queue = queue.Queue()
     for i in range(TASK_THREADS):
-        threading.Thread(target=task_processor)
+        threading.Thread(target=task_processor).start()
 
 
 def stop_task_workers():
@@ -44,7 +44,7 @@ async_loop: typing.Optional[asyncio.BaseEventLoop] = None
 def async_worker(func):
     @functools.wraps(func)
     def res(*args, **kwargs):
-        async_loop.create_task(func(*args, **kwargs))
+        asyncio.run_coroutine_threadsafe(func(*args, **kwargs), async_loop)
     return res
 
 

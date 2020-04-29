@@ -1,6 +1,8 @@
 from __future__ import annotations
 import random
 import string
+import functools
+import traceback
 from typing import *
 from aiohttp import web
 from attrdict import AttrDict
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Session:
-    sessions: Dict[str, 'Session']
+    sessions: Dict[str, 'Session'] = dict()
 
     def __new__(cls, session_id: str, *args, **kwargs):
         if session_id in cls.sessions:
@@ -33,7 +35,8 @@ class Session:
 
     @async_worker
     async def send_message(self, message: Dict['str', Any]):
-        await self.ws.send_bytes(serializer.encode(message))
+        from core.serializer import serializerU
+        await self.ws.send_bytes(serializerU.encode(message))
 
     def send_error(self, error: str):
         self.send_message({'m': 'e', 'l': error})
@@ -50,3 +53,15 @@ class Session:
 
     def request_metrics(self, node: AnyNode):
         self.send_message({'m': 'm', 'l': id(node)})
+
+
+def trace_errors(func):
+    @functools.wraps(func)
+    def res(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except:
+            args[0].session.send_error(traceback.format_exc())
+        else:
+            args[0].session.send_shot(args[0].shot)
+    return res

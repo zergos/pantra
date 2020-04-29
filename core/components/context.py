@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
-from core.common import UniNode
+from core.common import UniNode, DynamicStyles
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from .render import RenderMixin, DefaultRenderer
 
 if TYPE_CHECKING:
-    from core.common import DynamicString, DynamicStyles
+    from core.common import DynamicString
     from .render import ContextShot
     from ..session import Session
 
@@ -34,7 +34,9 @@ class Context(UniNode, RenderMixin):
             self.template = collect_template(template)
 
         super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent, shot, session)
+
+        RenderMixin.__init__(self, parent, shot=shot, session=session)
+
         self.render: DefaultRenderer = DefaultRenderer(self)
 
     def __getitem__(self, item: str):
@@ -54,23 +56,14 @@ class Context(UniNode, RenderMixin):
 class HTMLElement(HTMLNode, RenderMixin):
     __slots__ = ['text', 'style']
 
-    def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None):
+    def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, **kwargs):
         super().__init__(tag_name=tag_name, parent=parent, attributes=attributes)
-        RenderMixin.__init__(self, parent)
-        self.style: Optional[Union[DynamicStyles, DynamicString, str]] = None
+        RenderMixin.__init__(self, parent, **kwargs)
+        self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
         self.text: Union[str, DynamicString] = ''
 
     def render(self, content: Union[str, AnyNode]):
         self.context.render(self, content)
-
-    def clone(self, new_parent: Optional[AnyNode] = None) -> 'HTMLElement':
-        clone: HTMLElement = HTMLElement(self.tag_name, new_parent, AttrDict(self.attributes))
-        clone.shot = self.shot
-        clone.text = self.text
-        clone.classes = deepcopy(self.classes)
-        clone.style = deepcopy(self.style)
-        self.shot += clone
-        return clone
 
     def __str__(self):
         return f'HTML: {self.tag_name}'

@@ -238,8 +238,8 @@ var serializer = new bsdf.BsdfSerializer(
     [HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer,
     HTMLElementSerializerU, ContextSerializerU, ConditionSerializerU, LoopSerializerU, TextSerializerU]);
 
-function do_none() {
-    return false;
+function do_none(event) {
+    event.preventDefault();
 }
 
 class ClickListener {
@@ -275,11 +275,19 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
             node.addEventListener('selectstart', do_none);
             node.addEventListener('mousedown', new DragListener(value, oid, 0));
             if (!drag_events_attached) {
-                document.addEventListener('mousemove', (event) => {
+                drag_events_attached = true;
+                let root = root_node();
+                root.addEventListener('selectstart', (event) => {
+                    if (drag_mode_active) event.preventDefault();
+                });
+                root.addEventListener('dragstart', (event) => {
+                    if (drag_mode_active) event.preventDefault();
+                });
+                root.addEventListener('mousemove', (event) => {
                     if (drag_mode_active) process_drag_move(event);
                     else return false;
                 });
-                document.addEventListener('mouseup', (event) => {
+                root.addEventListener('mouseup', (event) => {
                     if (drag_mode_active) {
                         process_drag_stop(event);
                         drag_mode_active = false;
