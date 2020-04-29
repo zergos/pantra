@@ -1,5 +1,4 @@
 aiohttp==3.5.4
-aiohttp-session==2.9.0
 antlr4-python3-runtime==4.7.2
 anytree==2.6.0
 attrdict==2.0.1
