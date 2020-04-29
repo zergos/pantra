@@ -1,9 +1,12 @@
 var ws = new WebSocketClient();
 ws.open(`ws://${hostname}/ws/${session_id}`);
 
-ws.onopen = function (event) {
-    let message = {Command: 'RESTART'};
+function send_message(message) {
     ws.send(serializer.encode(message));
+}
+
+ws.onopen = function (event) {
+    send_message({C: 'RESTART'});
 };
 
 ws.onmessage = function (data, flags, number) {
@@ -26,12 +29,30 @@ ws.onmessage = function (data, flags, number) {
                     element.remove();
                 }
             }
+        } else if (obj.m === 'm') {
+            let node = document.getElementById(obj.oid);
+            let rect = node.getBoundingClientRect();
+            send_message({C: 'M', oid: obj.oid, x: rect.left, y: rect.top, w: rect.width, h: rect.height});
+        } else if (obj.m === 'dm') {
+            drag_mode_active = true;
         }
     };
     fileReader.readAsArrayBuffer(received_msg);
 };
 
 function process_click(method, oid) {
-    let message = {Command: 'CLICK', Data: {method: method, oid: oid}};
-    ws.send(serializer.encode(message));
+    send_message({C: 'CLICK', method: method, oid: oid});
+}
+
+function process_drag_start(method, oid, event) {
+    send_message({C: 'DD', method: method, oid: oid, x: event.pageX, y: event.pageY, button: event.button});
+}
+
+function process_drag_move(event) {
+    send_message({C: 'DM', x: event.pageX, y: event.pageY});
+}
+
+function process_drag_stop(event) {
+    send_message({C: 'DU', x: event.pageX, y: event.pageY});
+
 }

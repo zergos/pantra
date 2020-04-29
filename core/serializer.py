@@ -1,9 +1,10 @@
+from __future__ import annotations
+import typing
 import bsdf
 
-from core.common import UniNode
-from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
 from core.oid import gen_id
-
+if typing.TYPE_CHECKING:
+    from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
 
 class HTMLElementSerializer(bsdf.Extension):
     name = 'H'

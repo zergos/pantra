@@ -1,21 +1,17 @@
 import asyncio
 import sys
-import traceback
-from datetime import datetime
 from typing import *
 
-import aioredis
 import sass
 from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
-from aiohttp_session import setup, get_session
-from aiohttp_session.redis_storage import RedisStorage
 
-from core.components.context import Context, ContextShot, RenderMixin
-from core.components.controllers import process_click
-from core.components.htmlnode import collect_template, collect_styles
+from core.components.context import Context
+from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop
+from core.components.htmlnode import collect_styles
 import core.database as db
-from core.serializer import serializer, serializerU
+from core.components.render import ContextShot, RenderMixin
+from core.serializer import serializer
 from core.defaults import *
 from core.session import Session
 from core.workers import start_task_workers, init_async_worker, stop_task_workers
@@ -37,26 +33,49 @@ async def get_ws(request: Request):
 
     session = Session(request.match_info['session_id'], ws)
 
-    #token = request.match_info['token']
+    async def send_message(message: Dict):
+        await ws.send_bytes(serializer.encode(message))
+
+    async def send_shot():
+        if shot.deleted:
+            await send_message({'m': 'd', 'l': list(shot.deleted)})
+        if shot.updated:
+            await send_message({'m': 'u', 'l': shot.updated})
+        shot.reset()
+
+    # token = request.match_info['token']
     ctx: Optional[Context] = None
+    shot: Optional[ContextShot] = None
 
     async for msg in ws:  # type: WSMessage
         if msg.type == WSMsgType.BINARY:
             data = serializer.decode(msg.data)
-            command = data['Command']
+            command = data['C']
             if command == 'RESTART':
-                ctx = Context("Main", shot=ContextShot(), session=session)
+                shot = ContextShot()
+                ctx = Context("Main", shot=shot, session=session)
                 ctx.render.build()
                 ctx.shot.reset()
                 session.root = ctx
-                message = {'m': 'c', 'l': ctx}
-                await ws.send_bytes(serializer.encode(message), None)
+                await send_message({'m': 'c', 'l': ctx})
 
             elif command == 'CLICK':
-                process_click(data['Data']['method'], int(data['Data']['oid']))
+                process_click(data['method'], int(data['oid']))
 
-            elif command == 'Metrics':
-                RenderMixin._set_metrics(int(data['Data']['oid']), data['Data']['metrics'])
+            elif command == 'M':
+                RenderMixin._set_metrics(int(data['oid']), data)
+
+            elif command == 'DD':
+                if process_drag_start(data['method'], int(data['oid']), data['x'], data['y'], data['button']):
+                    await send_message({'m': 'dm'})
+
+            elif command == 'DM':
+                process_drag_move(session, data['x'], data['y'])
+
+            elif command == 'DU':
+                process_drag_stop(session, data['x'], data['y'])
+
+            await send_shot()
 
         elif msg.type == WSMsgType.ERROR:
             print('ws connection closed with exception %s' %

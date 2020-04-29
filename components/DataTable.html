@@ -84,6 +84,7 @@ class DragReorder(DragController):
         self.drag_node = node.clone()
         self.drag_node.set_metrics(node.metrics)
         self.drag_node.style.background_color = 'yellow'
+        return True
 
     def move(self):
         self.drag_node.move(self.delta_x, 0)

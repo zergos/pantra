@@ -1,12 +1,14 @@
+from __future__ import annotations
 import random
 import string
 from typing import *
 from aiohttp import web
 from attrdict import AttrDict
 
-from core.components.context import Context, ContextShot, AnyNode
-from core.serializer import serializer
 from core.workers import async_worker
+if TYPE_CHECKING:
+    from core.components.context import Context, ContextShot, AnyNode
+    from core.serializer import serializer
 
 
 class Session:
@@ -20,8 +22,8 @@ class Session:
         return self
 
     def __init__(self, session_id: str, ws: web.WebSocketResponse):
-        if not hasattr(self, "data"):
-            self.data: AttrDict = AttrDict()
+        if not hasattr(self, "state"):
+            self.state: AttrDict = AttrDict()
         self.root: Context
         self.ws: web.WebSocketResponse = ws
 

@@ -238,6 +238,10 @@ var serializer = new bsdf.BsdfSerializer(
     [HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer,
     HTMLElementSerializerU, ContextSerializerU, ConditionSerializerU, LoopSerializerU, TextSerializerU]);
 
+function do_none() {
+    return false;
+}
+
 class ClickListener {
     constructor(method, oid) {
         this.method = method;
@@ -248,11 +252,43 @@ class ClickListener {
     }
 }
 
+let drag_mode_active = false;
+let drag_events_attached = false;
+class DragListener {
+    constructor(method, oid) {
+        this.method = method;
+        this.oid = oid;
+    }
+    handleEvent(event) {
+        process_drag_start(this.method, this.oid, event);
+    }
+}
+
 function process_special_attribute(attr, value, node, oid, is_new = false) {
     if (attr === 'on:click') {
         if (is_new)
             node.addEventListener('click', new ClickListener(value, oid));
         return true;
+    } else if (attr === 'on:drag') {
+        if (is_new) {
+            node.addEventListener('dragstart', do_none);
+            node.addEventListener('selectstart', do_none);
+            node.addEventListener('mousedown', new DragListener(value, oid, 0));
+            if (!drag_events_attached) {
+                document.addEventListener('mousemove', (event) => {
+                    if (drag_mode_active) process_drag_move(event);
+                    else return false;
+                });
+                document.addEventListener('mouseup', (event) => {
+                    if (drag_mode_active) {
+                        process_drag_stop(event);
+                        drag_mode_active = false;
+                    } else return false;
+                });
+            }
+        }
+        return true;
     }
     return false;
 }
+

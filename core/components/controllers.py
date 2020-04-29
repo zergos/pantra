@@ -1,18 +1,27 @@
 import ctypes
 import traceback
-from collections import namedtuple
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import NamedTuple, Optional
 
 from core.components.context import Context, AnyNode
 from core.oid import get_object
+from core.session import Session
 from core.workers import thread_worker
 
 
-class Controller:
+class Controller(ABC):
     pass
 
 
-DragOptions = namedtuple('DragMode', ['mouse_button', 'allow_x', 'allow_y', 'top', 'left', 'bottom', 'right'])
+class DragOptions(NamedTuple):
+    button: int = 1
+    allow_x: bool = True
+    allow_y: bool = True
+    top: Optional[int] = None
+    left: Optional[int] = None
+    bottom: Optional[int] = None
+    right: Optional[int] = None
 
 
 @dataclass
@@ -31,15 +40,15 @@ class DragController(Controller):
         self.mode = self.get_options()
 
     def get_options(self):
-        return DragOptions(1, True, True, None, None, None, None)
+        return DragOptions()
 
-    def _mousedown(self, node, x, y, mouse_button):
-        if mouse_button != self.mode.mouse_button:
-            return
+    def _mousedown(self, node, x, y, button):
+        if button != self.mode.button:
+            return False
         self.from_x = self.x = x
         self.from_y = self.y = y
         self.in_moving = True
-        self.start(node)
+        return self.start(node)
 
     def _mousemove(self, x, y):
         if self.mode.allow_x:
@@ -58,14 +67,32 @@ class DragController(Controller):
         self.in_moving = False
         self.stop()
 
+    @abstractmethod
     def start(self, node):
-        pass
+        return False
 
+    @abstractmethod
     def move(self):
         pass
 
+    @abstractmethod
     def stop(self):
         pass
+
+
+def process_drag_start(method: str, oid: int, x: int, y: int, button: int):
+    node: AnyNode = get_object(oid)
+    node.session.state.drag: DragController = node.context.locals[method]()
+    return node.session.state.drag._mousedown(node, x, y, button)
+
+
+def process_drag_move(session: Session, x: int, y: int):
+    session.state.drag._mousemove(x, y)
+
+
+def process_drag_stop(session: Session, x: int, y: int):
+    session.state.drag._mouseup(x, y)
+    delattr(session.state, "drag")
 
 
 @thread_worker
@@ -82,7 +109,5 @@ def process_click_referred(method: str, context: Context, node: AnyNode):
                 context.locals[method](node)
             except:
                 node.session.send_error(traceback.format_exc())
-            else:
-                node.session.send_shot(node.shot)
         else:
             process_click_referred(context.locals[method], context.parent.context, node)
