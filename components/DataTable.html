@@ -1,12 +1,19 @@
-﻿<div class="table-container">
-    <table>
-        <colgroup>
-            <col span="{len(columns)}" style="width: {100//len(columns)}%">
+<div class="table-container">
+    <table ref:table>
+        <colgroup ref:colgroup>
+            {#for size in col_sizes}
+            <col style="width: {size}%">
+            {/for}
         </colgroup>
         <thead ref:thead>
             <tr ref:head_row>
                 {#for column in columns}
-                <th class="sortable" on:drag="DragReorder">{{column.title}}</th>
+                <th>
+                    <div on:drag="DragReorder">{{column.title}}
+                        <span on:drag="DragResize" class="resizable"></span>
+                        <span on:click="do_sort" class="sortable{get_order_class(this)}"></span>
+                    </div>
+                </th>
                 {/for}
             </tr>
         </thead>
@@ -30,11 +37,13 @@ import db.models
 
 src: str
 columns: Optional[List] = None
+col_sizes: Optional[List] = None
 
 def init():
-    global columns
+    global columns, col_sizes
     entity = getattr(db.models, src)
     columns = entity._attrs_with_columns_
+    col_sizes = [100/len(columns)] * len(columns)
 
 @db_session
 def get_rows():
@@ -57,31 +66,34 @@ order_node = None
 
 def do_sort(node):
     global order_by, order_node
-    if order_by != 0:
-        order_node.classes *= "sortable"
-        order_node.update()
     if order_node != node:
-        order_by = refs.head_row[0].children.index(node) + 1
+        order_by = node.parent.parent.index() + 1
+        prev_node = order_node
         order_node = node
-        node.classes += 'asc'
+        if prev_node:
+            prev_node.update()
     else:
         order_by = -order_by
-        node.classes += 'asc' if order_by > 0 else 'desc'
     node.update()
     refs.tbody.update_tree()
 
+def get_order_class(node):
+    if order_by == 0 or order_node != node:
+        return ''
+    return ' asc' if order_by > 0 else ' desc'
 
 class DragReorder(DragController):
     drag_node: HTMLElement = None
     source_index: int = 0
 
-    def get_options(self):
+    def get_options(self, node):
+        ctx.session.drop_metrics()
         return DragOptions(0, True, False, None, refs.thead.metrics.left, None, refs.thead.metrics.right)
 
     def start(self, node):
-        self.source_index = node.index()
-        self.drag_node = node.clone()
-        self.drag_node.set_metrics(node.metrics)
+        self.source_index = node.parent.index()
+        self.drag_node = node.parent.clone()
+        self.drag_node.set_metrics(node.parent.metrics, 1)
         self.drag_node.style.background_color = 'grey'
         self.drag_node.style.padding = 0
         self.drag_node.style.margin = 0
@@ -103,8 +115,39 @@ class DragReorder(DragController):
         if abs(order_by) == self.source_index + 1:
             order_by = (index + 1) * (1 - 2 * (order_by<0))
         columns.insert(index, columns.pop(self.source_index))
+        col_sizes.insert(index, col_sizes.pop(self.source_index))
         self.drag_node.remove()
+        refs.colgroup.update_tree()
         refs.thead.update_tree()
         refs.tbody.update_tree()
+
+
+class DragResize(DragController):
+    drag_node: HTMLElement
+    source_index: int
+    source_node: HTMLElement
+
+    def get_options(self, node: HTMLElement):
+        ctx.session.drop_metrics()
+        return DragOptions(0, True, False, None, node.metrics.left+20, None, None)
+
+    def start(self, node: HTMLElement):
+        self.source_index = node.parent.parent.index()
+        self.source_node = node.parent.parent
+        self.drag_node = HTMLElement('div', ctx)
+        self.drag_node.set_metrics([self.x, node.metrics.top, 3, refs.table.metrics.bottom])
+        self.drag_node.style.background_color = "blue"
+        return True
+
+    def move(self):
+        self.drag_node.move(self.delta_x, 0)
+
+    def stop(self):
+        global col_sizes
+        self.drag_node.remove()
+        source_width = self.source_node.metrics.width
+        new_width = self.x - self.source_node.metrics.left
+        col_sizes[self.source_index] = col_sizes[self.source_index] * new_width // source_width
+        refs.colgroup.update_tree()
 
 </python>

@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 import ctypes
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, TYPE_CHECKING
 
-from core.components.context import Context, AnyNode
 from core.oid import get_object
 from core.session import Session, trace_errors
 from core.workers import thread_worker
 
+if TYPE_CHECKING:
+    from core.components.context import Context, AnyNode, HTMLElement
 
-class Controller:
+
+class Controller(ABC):
     pass
 
 
@@ -25,7 +29,7 @@ class DragOptions(NamedTuple):
 
 
 class DragController(Controller):
-    def __init__(self):
+    def __init__(self, node: HTMLElement):
         self.from_x: int = 0
         self.from_y: int = 0
         self.x: int = 0
@@ -33,13 +37,10 @@ class DragController(Controller):
         self.delta_x: int = 0
         self.delta_y: int = 0
 
-        self.mode: DragOptions = self.get_options()
+        self.mode: DragOptions = self.get_options(node)
         self.in_moving: bool = False
 
-    def __post_init__(self):
-        self.mode = self.get_options()
-
-    def get_options(self):
+    def get_options(self, node: HTMLElement):
         return DragOptions()
 
     def _mousedown(self, node, x, y, button):
@@ -67,12 +68,15 @@ class DragController(Controller):
         self.in_moving = False
         self.stop()
 
-    def start(self, node):
+    @abstractmethod
+    def start(self, node) -> bool:
         return False
 
+    @abstractmethod
     def move(self):
         pass
 
+    @abstractmethod
     def stop(self):
         pass
 
@@ -81,7 +85,7 @@ class DragController(Controller):
 @trace_errors
 def process_drag_start(ctx: Context, method: str, oid: int, x: int, y: int, button: int):
     node: AnyNode = get_object(oid)
-    node.session.state.drag: DragController = node.context.locals[method]()
+    node.session.state.drag: DragController = node.context.locals[method](node)
     if node.session.state.drag._mousedown(node, x, y, button):
         ctx.session.send_message({'m': 'dm'})
 
@@ -103,13 +107,13 @@ def process_drag_stop(ctx: Context, x: int, y: int):
 def process_click(method: str, oid: int):
     node = get_object(oid)
     context = node.context
-    process_click_referred(method, context, node)
+    process_click_referred(context, method, node)
 
 
 @trace_errors
-def process_click_referred(method: str, context: Context, node: AnyNode):
+def process_click_referred(context: Context, method: str, node: AnyNode):
     if method in context.locals:
         if callable(context.locals[method]):
             context.locals[method](node)
         else:
-            process_click_referred(context.locals[method], context.parent.context, node)
+            process_click_referred(context.parent.context, context.locals[method], node)

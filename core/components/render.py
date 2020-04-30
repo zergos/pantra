@@ -44,7 +44,7 @@ class RenderMixin:
         self.empty()
         self.shot -= self
         if hasattr(self, '_NodeMixin__parent'):
-            self._NodeMixin__parent.remove(self)
+            self._NodeMixin__parent._NodeMixin__children.remove(self)
 
     def update(self):
         self.context.render.update(self)
@@ -56,6 +56,7 @@ class RenderMixin:
     def _set_metrics(oid: int, metrics: Dict[str, int]):
         self = get_object(oid)
         self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
+        self.session.metrics_stack.append(self)
         with self._metrics_cv:
             self._metrics_cv.notify()
 
@@ -72,12 +73,16 @@ class RenderMixin:
         self.request_metrics()
         return self._metrics
 
-    def set_metrics(self, m: MetricsData):
+    def set_metrics(self, m: Union[MetricsData, Dict[str, int], List[int]], shrink: int = 0):
+        if isinstance(m, dict):
+            m = AttrDict(m)
+        elif isinstance(m, list):
+            m = AttrDict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
         self.style.position = 'fixed'
         self.style.left = Pixels(m.left)
         self.style.top = Pixels(m.top)
-        self.style.width = Pixels(m.width)
-        self.style.height = Pixels(m.height)
+        self.style.width = Pixels(m.width) - shrink
+        self.style.height = Pixels(m.height) - shrink
         self.shot(self)
 
     def move(self, delta_x, delta_y):
@@ -87,6 +92,8 @@ class RenderMixin:
 
     def clone(self, new_parent: Optional[AnyNode] = None) -> 'HTMLElement':
         from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+        if new_parent is None:
+            new_parent = self.context
         if type(self) == HTMLElement:
             clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
             clone.attributes = AttrDict({
@@ -122,15 +129,15 @@ class DefaultRenderer:
     def build(self):
         self.build_node(self.ctx.template, self.ctx, True)
 
-    def build_func(self, text: str) -> Callable[[], Any]:
-        return lambda: eval(text, {'ctx': self.ctx}, self.ctx.locals)
+    def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
+        return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
 
-    def build_string(self, source: str) -> Optional[Union[str, DynamicString]]:
+    def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
             return None
 
         if '{' in source:
-            return DynamicString(self.build_func('f'+source))
+            return DynamicString(self.build_func('f'+source, node))
         else:
             return source.strip('"'' ')
 
@@ -141,7 +148,7 @@ class DefaultRenderer:
             return True
         elif attr == 'style':
             if '{' in value:
-                node.style = self.build_string(value)
+                node.style = self.build_string(value, node)
             else:
                 node.style = DynamicStyles(value.strip('" '''))
             return True
@@ -155,7 +162,7 @@ class DefaultRenderer:
                 node = ConditionNode(parent)
                 for child_template in template.children:  # type: HTMLTemplate
                     if child_template.tag_name != '#else':
-                        item = Condition(self.build_func(child_template.macro), child_template, None)
+                        item = Condition(self.build_func(child_template.macro, node), child_template, None)
                     else:
                         item = Condition((lambda: True), child_template, None)
                     node.conditions.append(item)
@@ -165,7 +172,7 @@ class DefaultRenderer:
                 node = LoopNode(parent=parent, template=template)
                 chunks = template.macro.split(' in ')
                 node.var_name = chunks[0].strip()
-                node.iterator = self.build_func(chunks[1])
+                node.iterator = self.build_func(chunks[1], node)
                 self.update(node)
 
         elif template.tag_name[0].isupper():
@@ -182,7 +189,7 @@ class DefaultRenderer:
             # evaluate attributes
             for attr, value in template.attributes.items():
                 if not self.process_special_attribute(attr, value, node):
-                    node.locals[attr] = self.build_string(value)
+                    node.locals[attr] = self.build_string(value, node)
 
             node.render.build()
 
@@ -229,9 +236,9 @@ class DefaultRenderer:
                 # evaluate attributes
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        node.attributes[attr] = self.build_string(value)
+                        node.attributes[attr] = self.build_string(value, node)
 
-            node.classes = self.build_string(template.classes)
+            node.classes = self.build_string(template.classes, node)
             if type(node.classes) == str:
                 node.classes = DynamicClasses(node.classes)
 
@@ -240,7 +247,7 @@ class DefaultRenderer:
 
             # evaluate children
             if template.tag_name == 'macro':
-                node.text = DynamicString(self.build_func(template.macro))
+                node.text = DynamicString(self.build_func(template.macro, node))
             elif len(template.children) == 1 and template.children[0].tag_name == '@text':
                 node.text = template.children[0].text
             else:

@@ -16,6 +16,7 @@ ws.onmessage = function (data, flags, number) {
     fileReader.onload = (res) => {
         let obj = serializer.decode(res.target.result);
         if (obj.m === 'u') {
+            //root_node().style.visibility = 'visible';
         } else if (obj.m === 'c') {
             let display = root_node();
             display.innerText = '';
@@ -30,10 +31,11 @@ ws.onmessage = function (data, flags, number) {
                     element.remove();
                 }
             }
+            //root_node().style.visibility = 'hidden';
         } else if (obj.m === 'm') {
             let node = document.getElementById(obj.l);
             let rect = node.getBoundingClientRect();
-            send_message({C: 'M', oid: obj.l, x: rect.left, y: rect.top, w: rect.width, h: rect.height});
+            send_message({C: 'M', oid: obj.l, x: Math.round(rect.left), y: Math.round(rect.top), w: Math.round(rect.width), h: Math.round(rect.height)});
         } else if (obj.m === 'dm') {
             drag_mode_active = true;
         }

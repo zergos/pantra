@@ -9,7 +9,7 @@ from attrdict import AttrDict
 
 from core.workers import async_worker
 if TYPE_CHECKING:
-    from core.components.context import Context, ContextShot, AnyNode
+    from core.components.context import Context, ContextShot, AnyNode, HTMLElement
     from core.serializer import serializer
 
 
@@ -28,6 +28,7 @@ class Session:
             self.state: AttrDict = AttrDict()
         self.root: Context
         self.ws: web.WebSocketResponse = ws
+        self.metrics_stack: List[HTMLElement] = []
 
     @staticmethod
     def gen_session_id():
@@ -53,6 +54,11 @@ class Session:
 
     def request_metrics(self, node: AnyNode):
         self.send_message({'m': 'm', 'l': id(node)})
+
+    def drop_metrics(self):
+        for node in self.metrics_stack:
+            if hasattr(node, '_metrics'):
+                delattr(node, '_metrics')
 
 
 def trace_errors(func):

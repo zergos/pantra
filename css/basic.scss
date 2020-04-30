@@ -27,17 +27,31 @@ thead {
 }
 th {
   font-family: $th-font;
-  &.sortable:after {
+  div {
+    cursor: grab;
+    width: 100%;
+
+    .sortable:after {
       content: '⇅';
       float: right;
-  }
-  &.sortable.asc:after {
-    content: '⬇';
-    float: right;
-  }
-  &.sortable.desc:after {
-    content: '⬆';
-    float: right;
+      cursor: pointer;
+    }
+
+    .sortable.asc:after {
+      content: '⬇';
+      float: right;
+    }
+
+    .sortable.desc:after {
+      content: '⬆';
+      float: right;
+    }
+
+    .resizable:after {
+      content: '↔';
+      float: right;
+      cursor: col-resize;
+    }
   }
 }
 td, th {

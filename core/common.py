@@ -34,7 +34,7 @@ class DynamicString(str):
     __slots__ = ['func']
 
     def __new__(cls, func: Callable[[], str]):
-        return super().__new__(cls, func())
+        return super().__new__(cls, func() if callable(func) else func)
 
     def __init__(self, func: Callable[[], str]):
         self.func: Callable[[], str] = func
@@ -46,6 +46,12 @@ class DynamicString(str):
         if not other:
             return DynamicString(self.func)
         return self+other
+
+    def __getstate__(self):
+        return str(self)
+
+    def __setstate__(self, state):
+        self.func = lambda: state
 
 
 class DynamicClasses(str):
@@ -78,6 +84,12 @@ class DynamicStyles(AttrDict):
 
     def __str__(self):
         return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items())
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 @dataclass

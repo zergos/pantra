@@ -239,6 +239,7 @@ var serializer = new bsdf.BsdfSerializer(
     HTMLElementSerializerU, ContextSerializerU, ConditionSerializerU, LoopSerializerU, TextSerializerU]);
 
 function do_none(event) {
+    event.stopPropagation();
     event.preventDefault();
 }
 
@@ -248,7 +249,8 @@ class ClickListener {
         this.oid = oid;
     }
     handleEvent(event) {
-        process_click(this.method, this.oid)
+        event.stopPropagation();
+        process_click(this.method, this.oid);
     }
 }
 
@@ -260,14 +262,17 @@ class DragListener {
         this.oid = oid;
     }
     handleEvent(event) {
+        event.stopPropagation();
         process_drag_start(this.method, this.oid, event);
     }
 }
 
 function process_special_attribute(attr, value, node, oid, is_new = false) {
     if (attr === 'on:click') {
-        if (is_new)
+        if (is_new) {
             node.addEventListener('click', new ClickListener(value, oid));
+            node.addEventListener('mousedown', do_none);
+        }
         return true;
     } else if (attr === 'on:drag') {
         if (is_new) {
@@ -278,20 +283,23 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
                 drag_events_attached = true;
                 let root = root_node();
                 root.addEventListener('selectstart', (event) => {
-                    if (drag_mode_active) event.preventDefault();
+                    if (drag_mode_active) event.stopPropagation();
                 });
                 root.addEventListener('dragstart', (event) => {
-                    if (drag_mode_active) event.preventDefault();
+                    if (drag_mode_active) event.stopPropagation();
                 });
                 root.addEventListener('mousemove', (event) => {
-                    if (drag_mode_active) process_drag_move(event);
-                    else return false;
+                    if (drag_mode_active) {
+                        event.stopPropagation();
+                        process_drag_move(event);
+                    }
                 });
                 root.addEventListener('mouseup', (event) => {
                     if (drag_mode_active) {
+                        event.stopPropagation();
                         process_drag_stop(event);
                         drag_mode_active = false;
-                    } else return false;
+                    }
                 });
             }
         }
