@@ -60,6 +60,9 @@ class Session:
             if hasattr(node, '_metrics'):
                 delattr(node, '_metrics')
 
+    def log(self, message):
+        self.send_message({'m': 'log', 'l': message})
+
 
 def trace_errors(func):
     @functools.wraps(func)

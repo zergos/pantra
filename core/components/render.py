@@ -90,10 +90,11 @@ class RenderMixin:
         self.style.top += delta_y
         self.shot(self)
 
-    def clone(self, new_parent: Optional[AnyNode] = None) -> 'HTMLElement':
+    def clone(self, new_parent: Optional[AnyNode] = None) -> HTMLElement:
         from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
         if new_parent is None:
             new_parent = self.context
+        clone: Optional[AnyNode] = None
         if type(self) == HTMLElement:
             clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
             clone.attributes = AttrDict({
@@ -155,7 +156,7 @@ class DefaultRenderer:
         return False
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode], is_root_node: bool = False) -> Optional[AnyNode]:
-        from core.components.context import Context, SlotNode, ConditionNode, Condition, HTMLElement, LoopNode
+        from core.components.context import Context, SlotNode, ConditionNode, Condition, HTMLElement, LoopNode, EventNode
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
             if template.tag_name == '#if':
@@ -220,6 +221,14 @@ class DefaultRenderer:
         elif template.tag_name == 'style':
             # styles collected elsewhere
             pass
+
+        elif template.tag_name == 'event':
+            node = EventNode(parent)
+            for k, v in template.attributes.items():
+                if k == 'selector':
+                    node.attributes[k] = ','.join(f'.default .ctx-{self.ctx.template.name} {s}' for s in v.strip('" ''').split(','))
+                else:
+                    node.attributes[k] = self.build_string(v, node)
 
         elif template.tag_name == '@text':
             node = TextNode(parent=parent, text=template.text.strip('"'' '))

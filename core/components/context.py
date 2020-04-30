@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from .render import ContextShot
     from ..session import Session
 
-AnyNode = Union['HTMLElement', 'Context', 'ConditionNode', 'LoopNode', 'SlotNode', 'TextNode']
+AnyNode = Union['HTMLElement', 'Context', 'ConditionNode', 'LoopNode', 'SlotNode', 'TextNode', 'EventNode']
 
 
 class Context(UniNode, RenderMixin):
@@ -112,3 +112,12 @@ class TextNode(UniNode, RenderMixin):
         super().__init__(parent=parent)
         RenderMixin.__init__(self, parent)
         self.text: str = text
+
+
+class EventNode(UniNode, RenderMixin):
+    __slots__ = ['attributes']
+
+    def __init__(self, parent: AnyNode, attributes: Optional[AttrDict] = None):
+        super().__init__(parent=parent)
+        RenderMixin.__init__(self, parent)
+        self.attributes = attributes or AttrDict()

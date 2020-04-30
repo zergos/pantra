@@ -29,6 +29,8 @@
     </table>
 </div>
 
+<event selector="td, td macro" on:click="enter_cell"></event>
+
 <python>
 from datetime import datetime
 from pony.orm import *
@@ -149,5 +151,8 @@ class DragResize(DragController):
         new_width = self.x - self.source_node.metrics.left
         col_sizes[self.source_index] = col_sizes[self.source_index] * new_width // source_width
         refs.colgroup.update_tree()
+
+def enter_cell(node):
+    ctx.session.log(node.text or node.children[0].text)
 
 </python>

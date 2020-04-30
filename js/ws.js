@@ -38,6 +38,8 @@ ws.onmessage = function (data, flags, number) {
             send_message({C: 'M', oid: obj.l, x: Math.round(rect.left), y: Math.round(rect.top), w: Math.round(rect.width), h: Math.round(rect.height)});
         } else if (obj.m === 'dm') {
             drag_mode_active = true;
+        } else if (obj.m === 'log') {
+            console.log(obj.l);
         }
     };
     fileReader.readAsArrayBuffer(received_msg);

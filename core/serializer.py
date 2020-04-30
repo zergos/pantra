@@ -4,7 +4,7 @@ import bsdf
 
 from core.oid import gen_id
 #if typing.TYPE_CHECKING:
-from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode, EventNode
 
 class HTMLElementSerializer(bsdf.Extension):
     name = 'H'
@@ -56,12 +56,22 @@ class TextSerializer(bsdf.Extension):
         return {'i': gen_id(v), 't': v.text}
 
 
-serializer = bsdf.BsdfSerializer([HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer],
+class EventSerializer(bsdf.Extension):
+    name = 'E'
+
+    def match(self, s, v):
+        return type(v) == EventNode
+
+    def encode(self, s, v):
+        return {'ctx': v.context.template.name, 'a': v.attributes}
+
+
+serializer = bsdf.BsdfSerializer([HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer],
                                  compression='bz2')
 
 
 class HTMLElementSerializer2(bsdf.Extension):
-    name = 'H2'
+    name = 'h'
 
     def match(self, s, v):
         return type(v) == HTMLElement
@@ -71,7 +81,7 @@ class HTMLElementSerializer2(bsdf.Extension):
 
 
 class ContextSerializer2(bsdf.Extension):
-    name = 'C2'
+    name = 'c'
 
     def match(self, s, v):
         return type(v) == Context
@@ -81,7 +91,7 @@ class ContextSerializer2(bsdf.Extension):
 
 
 class ConditionSerializer2(bsdf.Extension):
-    name = 'I2'
+    name = 'i'
 
     def match(self, s, v):
         return type(v) == ConditionNode
@@ -91,7 +101,7 @@ class ConditionSerializer2(bsdf.Extension):
 
 
 class LoopSerializer2(bsdf.Extension):
-    name = 'L2'
+    name = 'l'
 
     def match(self, s, v):
         return type(v) == LoopNode
@@ -101,7 +111,7 @@ class LoopSerializer2(bsdf.Extension):
 
 
 class TextSerializer2(bsdf.Extension):
-    name = 'T2'
+    name = 't'
 
     def match(self, s, v):
         return type(v) == TextNode
@@ -110,7 +120,17 @@ class TextSerializer2(bsdf.Extension):
         return {'i': gen_id(v), 'p': gen_id(v.parent), 't': v.text}
 
 
-serializerU = bsdf.BsdfSerializer([HTMLElementSerializer2, ContextSerializer2, ConditionSerializer2, LoopSerializer2, TextSerializer2],
+class EventSerializer2(bsdf.Extension):
+    name = 'e'
+
+    def match(self, s, v):
+        return type(v) == EventNode
+
+    def encode(self, s, v):
+        return None
+
+
+serializerU = bsdf.BsdfSerializer([HTMLElementSerializer2, ContextSerializer2, ConditionSerializer2, LoopSerializer2, TextSerializer2, EventSerializer2],
                                  compression='bz2')
 
 
