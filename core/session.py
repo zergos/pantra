@@ -10,7 +10,6 @@ from attrdict import AttrDict
 from core.workers import async_worker
 if TYPE_CHECKING:
     from core.components.context import Context, ContextShot, AnyNode, HTMLElement
-    from core.serializer import serializer
 
 
 class Session:
@@ -53,12 +52,15 @@ class Session:
         shot.reset()
 
     def request_metrics(self, node: AnyNode):
-        self.send_message({'m': 'm', 'l': id(node)})
+        self.send_message({'m': 'm', 'l': node.oid})
 
     def drop_metrics(self):
         for node in self.metrics_stack:
             if hasattr(node, '_metrics'):
                 delattr(node, '_metrics')
+
+    def request_value(self, node: AnyNode):
+        self.send_message({'m': 'v', 'l': node.oid})
 
     def log(self, message):
         self.send_message({'m': 'log', 'l': message})

@@ -9,7 +9,7 @@
             <tr ref:head_row>
                 {#for column in columns}
                 <th>
-                    <div on:drag="DragReorder">{{column.title}}
+                    <div on:drag="DragReorder" class="movable">{{column.title}}
                         <span on:drag="DragResize" class="resizable"></span>
                         <span on:click="do_sort" class="sortable{get_order_class(this)}"></span>
                     </div>
@@ -29,7 +29,8 @@
     </table>
 </div>
 
-<event selector="td, td macro" on:click="enter_cell"></event>
+<event selector="td, td > macro, td > text" on:click="enter_cell"></event>
+<event selector="input" on:focusout="exit_cell"></event>
 
 <python>
 from datetime import datetime
@@ -66,6 +67,11 @@ def fmt(value):
 order_by = 0
 order_node = None
 
+def get_order_class(node):
+    if order_by == 0 or order_node != node:
+        return ''
+    return ' asc' if order_by > 0 else ' desc'
+
 def do_sort(node):
     global order_by, order_node
     if order_node != node:
@@ -78,11 +84,6 @@ def do_sort(node):
         order_by = -order_by
     node.update()
     refs.tbody.update_tree()
-
-def get_order_class(node):
-    if order_by == 0 or order_node != node:
-        return ''
-    return ' asc' if order_by > 0 else ' desc'
 
 class DragReorder(DragController):
     drag_node: HTMLElement = None
@@ -152,7 +153,20 @@ class DragResize(DragController):
         col_sizes[self.source_index] = col_sizes[self.source_index] * new_width // source_width
         refs.colgroup.update_tree()
 
-def enter_cell(node):
-    ctx.session.log(node.text or node.children[0].text)
+def enter_cell(node: HTMLElement):
+    if node.tag_name == 'td':
+        node = node.children[0]
+    field = HTMLElement('input', node.parent, {'type': 'text', 'value': str(node.text)})
+    field.style.width = '100%'
+    field.style.background_color = 'aliceblue'
+    field.focus()
+    field.update()
+    node.parent.style.padding = 0
+    node.parent.update()
+    node.remove()
+
+def exit_cell(node: HTMLElement):
+    TextNode(node.parent, node.value).update()
+    node.remove()
 
 </python>

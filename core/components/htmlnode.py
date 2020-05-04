@@ -5,7 +5,7 @@ import traceback
 
 from attrdict import AttrDict
 
-from core.common import UniNode, DynamicString
+from core.common import DynamicString, AnyNode
 from core.defaults import COMPONENTS_PATH
 
 from logging import getLogger
@@ -14,7 +14,7 @@ logger = getLogger(__name__)
 templates: Dict[str, 'HTMLTemplate'] = {}
 
 
-class HTMLNode(UniNode):
+class HTMLNode(AnyNode):
     __slots__ = ('tag_name', 'attributes', 'classes')
 
     def __init__(self, tag_name: str, parent: Optional['HTMLNode'] = None, children: Optional[List['HTMLNode']] = None, attributes: Optional[Union[Dict, AttrDict]] = None):

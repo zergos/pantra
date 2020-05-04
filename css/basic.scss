@@ -1,7 +1,7 @@
 @import 'defaults.scss';
 
 // ##### Common tags #####
-div {
+*, ::before, ::after {
   box-sizing: border-box;
 }
 
@@ -28,8 +28,10 @@ thead {
 th {
   font-family: $th-font;
   div {
-    cursor: grab;
     width: 100%;
+    &.movable {
+      cursor: grab;
+    }
 
     .sortable:after {
       content: '⇅';
@@ -64,7 +66,6 @@ tr:nth-child(even) {
   background-color: $color-even-gray;
 }
 .table-container {
-  box-sizing: border-box;
   overflow: auto;
   width: 100%;
 }

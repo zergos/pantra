@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import NamedTuple, Optional, TYPE_CHECKING
 
-from core.oid import get_object
+from core.oid import get_node
 from core.session import Session, trace_errors
 from core.workers import thread_worker
 
@@ -84,7 +84,8 @@ class DragController(Controller):
 @thread_worker
 @trace_errors
 def process_drag_start(ctx: Context, method: str, oid: int, x: int, y: int, button: int):
-    node: AnyNode = get_object(oid)
+    node: AnyNode = get_node(oid)
+    if node is None: return
     node.session.state.drag: DragController = node.context.locals[method](node)
     if node.session.state.drag._mousedown(node, x, y, button):
         ctx.session.send_message({'m': 'dm'})
@@ -105,7 +106,8 @@ def process_drag_stop(ctx: Context, x: int, y: int):
 
 @thread_worker
 def process_click(method: str, oid: int):
-    node = get_object(oid)
+    node = get_node(oid)
+    if node is None: return
     context = node.context
     process_click_referred(context, method, node)
 

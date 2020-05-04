@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
-from core.common import UniNode, DynamicStyles
+from core.common import DynamicStyles, AnyNode
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from .render import RenderMixin, DefaultRenderer
@@ -16,14 +16,11 @@ if TYPE_CHECKING:
     from .render import ContextShot
     from ..session import Session
 
-AnyNode = Union['HTMLElement', 'Context', 'ConditionNode', 'LoopNode', 'SlotNode', 'TextNode', 'EventNode']
 
-
-class Context(UniNode, RenderMixin):
+class Context(AnyNode, RenderMixin):
     __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
-        #self.uid = uuid.UUID()
         self.locals = AttrDict()
         self.server_events = AttrDict()
         self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
@@ -38,6 +35,10 @@ class Context(UniNode, RenderMixin):
         RenderMixin.__init__(self, parent, shot=shot, session=session)
 
         self.render: DefaultRenderer = DefaultRenderer(self)
+
+    @property
+    def tag_name(self):
+        return self.template.name
 
     def __getitem__(self, item: str):
         if item in self.locals:
@@ -77,7 +78,7 @@ class Condition:
     node: Optional[AnyNode]
 
 
-class ConditionNode(UniNode, RenderMixin):
+class ConditionNode(AnyNode, RenderMixin):
     __slots__ = ['state', 'conditions']
 
     def __init__(self, parent: AnyNode):
@@ -86,8 +87,12 @@ class ConditionNode(UniNode, RenderMixin):
         self.state = -1
         self.conditions: Optional[List[Condition]] = []
 
+    @property
+    def tag_name(self):
+        return 'condition'
 
-class LoopNode(UniNode, RenderMixin):
+
+class LoopNode(AnyNode, RenderMixin):
     __slots__ = ['template', 'var_name', 'iterator']
 
     def __init__(self, parent: AnyNode, template: HTMLTemplate):
@@ -98,14 +103,18 @@ class LoopNode(UniNode, RenderMixin):
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
 
+    @property
+    def tag_name(self):
+        return 'loop'
 
-class SlotNode(UniNode, RenderMixin):
+
+class SlotNode(AnyNode, RenderMixin):
     def __init__(self, parent: AnyNode):
         super().__init__()
         RenderMixin.__init__(self, parent)
 
 
-class TextNode(UniNode, RenderMixin):
+class TextNode(AnyNode, RenderMixin):
     __slots__ = ['text']
 
     def __init__(self, parent: AnyNode, text: str):
@@ -113,8 +122,12 @@ class TextNode(UniNode, RenderMixin):
         RenderMixin.__init__(self, parent)
         self.text: str = text
 
+    @property
+    def tag_name(self):
+        return 'text'
 
-class EventNode(UniNode, RenderMixin):
+
+class EventNode(AnyNode, RenderMixin):
     __slots__ = ['attributes']
 
     def __init__(self, parent: AnyNode, attributes: Optional[AttrDict] = None):

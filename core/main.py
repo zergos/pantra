@@ -65,6 +65,9 @@ async def get_ws(request: Request):
             elif command == 'M':
                 RenderMixin._set_metrics(int(data['oid']), data)
 
+            elif command == 'V':
+                RenderMixin._set_value(int(data['oid']), data['value'])
+
             elif command == 'DD':
                 process_drag_start(ctx, data['method'], int(data['oid']), data['x'], data['y'], data['button'])
 

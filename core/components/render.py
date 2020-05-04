@@ -9,7 +9,7 @@ from attrdict import AttrDict
 
 from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData, Pixels
 from core.components.htmlnode import HTMLTemplate, collect_template
-from core.oid import gen_id, get_object
+from core.oid import get_node
 from core.session import Session
 
 if TYPE_CHECKING:
@@ -33,6 +33,7 @@ class RenderMixin:
             self.context = self
         else:
             self.context = kwargs.get('context') or parent.context
+        self._set_focus = False
 
     def empty(self):
         for child in self._NodeMixin__children_:  # type: AnyNode
@@ -54,14 +55,16 @@ class RenderMixin:
 
     @staticmethod
     def _set_metrics(oid: int, metrics: Dict[str, int]):
-        self = get_object(oid)
+        self = get_node(oid)
+        if self is None: return
         self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
         self.session.metrics_stack.append(self)
         with self._metrics_cv:
             self._metrics_cv.notify()
 
     def request_metrics(self):
-        self._metrics_cv = threading.Condition()
+        if not hasattr(self, '_metrics_cv'):
+            self._metrics_cv = threading.Condition()
         with self._metrics_cv:
             self.session.request_metrics(self)
             self._metrics_cv.wait()
@@ -85,6 +88,23 @@ class RenderMixin:
         self.style.height = Pixels(m.height) - shrink
         self.shot(self)
 
+    @staticmethod
+    def _set_value(oid: int, value):
+        self = get_node(oid)
+        if self is None: return
+        self._value = value
+        with self._value_cv:
+            self._value_cv.notify()
+
+    @property
+    def value(self):
+        if not hasattr(self, '_value_cv'):
+            self._value_cv = threading.Condition()
+        with self._value_cv:
+            self.session.request_value(self)
+            self._value_cv.wait()
+        return self._value
+
     def move(self, delta_x, delta_y):
         self.style.left += delta_x
         self.style.top += delta_y
@@ -99,7 +119,7 @@ class RenderMixin:
             clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
             clone.attributes = AttrDict({
                 k: v
-                for k, v in self.attributes.items() if k not in ('on:click', 'on:drag') and not k.startswith('ref:')
+                for k, v in self.attributes.items() if k[:3] != 'on:' and not k.startswith('ref:')
             })
             clone.text = self.text
             clone.classes = deepcopy(self.classes)
@@ -116,6 +136,9 @@ class RenderMixin:
         for child in self.children:
             clone.append(child.clone(clone))
         return clone
+
+    def focus(self):
+        self._set_focus = True
 
 
 class DefaultRenderer:
@@ -373,5 +396,5 @@ class ContextShot:
         return self
 
     def __sub__(self, other):
-        self.deleted.add(gen_id(other))
+        self.deleted.add(other.oid)
         return self

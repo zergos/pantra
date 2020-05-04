@@ -25,17 +25,28 @@ ws.onmessage = function (data, flags, number) {
             console.error(obj.l);
         } else if (obj.m === 'd') {
             for (let v of obj.l) {
-                let element = document.getElementById(v);
+                let element = get_node(v);
                 if (!!element) {
                     se_log(`removing ${v} ${element.tagName}`);
                     element.remove();
+                    delete_id(v);
                 }
             }
             //root_node().style.visibility = 'hidden';
         } else if (obj.m === 'm') {
-            let node = document.getElementById(obj.l);
+            let node = get_node(obj.l);
             let rect = node.getBoundingClientRect();
-            send_message({C: 'M', oid: obj.l, x: Math.round(rect.left), y: Math.round(rect.top), w: Math.round(rect.width), h: Math.round(rect.height)});
+            send_message({
+                C: 'M',
+                oid: obj.l,
+                x: Math.round(rect.left),
+                y: Math.round(rect.top),
+                w: Math.round(rect.width),
+                h: Math.round(rect.height)
+            });
+        } else if (obj.m === 'v') {
+            let node = get_node(obj.l);
+            send_message({C: 'V', oid: obj.l, value: node.value});
         } else if (obj.m === 'dm') {
             drag_mode_active = true;
         } else if (obj.m === 'log') {

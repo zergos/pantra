@@ -3,7 +3,9 @@ from typing import *
 from anytree import NodeMixin
 from attrdict import AttrDict
 
-__all__ = ['UniNode', 'DynamicString', 'DynamicClasses']
+__all__ = ['UniNode', 'AnyNode', 'DynamicString', 'DynamicClasses']
+
+from core.oid import gen_id
 
 
 class UniNode(NodeMixin):
@@ -28,6 +30,14 @@ class UniNode(NodeMixin):
 
     def __getitem__(self, item):
         return self._NodeMixin__children[item]
+
+
+class AnyNode(UniNode):
+    __slots__ = ['oid', '__weakref__']
+
+    def __init__(self, *args, **kwargs):
+        self.oid = gen_id(self)
+        super().__init__(*args, **kwargs)
 
 
 class DynamicString(str):
