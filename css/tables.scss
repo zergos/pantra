@@ -1,0 +1,79 @@
+// ##### Tables #####
+
+.table-container {
+  overflow: auto;
+  width: 100%;
+}
+
+table {
+  table-layout: fixed;
+  width: 100%;
+  border: $table-border;
+  border-collapse: collapse;
+  min-width: $table-min-width;
+  max-width: $table-max-width;
+}
+
+thead {
+  background-color: $color-caption;
+  color: white;
+}
+
+@mixin arrows-font() {
+  font-family: $font-family-monospace;
+  font-size: 18px;
+}
+
+th {
+  font-family: $th-font;
+  div {
+    width: 100%;
+    &.movable {
+      cursor: grab;
+    }
+
+    .sortable {
+      @include arrows-font();
+
+      &:after {
+        content: '⇅';
+        float: right;
+        cursor: pointer;
+      }
+
+      &.asc:after {
+        content: '⬇';
+        float: right;
+      }
+
+      &.desc:after {
+        content: '⬆';
+        float: right;
+      }
+    }
+
+    .resizable:after {
+      @include arrows-font();
+      content: '↔';
+      float: right;
+      cursor: col-resize;
+    }
+  }
+}
+
+td, th {
+  border: $table-cell-border;
+  padding: 2px 3px 2px 3px;
+  text-overflow:ellipsis;
+  overflow: hidden;
+  transition: all .15s ease-in-out;
+}
+
+td:hover {
+  //border: 1px solid $table-cell-active-color;
+  box-shadow: 0 0 0 3px rgba($table-cell-active-color, 0.5);
+}
+
+tr:nth-child(even) {
+  background-color: $color-even-gray;
+}

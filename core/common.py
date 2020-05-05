@@ -101,6 +101,11 @@ class DynamicStyles(AttrDict):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    def __sub__(self, other):
+        if other in self:
+            del self[other]
+        return self
+
 
 @dataclass
 class MetricsData:

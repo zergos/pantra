@@ -113,13 +113,13 @@ class DragReorder(DragController):
             if i == len(children)-1 or children[i].metrics.left <= self.x <= children[i+1].metrics.left:
                 index = i
                 break
+        self.drag_node.remove()
         if index == self.source_index:
             return
         if abs(order_by) == self.source_index + 1:
             order_by = (index + 1) * (1 - 2 * (order_by<0))
         columns.insert(index, columns.pop(self.source_index))
         col_sizes.insert(index, col_sizes.pop(self.source_index))
-        self.drag_node.remove()
         refs.colgroup.update_tree()
         refs.thead.update_tree()
         refs.tbody.update_tree()
@@ -167,6 +167,8 @@ def enter_cell(node: HTMLElement):
 
 def exit_cell(node: HTMLElement):
     TextNode(node.parent, node.value).update()
+    node.parent.style -= 'padding'
+    node.parent.update()
     node.remove()
 
 </python>

@@ -1,0 +1,12 @@
+@mixin x-appearance ($value) {
+	-webkit-appearance: $value;
+	   -moz-appearance: $value;
+			appearance: $value;
+}
+
+@mixin x-user-select($value: none) {
+	-webkit-user-select: $value;
+	   -moz-user-select: $value;
+        -ms-user-select: $value;
+            user-select: $value;
+}

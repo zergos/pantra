@@ -1,0 +1,18 @@
+// ##### Common tags #####
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $body-color;
+  background: $body-bg;
+  padding: $body-padding;
+  margin: 0;
+}
+
+// ##### Managed tags ####
+loop, condition {
+    display: contents;
+}

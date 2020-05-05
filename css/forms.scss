@@ -1,0 +1,149 @@
+form {
+  border: $form-border;
+  border-radius: .4rem;
+  padding: .375rem .56rem .75rem .56rem;
+  background: $form-bg;
+}
+
+label {
+  display: block;
+  width: 100%;
+  padding-top: .375rem;
+
+  &.inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+    > span {
+      padding-right: .5rem;
+      /*flex: 0 0 16%;*/
+    }
+
+    > input,  > select {
+      flex-grow: 1;
+    }
+  }
+
+  &.block {
+    > span {
+      display: block;
+      padding-bottom: 0.5rem;
+    }
+    > input, > textarea {
+      display: block;
+      width: 100%;
+    }
+  }
+
+  > input:not([type='checkbox']):not([type='radio']), > select, > textarea {
+    height: 2.5rem;
+    border: 1px solid $color-passive;
+    border-radius: 0.4rem;
+    padding: .375rem .75rem;
+    transition: all .15s ease-in-out;
+
+    &:focus {
+      border: 1px solid $color-active;
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba($color-active, 0.58);
+    }
+  }
+
+  > select[multiple], > textarea {
+    height: auto;
+  }
+
+  &.required span::after {
+    content: '*';
+  }
+
+  &.error {
+    > input {
+     border-color: $color-error !important;
+    }
+    > .message {
+      color: $color-error;
+      font-size: .75rem;
+
+      &::before {
+        page-break-before: always;
+      }
+    }
+  }
+}
+
+fieldset {
+  margin-top: .375rem;
+  margin-bottom: .375rem;
+}
+
+.input-row {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+
+  > label {
+    padding-left: .12rem;
+  }
+}
+
+legend {
+  padding-left: .375rem;
+  padding-right: .375rem;
+}
+
+input[type="checkbox"] {
+  @include x-appearance(none);
+  margin-bottom: 0;
+  width: .8rem;
+  height: .8rem;
+  border: 1px solid $color-active;
+  transition: all .2s ease-in-out;
+  outline: 0;
+
+  &:checked {
+    border-width: .4rem;
+    background-color: $color-active;
+  }
+}
+
+input[type="radio"] {
+  @include x-appearance(none);
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 1px solid $color-active;
+  border-radius: .4rem;
+  background-color: $color-passive;
+  transition: all .2s ease-in-out;
+  outline: 0;
+
+  &:checked {
+    background-color: $color-active;
+    border-width: 0.4rem;
+  }
+}
+
+button {
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: .25rem;
+  margin-top: .5rem;
+  margin-bottom: .25rem;
+  cursor: pointer;
+  color: $button-text-color;
+  border: 1px solid darken($button-color-base, 5%);
+  background-color: $button-color-base;
+  padding: .375rem .75rem;
+  @include x-user-select();
+  transition: all .15s ease-in-out;
+
+  &:focus, &:hover {
+    background-color: darken($button-color-base, 10%);
+    border-color: darken($button-color-base, 15%);
+    box-shadow: 0 0 0 0.2rem rgba($color-active, .5);
+  }
+}
