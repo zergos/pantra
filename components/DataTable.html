@@ -32,6 +32,33 @@
 <event selector="td, td > macro, td > text" on:click="enter_cell"></event>
 <event selector="input" on:focusout="exit_cell"></event>
 
+<style type="text/scss">
+    @import "defaults";
+
+    .moving {
+        text-align: center;
+        font-weight: bold;
+        background-color: $color-passive;
+        margin: 0;
+        padding: 3px;
+        border: 1px solid $color-decoration;
+        box-shadow: 0 0 0 0.2rem rgba($color-decoration, .5);
+    }
+
+    .resizing {
+        background-color: $color-active;
+        background: linear-gradient(180deg, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
+    }
+
+    input {
+        width: 100%;
+        background-color: $form-bg;
+        border: none;
+        padding-left: 3px;
+        padding-right: 3px;
+    }
+</style>
+
 <python>
 from datetime import datetime
 from pony.orm import *
@@ -95,11 +122,10 @@ class DragReorder(DragController):
 
     def start(self, node):
         self.source_index = node.parent.index()
-        self.drag_node = node.parent.clone()
-        self.drag_node.set_metrics(node.parent.metrics, 1)
-        self.drag_node.style.background_color = 'grey'
-        self.drag_node.style.padding = 0
-        self.drag_node.style.margin = 0
+        self.drag_node = HTMLElement('div', refs.thead)
+        self.drag_node.classes = 'moving'
+        self.drag_node.text = node.children[0].text
+        self.drag_node.set_metrics(node.parent.metrics, grow=2)
         return True
 
     def move(self):
@@ -138,8 +164,8 @@ class DragResize(DragController):
         self.source_index = node.parent.parent.index()
         self.source_node = node.parent.parent
         self.drag_node = HTMLElement('div', ctx)
-        self.drag_node.set_metrics([self.x, node.metrics.top, 3, refs.table.metrics.bottom])
-        self.drag_node.style.background_color = "blue"
+        self.drag_node.classes = 'resizing'
+        self.drag_node.set_metrics([self.x, node.metrics.top, 3, '100vh'])
         return True
 
     def move(self):
@@ -157,8 +183,6 @@ def enter_cell(node: HTMLElement):
     if node.tag_name == 'td':
         node = node.children[0]
     field = HTMLElement('input', node.parent, {'type': 'text', 'value': str(node.text)})
-    field.style.width = '100%'
-    field.style.background_color = 'aliceblue'
     field.focus()
     field.update()
     node.parent.style.padding = 0

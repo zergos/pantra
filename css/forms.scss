@@ -144,6 +144,6 @@ button {
   &:focus, &:hover {
     background-color: darken($button-color-base, 10%);
     border-color: darken($button-color-base, 15%);
-    box-shadow: 0 0 0 0.2rem rgba($color-active, .5);
+    box-shadow: 0 0 0 3px rgba($color-active, .5);
   }
 }

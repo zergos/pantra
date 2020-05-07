@@ -7,7 +7,7 @@ from typing import *
 
 from attrdict import AttrDict
 
-from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData, Pixels
+from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData, WebUnits
 from core.components.htmlnode import HTMLTemplate, collect_template
 from core.oid import get_node
 from core.session import Session
@@ -76,16 +76,16 @@ class RenderMixin:
         self.request_metrics()
         return self._metrics
 
-    def set_metrics(self, m: Union[MetricsData, Dict[str, int], List[int]], shrink: int = 0):
+    def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]], shift: int = 0, grow: int = 0):
         if isinstance(m, dict):
             m = AttrDict(m)
         elif isinstance(m, list):
             m = AttrDict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
         self.style.position = 'fixed'
-        self.style.left = Pixels(m.left)
-        self.style.top = Pixels(m.top)
-        self.style.width = Pixels(m.width) - shrink
-        self.style.height = Pixels(m.height) - shrink
+        self.style.left = WebUnits(m.left) + shift
+        self.style.top = WebUnits(m.top) + shift
+        self.style.width = WebUnits(m.width) + grow
+        self.style.height = WebUnits(m.height) + grow
         self.shot(self)
 
     @staticmethod

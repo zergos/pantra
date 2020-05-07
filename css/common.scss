@@ -12,6 +12,13 @@ body {
   margin: 0;
 }
 
+@media all and (max-width: 800px){
+  body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 // ##### Managed tags ####
 loop, condition {
     display: contents;

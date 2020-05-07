@@ -15,7 +15,7 @@ gen_id.counter = count()
 
 
 def get_node(oid: int) -> AnyNode:
-    return get_node.list[oid]()
+    return get_node.list[oid]() if oid < len(get_node.list) else None
 get_node.list: typing.List[weakref.ReferenceType] = []
 
 

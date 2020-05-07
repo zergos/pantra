@@ -118,18 +118,27 @@ class MetricsData:
     height: int
 
 
-class Pixels(str):
-    __slots__ = ['value']
+class WebUnits(str):
+    __slots__ = ['value', 'unit']
 
-    def __new__(cls, value: int):
-        return super().__new__(cls, f'{value}px')
+    def __new__(cls, value: Union[int, float, str], unit: str = 'px'):
+        if type(value) != str:
+            return super().__new__(cls, f'{value}{unit}')
+        else:
+            return super().__new__(cls, value)
 
-    def __init__(self, value: int):
-        self.value = value
+    def __init__(self, value: Union[int, float, str], unit: str = 'px'):
+        if type(value) != str:
+            self.value = value
+            self.unit = unit
+        else:
+            pos = next((i for i, c in enumerate(value) if not c.isdigit()), len(value))
+            self.value = int(value[:pos])
+            self.unit = value[pos:]
 
-    def __add__(self, other: int):
-        return Pixels(self.value + other)
+    def __add__(self, other: Union[int, float]):
+        return WebUnits(self.value + other, self.unit)
 
-    def __sub__(self, other: int):
-        return Pixels(self.value - other)
+    def __sub__(self, other: Union[int, float]):
+        return WebUnits(self.value - other, self.unit)
 

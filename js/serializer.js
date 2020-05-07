@@ -113,10 +113,14 @@ const HTMLElementSerializerU = {
         }
         if (!!v.C)
             element.className = v.C;
+        else
+            element.removeAttribute('class');
         if (!!v.t)
             element.innerText = v.t;
         if (!!v.s)
             element.setAttribute('style', v.s);
+        else
+            element.removeAttribute('style');
         if (v.f)
             element.focus();
         return element;

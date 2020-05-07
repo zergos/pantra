@@ -10,3 +10,8 @@
         -ms-user-select: $value;
             user-select: $value;
 }
+
+@mixin x-position-sticky() {
+	position: -webkit-sticky;
+	position: sticky;
+}
