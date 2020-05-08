@@ -18,10 +18,10 @@ OPEN_END    : '</' -> pushMode(TAG_PROPERTIES);
 
 // macro command
 OPEN_MACRO_BEGIN
-            : '{#' -> pushMode(MACRO);
+            : '{{#' -> pushMode(MACRO);
 OPEN_MACRO_END
-            : '{/' -> pushMode(MACRO);
-INLINE_MACRO: '{{' -> pushMode(MACRO_EXP);
+            : '{{/' -> pushMode(MACRO);
+INLINE_MACRO: '{{' -> pushMode(MACRO);
 
 // text other content inside tags
 TEXT        : (~[<{] | [{] ~[<{#/] )+ ;
@@ -57,16 +57,17 @@ NameStartChar
             | '\uFDF0'..'\uFFFD'
             ;
 
+/*
 mode MACRO;
 
 CLOSE_MACRO : '}' -> popMode;
 COMMAND     : ~[}]+ ;
+*/
 
+mode MACRO;
 
-mode MACRO_EXP;
-
-CLOSE_MACRO_EXP: '}}' -> popMode;
-COMMAND_EXP    : (~[}] | [}] ~[}])+ ;
+CLOSE_MACRO : '}}' -> popMode;
+COMMAND     : (~[}] | [}] ~[}])+ ;
 
 mode RAW_BLOCK;
 

@@ -44,6 +44,8 @@ async_loop: typing.Optional[asyncio.BaseEventLoop] = None
 def async_worker(func):
     @functools.wraps(func)
     def res(*args, **kwargs):
+        if async_loop._thread_id == threading.current_thread().ident:
+            return func(*args, **kwargs)
         asyncio.run_coroutine_threadsafe(func(*args, **kwargs), async_loop)
     return res
 

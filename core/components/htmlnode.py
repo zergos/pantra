@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import os
 from types import CodeType
 from typing import *
-import traceback
 
 from attrdict import AttrDict
 
 from core.common import DynamicString, AnyNode
 from core.defaults import COMPONENTS_PATH
+
+if TYPE_CHECKING:
+    from core.session import Session
 
 from logging import getLogger
 logger = getLogger(__name__)
@@ -39,8 +43,8 @@ class HTMLTemplate(HTMLNode):
         self.code: Optional[CodeType] = None
 
 
-def _search_component(name):
-    for root, dirs, files in os.walk(COMPONENTS_PATH):
+def _search_component(path, name):
+    for root, dirs, files in os.walk(path):
         for file in files:  # type: str
             if file.endswith('html'):
                 if os.path.basename(file) == f'{name}.html':
@@ -48,17 +52,19 @@ def _search_component(name):
     return None
 
 
-def collect_template(name) -> Optional[HTMLTemplate]:
+def collect_template(session: Session, name) -> Optional[HTMLTemplate]:
     import core.components.loader as loader
     global templates
 
     if name in templates:
         return templates[name]
 
-    path = _search_component(name)
+    path = _search_component(session.app, name)
     if not path:
-        logger.warning(f'component {name} not found')
-        return None
+        path = _search_component(COMPONENTS_PATH, name)
+        if not path:
+            logger.warning(f'component {name} not found')
+            return None
 
     templates[name] = loader.load(path)
     if templates[name]:

@@ -22,3 +22,5 @@ DB_PARAMS = dict(
 MIGRATION_PATH = os.path.join(BASE_PATH, 'migrations')
 
 TASK_THREADS = 2
+
+DEFAULT_APP = COMPONENTS_PATH #os.path.join(BASE_PATH, 'apps', 'score_parser')

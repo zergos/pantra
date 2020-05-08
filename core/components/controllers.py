@@ -107,15 +107,16 @@ def process_drag_stop(ctx: Context, x: int, y: int):
 @thread_worker
 def process_click(method: str, oid: int):
     node = get_node(oid)
-    if node is None: return
+    if node is None or not method: return
     context = node.context
     process_click_referred(context, method, node)
 
 
 @trace_errors
 def process_click_referred(context: Context, method: str, node: AnyNode):
-    if method in context.locals:
-        if callable(context.locals[method]):
-            context.locals[method](node)
-        else:
-            process_click_referred(context.parent.context, context.locals[method], node)
+    func = context[method]
+    if not func: return
+    if callable(func):
+        func(node)
+    elif context.parent:
+        process_click_referred.call(context.parent.context, func, node)

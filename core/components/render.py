@@ -25,10 +25,11 @@ class RenderMixin:
     #__slots__ = ['context', 'shot']
 
     def __init__(self, parent: Optional[AnyNode], **kwargs):
-        from core.components.context import Context
+        from core.components.context import Context, TextNode, HTMLElement
         self.shot: 'ContextShot' = kwargs.get('shot') or parent.shot
         self.session: Session = kwargs.get('session') or parent.session
-        self.shot(self)
+        if type(self) in [HTMLElement, TextNode, Context]:
+            self.shot(self)
         if type(self) == Context:
             self.context = self
         else:
@@ -186,26 +187,26 @@ class DefaultRenderer:
                 node = ConditionNode(parent)
                 for child_template in template.children:  # type: HTMLTemplate
                     if child_template.tag_name != '#else':
-                        item = Condition(self.build_func(child_template.macro, node), child_template, None)
+                        item = Condition(self.build_func(child_template.macro, node), child_template)
                     else:
-                        item = Condition((lambda: True), child_template, None)
+                        item = Condition((lambda: True), child_template)
                     node.conditions.append(item)
                 self.update(node)
 
             elif template.tag_name == '#for':
-                node = LoopNode(parent=parent, template=template)
+                node = LoopNode(parent, template)
                 chunks = template.macro.split(' in ')
                 node.var_name = chunks[0].strip()
                 node.iterator = self.build_func(chunks[1], node)
                 self.update(node)
 
         elif template.tag_name[0].isupper():
-            node_template = collect_template(template.tag_name)
+            node_template = collect_template(self.ctx.session, template.tag_name)
             node = Context(template=node_template, parent=parent)
 
             # evaluate slot
             if template.children:
-                with node.shot.freeze():
+                with node.shot.make_shadow():
                     node.slot = SlotNode(parent=parent)
                     for child in template.children:
                         self.build_node(child, node.slot)
@@ -219,10 +220,13 @@ class DefaultRenderer:
 
         elif template.tag_name == 'slot':
             if parent.context.slot:
+                self.ctx.shot.merge()
                 for child in parent.context.slot.children:
-                    parent.append(child)
-                    self.ctx.shot(child)
+                    child.parent = parent
+                parent.context.slot.clear()
+                #parent.append(child)
             else:
+                self.ctx.shot.forget()
                 for child in template.children:
                     self.build_node(child, parent)
 
@@ -243,7 +247,8 @@ class DefaultRenderer:
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
-            pass
+            if 'global' not in template.attributes:
+                self.ctx.render_base = True
 
         elif template.tag_name == 'event':
             node = EventNode(parent)
@@ -252,6 +257,7 @@ class DefaultRenderer:
                     node.attributes[k] = ','.join(f'.default .ctx-{self.ctx.template.name} {s}' for s in v.strip('" ''').split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
+            self.ctx.render_base = True
 
         elif template.tag_name == '@text':
             node = TextNode(parent=parent, text=template.text.strip('"'' '))
@@ -331,24 +337,18 @@ class DefaultRenderer:
                     break
 
             if node.state != state:
-                node.empty()
-                node.shot(node)
+                if node.state >= 0:
+                    node.empty()
                 if state == -1:
                     return
 
-                sub_node = condition.node
-                if not sub_node:
-                    sub_node = self.build_node(condition.template, node)
-                    node.conditions[state].node = sub_node
-                else:
-                    sub_node.parent = node
-                    self.update_children(sub_node)
+                for child in condition.template.children:
+                    self.build_node(child, node)
 
                 return  # prevent repeated updates
 
         elif type(node) == LoopNode:
             node.empty()
-            node.shot(node)
             for value in node.iterator():
                 self.ctx.locals[node.var_name] = value
                 for temp_child in node.template.children:
@@ -369,32 +369,45 @@ class DefaultRenderer:
 
 
 class ContextShot:
-    __slots__ = ['updated', 'deleted', 'frozen']
+    __slots__ = ['updated', 'deleted', 'shadow_list', 'shadow']
 
     def __init__(self):
         self.updated: List[AnyNode] = list()
         self.deleted: Set[int] = set()
-        self.frozen: bool = False
+        self.shadow: List[AnyNode] = self.updated
+        self.shadow_list: List[List[AnyNode]] = [self.updated]
 
     def reset(self):
-        self.updated = list()
-        self.deleted = set()
+        self.updated.clear()
+        self.deleted.clear()
+        self.shadow_list = [self.updated]
+        self.shadow = self.updated
 
     @contextmanager
-    def freeze(self):
-        self.frozen = True
+    def make_shadow(self):
+        self.shadow = list()
+        self.shadow_list.append(self.shadow)
         yield
-        self.frozen = False
+        self.shadow = self.shadow_list[-2]
 
     def __call__(self, node):
-        if not self.frozen:
-            self.updated.append(node)
+        self.shadow.append(node)
 
     def __add__(self, other):
-        if not self.frozen:
-            self.updated.append(other)
+        self.shadow.append(other)
         return self
 
     def __sub__(self, other):
         self.deleted.add(other.oid)
         return self
+
+    def merge(self):
+        self.shadow += self.shadow_list.pop()
+
+    def forget(self):
+        del self.shadow_list[-1]
+
+    @property
+    def rendered(self) -> List[AnyNode]:
+        from core.components.context import Context
+        return [node for node in self.updated if type(node) != Context or node.render_base]

@@ -1,4 +1,7 @@
 let _serializer_debug = false;
+//let _create_control_tags = false;
+let content_filled = false;
+
 function se_log(message) {
     if (_serializer_debug) console.log(message);
 }
@@ -8,100 +11,20 @@ function root_node() {
 }
 
 const HTMLElementSerializer = {
-    name: 'H',
-    decode: function(s, v) {
-        let element = document.createElement(v.n);
-        set_oid(element, v.i);
-        for (let child of v.c) {
-            if (!!child)
-                element.appendChild(child);
-        }
-        for (let at in v.a) {
-            if (!process_special_attribute(at, v.a[at], element, v.i, true))
-                element.setAttribute(at, v.a[at]);
-        }
-        if (!!v.C)
-            element.className = v.C;
-        if (!!v.t)
-            element.innerText = v.t;
-        if (!!v.s)
-            element.setAttribute('style', v.s);
-        return element;
-    }
-};
-
-const ContextSerializer = {
-    name: 'C',
-    decode: function(s, v) {
-        let element = document.createElement(v.n);
-        set_oid(element, v.i);
-        element.className = 'default ctx-'+v.n;
-        for (let child of v.c) {
-            if (!!child)
-                element.appendChild(child);
-        }
-        return element;
-    }
-};
-
-const ConditionSerializer = {
-    name: 'I',
-    decode: function(s, v) {
-        let element = document.createElement('condition');
-        set_oid(element, v.i);
-        for (let child of v.c) {
-            element.appendChild(child);
-        }
-        return element;
-    }
-};
-
-const LoopSerializer = {
-    name: 'L',
-    decode: function(s, v) {
-        let element = document.createElement('loop');
-        set_oid(element, v.i);
-        for (let child of v.c) {
-            element.appendChild(child);
-        }
-        return element;
-    }
-};
-
-const TextSerializer = {
-    name: 'T',
-    decode: function(s, v) {
-        let element = document.createElement('text');
-        set_oid(element, v.i);
-        element.innerText = v.t;
-        return element;
-    }
-};
-
-const EventSerializer = {
-    name: 'E',
-    decode: function (s, v) {
-        let selector = v.a.selector;
-        for (let attr in v.a) {
-            if (attr !== 'selector')
-                process_event_attribute(v.ctx, selector, attr, v.a[attr]);
-        }
-    }
-};
-
-const HTMLElementSerializerU = {
     name: 'h',
     decode: function(s, v) {
         let element =  get_node(v.i);
         let is_new = false;
         if (!element) {
             let parent = get_node(v.p);
+            //while (parent && !parent.typical) parent = parent.parent;
             if (!parent) {
                 //console.error(`parent ${v.p} not found for ${v.i} ${v.n}`);
                 //return null;
                 parent = root_node();
             }
             element = document.createElement(v.n);
+            //element.typical = true;
             set_oid(element, v.i);
             se_log(`element ${v.i} ${v.n} created`);
             parent.appendChild(element);
@@ -109,7 +32,10 @@ const HTMLElementSerializerU = {
         }
         for (let at in v.a) {
             if (!process_special_attribute(at, v.a[at], element, v.i, is_new))
-                element.setAttribute(at, v.a[at]);
+                if (!!v.a[at])
+                    element.setAttribute(at, v.a[at]);
+                else
+                    element.removeAttribute(at);
         }
         if (!!v.C)
             element.className = v.C;
@@ -127,46 +53,54 @@ const HTMLElementSerializerU = {
     }
 };
 
-const ContextSerializerU = {
+const ContextSerializer = {
     name: 'c',
     decode: function(s, v) {
         let element = get_node(v.i);
         if (!element) {
             let parent = get_node(v.p);
-            if (!parent) parent = root_node();
+            if (!parent) {
+                parent = root_node();
+                if (!content_filled) {
+                    parent.innerText = '';
+                    content_filled = true;
+                }
+            }
             element = document.createElement(v.n);
             set_oid(element, v.i);
+            element.className = 'default ctx-'+v.n;
             parent.appendChild(element);
         }
         return element;
     }
 };
 
-const ConditionSerializerU = {
+const ConditionSerializer = {
     name: 'i',
     decode: function(s, v) {
         let element = get_node(v.i);
         if (!element) {
             let parent = get_node(v.p);
+            if (!parent) {
+                console.error(`parent ${v.p} not found for condition ${v.i}`);
+                return null;
+            }
             element = document.createElement('condition');
             set_oid(element, v.i);
             parent.appendChild(element);
-        }
-        for (let child of v.c) {
-            element.appendChild(child);
         }
         return element;
     }
 };
 
-const LoopSerializerU = {
+const LoopSerializer = {
     name: 'l',
     decode: function(s, v) {
         let element = get_node(v.i);
         if (!element) {
             let parent = get_node(v.p);
             if (!parent) {
-                console.error(`parent ${v.p} not found for ${v.i} ${v.n}`);
+                console.error(`parent ${v.p} not found for loop ${v.i}`);
                 return null;
             }
             element = document.createElement('loop');
@@ -178,7 +112,7 @@ const LoopSerializerU = {
     }
 };
 
-const TextSerializerU = {
+const TextSerializer = {
     name: 't',
     decode: function(s, v) {
         let element = get_node(v.i);
@@ -193,7 +127,7 @@ const TextSerializerU = {
     }
 };
 
-const EventSerializerU = {
+const EventSerializer = {
     name: 'e',
     decode: function (s, v) {
         return null;
@@ -201,6 +135,5 @@ const EventSerializerU = {
 };
 
 const serializer = new bsdf.BsdfSerializer(
-    [HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer,
-    HTMLElementSerializerU, ContextSerializerU, ConditionSerializerU, LoopSerializerU, TextSerializerU, EventSerializerU]);
+    [HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer]);
 

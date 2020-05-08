@@ -1,4 +1,5 @@
-let object2id = new WeakMap();
+//let object2id = new WeakMap();
+let object2id = new Map();
 let id2object = new Map();
 
 function set_oid(obj, oid) {
@@ -18,6 +19,7 @@ function get_node(oid) {
 }
 
 function delete_id(oid) {
+    object2id.delete(get_node(oid));
     id2object.delete(oid);
 }
 

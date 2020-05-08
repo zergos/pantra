@@ -8,7 +8,7 @@ import sys
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\36")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\34")
         buf.write("\u0085\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
@@ -41,13 +41,13 @@ def serializedATN():
         buf.write("\5\26\f\2ZX\3\2\2\2ZY\3\2\2\2[\23\3\2\2\2\\]\7\t\2\2]")
         buf.write("^\5\30\r\2^_\7\24\2\2_\25\3\2\2\2`a\7\n\2\2ab\7\25\2\2")
         buf.write("bc\7\24\2\2c\27\3\2\2\2de\7\25\2\2e\31\3\2\2\2fg\7\13")
-        buf.write("\2\2gh\7\27\2\2hi\7\26\2\2i\33\3\2\2\2jk\7\f\2\2k\35\3")
+        buf.write("\2\2gh\7\25\2\2hi\7\24\2\2i\33\3\2\2\2jk\7\f\2\2k\35\3")
         buf.write("\2\2\2lp\5 \21\2mo\5\"\22\2nm\3\2\2\2or\3\2\2\2pn\3\2")
-        buf.write("\2\2pq\3\2\2\2qs\3\2\2\2rp\3\2\2\2st\7\30\2\2tu\5&\24")
+        buf.write("\2\2pq\3\2\2\2qs\3\2\2\2rp\3\2\2\2st\7\26\2\2tu\5&\24")
         buf.write("\2uv\5(\25\2v\37\3\2\2\2wx\7\6\2\2x!\3\2\2\2y|\5$\23\2")
-        buf.write("z{\7\31\2\2{}\7\32\2\2|z\3\2\2\2|}\3\2\2\2}#\3\2\2\2~")
-        buf.write("\177\7\33\2\2\177%\3\2\2\2\u0080\u0081\7\36\2\2\u0081")
-        buf.write("\'\3\2\2\2\u0082\u0083\7\35\2\2\u0083)\3\2\2\2\f-\659")
+        buf.write("z{\7\27\2\2{}\7\30\2\2|z\3\2\2\2|}\3\2\2\2}#\3\2\2\2~")
+        buf.write("\177\7\31\2\2\177%\3\2\2\2\u0080\u0081\7\34\2\2\u0081")
+        buf.write("\'\3\2\2\2\u0082\u0083\7\33\2\2\u0083)\3\2\2\2\f-\659")
         buf.write("@LRTZp|")
         return buf.getvalue()
 
@@ -63,16 +63,16 @@ class BCDParser ( Parser ):
     sharedContextCache = PredictionContextCache()
 
     literalNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "'<'", "'</'", "'{#'", "'{/'", "'{{'", 
+                     "<INVALID>", "'<'", "'</'", "'{{#'", "'{{/'", "'{{'", 
                      "<INVALID>", "<INVALID>", "'/>'", "'='", "':'", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "'}'", "<INVALID>", "'}}'" ]
+                     "<INVALID>", "<INVALID>", "'}}'" ]
 
     symbolicNames = [ "<INVALID>", "COMMENT", "CDATA", "DTD", "RAW_TAG", 
                       "OPEN_BEGIN", "OPEN_END", "OPEN_MACRO_BEGIN", "OPEN_MACRO_END", 
                       "INLINE_MACRO", "TEXT", "CLOSE", "SLASH_CLOSE", "EQ", 
                       "COLON", "STRING", "NAME", "WS", "CLOSE_MACRO", "COMMAND", 
-                      "CLOSE_MACRO_EXP", "COMMAND_EXP", "RAW_CLOSE", "RAW_EQ", 
-                      "RAW_STRING", "RAW_NAME", "RAW_WS", "CLOSE_TAG", "RAW_TEXT" ]
+                      "RAW_CLOSE", "RAW_EQ", "RAW_STRING", "RAW_NAME", "RAW_WS", 
+                      "CLOSE_TAG", "RAW_TEXT" ]
 
     RULE_process = 0
     RULE_atom = 1
@@ -120,15 +120,13 @@ class BCDParser ( Parser ):
     WS=17
     CLOSE_MACRO=18
     COMMAND=19
-    CLOSE_MACRO_EXP=20
-    COMMAND_EXP=21
-    RAW_CLOSE=22
-    RAW_EQ=23
-    RAW_STRING=24
-    RAW_NAME=25
-    RAW_WS=26
-    CLOSE_TAG=27
-    RAW_TEXT=28
+    RAW_CLOSE=20
+    RAW_EQ=21
+    RAW_STRING=22
+    RAW_NAME=23
+    RAW_WS=24
+    CLOSE_TAG=25
+    RAW_TEXT=26
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -910,11 +908,11 @@ class BCDParser ( Parser ):
         def INLINE_MACRO(self):
             return self.getToken(BCDParser.INLINE_MACRO, 0)
 
-        def COMMAND_EXP(self):
-            return self.getToken(BCDParser.COMMAND_EXP, 0)
+        def COMMAND(self):
+            return self.getToken(BCDParser.COMMAND, 0)
 
-        def CLOSE_MACRO_EXP(self):
-            return self.getToken(BCDParser.CLOSE_MACRO_EXP, 0)
+        def CLOSE_MACRO(self):
+            return self.getToken(BCDParser.CLOSE_MACRO, 0)
 
         def getRuleIndex(self):
             return BCDParser.RULE_inlineMacro
@@ -945,9 +943,9 @@ class BCDParser ( Parser ):
             self.state = 100
             self.match(BCDParser.INLINE_MACRO)
             self.state = 101
-            self.match(BCDParser.COMMAND_EXP)
+            self.match(BCDParser.COMMAND)
             self.state = 102
-            self.match(BCDParser.CLOSE_MACRO_EXP)
+            self.match(BCDParser.CLOSE_MACRO)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)

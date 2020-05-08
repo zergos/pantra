@@ -31,17 +31,10 @@ async def get_ws(request: Request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    session = Session(request.match_info['session_id'], ws)
+    session = Session(request.match_info['session_id'], ws, DEFAULT_APP)
 
     async def send_message(message: Dict):
         await ws.send_bytes(serializer.encode(message))
-
-    async def send_shot():
-        if shot.deleted:
-            await send_message({'m': 'd', 'l': list(shot.deleted)})
-        if shot.updated:
-            await send_message({'m': 'u', 'l': shot.updated})
-        shot.reset()
 
     # token = request.match_info['token']
     ctx: Optional[Context] = None
@@ -55,9 +48,8 @@ async def get_ws(request: Request):
                 shot = ContextShot()
                 ctx = Context("Main", shot=shot, session=session)
                 ctx.render.build()
-                ctx.shot.reset()
                 session.root = ctx
-                await send_message({'m': 'c', 'l': ctx})
+                await session.send_message({'m': 'u', 'l': shot.rendered})
 
             elif command == 'CLICK':
                 process_click(data['method'], int(data['oid']))

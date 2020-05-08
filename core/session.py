@@ -22,11 +22,12 @@ class Session:
         cls.sessions[session_id] = self
         return self
 
-    def __init__(self, session_id: str, ws: web.WebSocketResponse):
+    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
         if not hasattr(self, "state"):
             self.state: AttrDict = AttrDict()
         self.root: Context
         self.ws: web.WebSocketResponse = ws
+        self.app: Optional[str] = app
         self.metrics_stack: List[HTMLElement] = []
 
     @staticmethod
@@ -35,8 +36,8 @@ class Session:
 
     @async_worker
     async def send_message(self, message: Dict['str', Any]):
-        from core.serializer import serializerU
-        await self.ws.send_bytes(serializerU.encode(message))
+        from core.serializer import serializer
+        await self.ws.send_bytes(serializer.encode(message))
 
     def send_error(self, error: str):
         self.send_message({'m': 'e', 'l': error})
@@ -48,7 +49,7 @@ class Session:
         if shot.deleted:
             self.send_message({'m': 'd', 'l': list(shot.deleted)})
         if shot.updated:
-            self.send_message({'m': 'u', 'l': shot.updated})
+            self.send_message({'m': 'u', 'l': shot.rendered})
         shot.reset()
 
     def request_metrics(self, node: AnyNode):
@@ -75,4 +76,5 @@ def trace_errors(func):
             args[0].session.send_error(traceback.format_exc())
         else:
             args[0].session.send_shot(args[0].shot)
+    res.call = func
     return res

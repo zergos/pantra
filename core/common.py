@@ -142,3 +142,10 @@ class WebUnits(str):
     def __sub__(self, other: Union[int, float]):
         return WebUnits(self.value - other, self.unit)
 
+
+class EmptyCaller(str):
+    def __new__(cls):
+        return super().__new__(cls, '')
+
+    def __call__(self, *args, **kwargs):
+        return None

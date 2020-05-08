@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
-from core.common import DynamicStyles, AnyNode
+from core.common import DynamicStyles, AnyNode, EmptyCaller
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from .render import RenderMixin, DefaultRenderer
@@ -18,23 +18,25 @@ if TYPE_CHECKING:
 
 
 class Context(AnyNode, RenderMixin):
-    __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render']
+    __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render', 'render_base']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         self.locals = AttrDict()
         self.server_events = AttrDict()
         self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
         self.slot: Optional['SlotNode'] = None
-        if type(template) == HTMLTemplate:
-            self.template: HTMLTemplate = template
-        else:
-            self.template = collect_template(template)
 
         super().__init__(parent=parent)
 
         RenderMixin.__init__(self, parent, shot=shot, session=session)
 
+        if type(template) == HTMLTemplate:
+            self.template: HTMLTemplate = template
+        else:
+            self.template = collect_template(self.session, template)
+
         self.render: DefaultRenderer = DefaultRenderer(self)
+        self.render_base = False
 
     @property
     def tag_name(self):
@@ -43,15 +45,13 @@ class Context(AnyNode, RenderMixin):
     def __getitem__(self, item: str):
         if item in self.locals:
             return self.locals[item]
-        result = self.parent[item] if self.parent else ''
-        return result
+        return self.parent.context[item] if self.parent else EmptyCaller()
 
     def __setitem__(self, key, value):
-        if key in self.locals:
-            self.locals[key] = value
+        self.locals[key] = value
 
     def __str__(self):
-        return f'Context: {self.template.name}'
+        return f'Context: {self.template.name} {self.oid}'
 
 
 class HTMLElement(HTMLNode, RenderMixin):
@@ -67,15 +67,14 @@ class HTMLElement(HTMLNode, RenderMixin):
         self.context.render(self, content)
 
     def __str__(self):
-        return f'HTML: {self.tag_name}'
+        return f'HTML: {self.tag_name} {self.oid}'
 
 
 @dataclass
 class Condition:
-    __slots__ = ['func', 'template', 'node']
+    __slots__ = ['func', 'template']
     func: Callable[[], bool]
     template: HTMLTemplate
-    node: Optional[AnyNode]
 
 
 class ConditionNode(AnyNode, RenderMixin):
@@ -90,6 +89,9 @@ class ConditionNode(AnyNode, RenderMixin):
     @property
     def tag_name(self):
         return 'condition'
+
+    def __str__(self):
+        return f'Condition {self.oid}'
 
 
 class LoopNode(AnyNode, RenderMixin):
@@ -106,6 +108,9 @@ class LoopNode(AnyNode, RenderMixin):
     @property
     def tag_name(self):
         return 'loop'
+
+    def __str__(self):
+        return f'Loop {self.oid}'
 
 
 class SlotNode(AnyNode, RenderMixin):
@@ -125,6 +130,9 @@ class TextNode(AnyNode, RenderMixin):
     @property
     def tag_name(self):
         return 'text'
+
+    def __str__(self):
+        return f'Text {self.oid}'
 
 
 class EventNode(AnyNode, RenderMixin):
