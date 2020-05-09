@@ -1,0 +1,21 @@
+<label class="{get_block_class()}">
+    {{#if caption}}<span>{{caption}}</span>{{/if}}
+    <select multiple="{multiple}" on:change="action">
+        <slot>
+            <option disabled>Empty</option>
+        </slot>
+    </select>
+</label>
+
+<python>
+from core.ctx import *
+
+inline: bool = False
+caption: str = ''
+multiple: str = ''
+action: str = ''
+
+def get_block_class():
+    return inline and 'inline' or 'block'
+
+</python>

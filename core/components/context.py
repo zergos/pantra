@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from enum import Enum, auto
 from typing import *
 from dataclasses import dataclass
 
@@ -17,14 +18,27 @@ if TYPE_CHECKING:
     from ..session import Session
 
 
+class NSType(Enum):
+    HTML = auto()       # http://www.w3.org/1999/xhtml
+    SVG = auto()        # http://www.w3.org/2000/svg
+    SVG_EV = auto()     # http://www.w3.org/2001/xml-events
+    SVG_XLINK = auto()  # http://www.w3.org/1999/xlink
+    MATH = auto()       # http://www.w3.org/1998/Math/MathML
+
+
+class Slot(NamedTuple):
+    ctx: 'Context'
+    template: HTMLTemplate
+
+
 class Context(AnyNode, RenderMixin):
-    __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render', 'render_base']
+    __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         self.locals = AttrDict()
         self.server_events = AttrDict()
         self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
-        self.slot: Optional['SlotNode'] = None
+        self.slot: Optional[Slot] = None
 
         super().__init__(parent=parent)
 
@@ -37,6 +51,7 @@ class Context(AnyNode, RenderMixin):
 
         self.render: DefaultRenderer = DefaultRenderer(self)
         self.render_base = False
+        self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
     @property
     def tag_name(self):
@@ -57,6 +72,13 @@ class Context(AnyNode, RenderMixin):
 class HTMLElement(HTMLNode, RenderMixin):
     __slots__ = ['text', 'style']
 
+    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, **kwargs):
+        if parent and not parent.context.ns_type:
+            return super().__new__(cls)
+        instance = super().__new__(NSElement)
+        instance.ns_type = parent.context.ns_type
+        return instance
+
     def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, **kwargs):
         super().__init__(tag_name=tag_name, parent=parent, attributes=attributes)
         RenderMixin.__init__(self, parent, **kwargs)
@@ -68,6 +90,16 @@ class HTMLElement(HTMLNode, RenderMixin):
 
     def __str__(self):
         return f'HTML: {self.tag_name} {self.oid}'
+
+
+class NSElement(HTMLElement):
+    __slots__ = ['ns_type']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return f'{NSType(self.ns_type).name}: {self.tag_name} {self.oid}'
 
 
 @dataclass
@@ -111,12 +143,6 @@ class LoopNode(AnyNode, RenderMixin):
 
     def __str__(self):
         return f'Loop {self.oid}'
-
-
-class SlotNode(AnyNode, RenderMixin):
-    def __init__(self, parent: AnyNode):
-        super().__init__()
-        RenderMixin.__init__(self, parent)
 
 
 class TextNode(AnyNode, RenderMixin):

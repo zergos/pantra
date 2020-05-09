@@ -1,0 +1,19 @@
+<div class="grid {fullscreen and 'fullscreen' or ''}">
+    <slot>
+        Anything inside
+    </slot>
+</div>
+
+<style type="text/scss">
+    .grid {
+        display: grid;
+        grid: auto / auto;
+    }
+    .fullscreen {
+        height: 100vh;
+    }
+</style>
+
+<python>
+fullscreen: bool = False
+</python>

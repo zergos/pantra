@@ -161,6 +161,7 @@ def load(filename: str):
 
 
 class StyleVisitor(BCDParserVisitor):
+    parser = cssutils.CSSParser(validate=False)
 
     def __init__(self, class_name: str):
         self.class_name = class_name
@@ -177,7 +178,7 @@ class StyleVisitor(BCDParserVisitor):
         if self.global_mode:
             self.styles.append(text)
         else:
-            base_class = f'.ctx-{self.class_name}'
+            base_class = f'.default .ctx-{self.class_name}'
 
             def go(l):
                 res = []
@@ -190,8 +191,7 @@ class StyleVisitor(BCDParserVisitor):
                         res.append(f'{s} {{ {css_text} }}')
                 return '\n'.join(res)
 
-            parser = cssutils.CSSParser(validate=False)
-            lst = parser.parseString(text)
+            lst = self.parser.parseString(text)
             res = go(lst)
 
             # chunks = re.split(r'(?<=})', text)

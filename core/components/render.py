@@ -13,8 +13,8 @@ from core.oid import get_node
 from core.session import Session
 
 if TYPE_CHECKING:
-    from core.components.context import Context, AnyNode, HTMLElement, ConditionNode, Condition, LoopNode, SlotNode, \
-        TextNode
+    from core.components.context import Context, AnyNode, HTMLElement, ConditionNode, Condition, LoopNode, \
+        TextNode, NSElement
 
 import logging
 
@@ -25,10 +25,10 @@ class RenderMixin:
     #__slots__ = ['context', 'shot']
 
     def __init__(self, parent: Optional[AnyNode], **kwargs):
-        from core.components.context import Context, TextNode, HTMLElement
+        from core.components.context import Context, TextNode, HTMLElement, NSElement
         self.shot: 'ContextShot' = kwargs.get('shot') or parent.shot
         self.session: Session = kwargs.get('session') or parent.session
-        if type(self) in [HTMLElement, TextNode, Context]:
+        if type(self) in [HTMLElement, NSElement, TextNode, Context]:
             self.shot(self)
         if type(self) == Context:
             self.context = self
@@ -116,7 +116,7 @@ class RenderMixin:
         if new_parent is None:
             new_parent = self.context
         clone: Optional[AnyNode] = None
-        if type(self) == HTMLElement:
+        if isinstance(self, HTMLElement):
             clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
             clone.attributes = AttrDict({
                 k: v
@@ -180,7 +180,7 @@ class DefaultRenderer:
         return False
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode], is_root_node: bool = False) -> Optional[AnyNode]:
-        from core.components.context import Context, SlotNode, ConditionNode, Condition, HTMLElement, LoopNode, EventNode
+        from core.components.context import Context, ConditionNode, Condition, HTMLElement, LoopNode, EventNode, Slot, TextNode
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
             if template.tag_name == '#if':
@@ -204,12 +204,9 @@ class DefaultRenderer:
             node_template = collect_template(self.ctx.session, template.tag_name)
             node = Context(template=node_template, parent=parent)
 
-            # evaluate slot
+            # attach slots
             if template.children:
-                with node.shot.make_shadow():
-                    node.slot = SlotNode(parent=parent)
-                    for child in template.children:
-                        self.build_node(child, node.slot)
+                node.slot = Slot(self.ctx, template)
 
             # evaluate attributes
             for attr, value in template.attributes.items():
@@ -219,16 +216,28 @@ class DefaultRenderer:
             node.render.build()
 
         elif template.tag_name == 'slot':
-            if parent.context.slot:
-                self.ctx.shot.merge()
-                for child in parent.context.slot.children:
-                    child.parent = parent
-                parent.context.slot.clear()
-                #parent.append(child)
-            else:
-                self.ctx.shot.forget()
+            slot: Slot = parent.context.slot
+            slot_template = None
+            if slot:
+                name = template.attributes.get('name')
+                if name:
+                    name = self.build_string(name, parent)
+                    for child in slot.template.children:
+                        if child.tag_name == name:
+                            slot_template = child
+                            break
+                else:
+                    slot_template = slot.template
+
+            if not slot_template:
                 for child in template.children:
                     self.build_node(child, parent)
+            else:
+                current_ctx = self.ctx
+                self.ctx = slot.ctx
+                for child in slot_template.children:
+                    self.build_node(child, parent)
+                self.ctx = current_ctx
 
         elif template.tag_name == 'python':
             saved = dict(self.ctx.locals)
@@ -244,6 +253,8 @@ class DefaultRenderer:
                 self.ctx.locals.update(saved)
                 if 'init' in self.ctx.locals:
                     self.ctx.locals.init()
+                if 'ns_type' in self.ctx.locals:
+                    self.ctx.ns_type = self.ctx.locals.ns_type
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
@@ -299,7 +310,7 @@ class DefaultRenderer:
 
     def update(self, node: AnyNode, recursive: bool = False):
         from core.components.context import HTMLElement, Context, TextNode, ConditionNode, LoopNode
-        if type(node) == HTMLElement:
+        if isinstance(node, HTMLElement):
             # attributes, classes and text evaluation
             for k, v in node.attributes.items():
                 if type(v) == DynamicString:
@@ -369,43 +380,26 @@ class DefaultRenderer:
 
 
 class ContextShot:
-    __slots__ = ['updated', 'deleted', 'shadow_list', 'shadow']
+    __slots__ = ['updated', 'deleted']
 
     def __init__(self):
         self.updated: List[AnyNode] = list()
         self.deleted: Set[int] = set()
-        self.shadow: List[AnyNode] = self.updated
-        self.shadow_list: List[List[AnyNode]] = [self.updated]
 
     def reset(self):
         self.updated.clear()
         self.deleted.clear()
-        self.shadow_list = [self.updated]
-        self.shadow = self.updated
-
-    @contextmanager
-    def make_shadow(self):
-        self.shadow = list()
-        self.shadow_list.append(self.shadow)
-        yield
-        self.shadow = self.shadow_list[-2]
 
     def __call__(self, node):
-        self.shadow.append(node)
+        self.updated.append(node)
 
     def __add__(self, other):
-        self.shadow.append(other)
+        self.updated.append(other)
         return self
 
     def __sub__(self, other):
         self.deleted.add(other.oid)
         return self
-
-    def merge(self):
-        self.shadow += self.shadow_list.pop()
-
-    def forget(self):
-        del self.shadow_list[-1]
 
     @property
     def rendered(self) -> List[AnyNode]:

@@ -1,0 +1,43 @@
+<div class="grid {fullscreen_class()}">
+    <div class="header">
+        <slot name="header">
+            Header
+        </slot>
+    </div>
+    <div class="main">
+        <slot name="main">
+            Main content
+        </slot>
+    </div>
+</div>
+
+<style type="text/scss">
+    @import "defaults";
+
+    .grid {
+        display: grid;
+        grid: "header" minmax($header-height, max-content)
+              "main" auto /
+              auto;
+
+        &.fullscreen {
+            height: 100vh;
+        }
+    }
+    .header {
+        grid-area: header;
+        overflow: hidden;
+    }
+    .main {
+        grid-area: main;
+        overflow: auto;
+    }
+</style>
+
+<python>
+fullscreen: bool = False
+
+def fullscreen_class():
+    return fullscreen and 'fullscreen' or ''
+
+</python>

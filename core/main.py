@@ -19,19 +19,24 @@ from core.workers import start_task_workers, init_async_worker, stop_task_worker
 routes = web.RouteTableDef()
 
 
-@routes.get('/')
+@routes.get(r'/{app:\w*}')
 async def get_main_page(request: Request):
-    body = template.replace('{{hostname}}', request.host)
+    body = template.replace('{{hostname}}', f'{request.host}/{request.match_info["app"]}')
     body = body.replace('{{session_id}}', Session.gen_session_id())
     return web.Response(body=body, content_type='text/html')
 
 
-@routes.get(r'/ws/{session_id:\w+}')
+@routes.get(r'/{app:\w*}/ws/{session_id:\w+}')
 async def get_ws(request: Request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
-    session = Session(request.match_info['session_id'], ws, DEFAULT_APP)
+    app = request.match_info['app']
+    if app:
+        app = os.path.join(APPS_PATH, app)
+    else:
+        app = COMPONENTS_PATH
+    session = Session(request.match_info['session_id'], ws, app)
 
     async def send_message(message: Dict):
         await ws.send_bytes(serializer.encode(message))

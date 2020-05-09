@@ -4,6 +4,7 @@ BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPONENTS_PATH = os.path.join(BASE_PATH, 'components')
 PAGES_PATH = os.path.join(BASE_PATH, 'pages')
 CSS_PATH = os.path.join(BASE_PATH, 'css')
+APPS_PATH = os.path.join(BASE_PATH, 'apps')
 
 '''
 DB_PARAMS = dict(

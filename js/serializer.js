@@ -2,6 +2,14 @@ let _serializer_debug = false;
 //let _create_control_tags = false;
 let content_filled = false;
 
+let namespaces = {
+    1: 'http://www.w3.org/1999/xhtml',
+    2: 'http://www.w3.org/2000/svg',
+    3: 'http://www.w3.org/2001/xml-events',
+    4: 'http://www.w3.org/1999/xlink',
+    5: 'http://www.w3.org/1998/Math/MathML'
+};
+
 function se_log(message) {
     if (_serializer_debug) console.log(message);
 }
@@ -17,13 +25,15 @@ const HTMLElementSerializer = {
         let is_new = false;
         if (!element) {
             let parent = get_node(v.p);
-            //while (parent && !parent.typical) parent = parent.parent;
             if (!parent) {
-                //console.error(`parent ${v.p} not found for ${v.i} ${v.n}`);
-                //return null;
+                se_log(`element became new root node:`);
                 parent = root_node();
             }
-            element = document.createElement(v.n);
+            if ('x' in v)
+                element = document.createElementNS(namespaces[v.x], v.n);
+            else
+                element = document.createElement(v.n);
+
             //element.typical = true;
             set_oid(element, v.i);
             se_log(`element ${v.i} ${v.n} created`);
@@ -41,12 +51,12 @@ const HTMLElementSerializer = {
             element.className = v.C;
         else
             element.removeAttribute('class');
-        if (!!v.t)
-            element.innerText = v.t;
         if (!!v.s)
             element.setAttribute('style', v.s);
         else
             element.removeAttribute('style');
+        if (!!v.t)
+            element.textContent = v.t;
         if (v.f)
             element.focus();
         return element;
