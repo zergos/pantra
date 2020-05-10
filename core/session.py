@@ -39,7 +39,7 @@ class Session:
         from core.serializer import serializer
         await self.ws.send_bytes(serializer.encode(message))
 
-    def send_error(self, error: str):
+    def error(self, error: str):
         self.send_message({'m': 'e', 'l': error})
 
     def send_context(self, ctx: Context):
@@ -73,7 +73,7 @@ def trace_errors(func):
         try:
             func(*args, **kwargs)
         except:
-            args[0].session.send_error(traceback.format_exc())
+            args[0].session.error(traceback.format_exc())
         else:
             args[0].session.send_shot(args[0].shot)
     res.call = func
