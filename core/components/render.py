@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 class RenderMixin:
-    #__slots__ = ['context', 'shot']
+    # __slots__ = ['context', 'shot', 'session', '_set_focus', '_metrics', '_metrics_cv', '_value', '_value_cv']
 
     def __init__(self, parent: Optional[AnyNode], **kwargs):
-        from core.components.context import Context, TextNode, HTMLElement, NSElement
+        from core.components.context import Context, TextNode, HTMLElement, NSElement, EventNode
         self.shot: 'ContextShot' = kwargs.get('shot') or parent.shot
         self.session: Session = kwargs.get('session') or parent.session
-        if type(self) in [HTMLElement, NSElement, TextNode, Context]:
+        if type(self) in [HTMLElement, NSElement, TextNode, Context, EventNode]:
             self.shot(self)
         if type(self) == Context:
             self.context = self
@@ -99,6 +99,8 @@ class RenderMixin:
 
     @property
     def value(self):
+        if hasattr(self, '_value'):
+            return self._value
         if not hasattr(self, '_value_cv'):
             self._value_cv = threading.Condition()
         with self._value_cv:
@@ -166,10 +168,27 @@ class DefaultRenderer:
         else:
             return source.strip('"'' ')
 
+    def eval_string(self, source: str, node: AnyNode) -> Any:
+        if not source:
+            return None
+
+        if '{' in source:
+            return self.build_func(source.strip('" ''{}'), node)()
+        else:
+            return source.strip('" ''')
+
     def process_special_attribute(self, attr: str, value: str, node: Optional[HTMLElement] = None) -> bool:
         if attr.startswith('ref:'):
             name = attr.split(':')[1].strip()
             self.ctx.refs[name] = node
+            return True
+        elif attr.startswith('local:'):
+            name = attr.split(':')[1].strip()
+            node.context.locals[name] = self.eval_string(value, node)
+            return True
+        elif attr == 'on:render':
+            value = value.strip('" ''')
+            self.ctx[value](node)
             return True
         elif attr == 'style':
             if '{' in value:
@@ -265,7 +284,7 @@ class DefaultRenderer:
             node = EventNode(parent)
             for k, v in template.attributes.items():
                 if k == 'selector':
-                    node.attributes[k] = ','.join(f'.default .ctx-{self.ctx.template.name} {s}' for s in v.strip('" ''').split(','))
+                    node.attributes[k] = ','.join(f'.ctx-{self.ctx.template.name} {s}' for s in v.strip('" ''').split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
             self.ctx.render_base = True

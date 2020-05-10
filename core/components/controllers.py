@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import ctypes
-import traceback
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import NamedTuple, Optional, TYPE_CHECKING
+from typing import NamedTuple, Optional, TYPE_CHECKING, List
 
 from core.oid import get_node
 from core.session import Session, trace_errors
@@ -120,3 +117,12 @@ def process_click_referred(context: Context, method: str, node: AnyNode):
         func(node)
     elif context.parent:
         process_click_referred.call(context.parent.context, func, node)
+
+
+@thread_worker
+def process_select(method: str, oid: int, opts: List[int]):
+    node = get_node(oid)
+    if not node or not method: return
+    opts = [get_node(i) for i in opts]
+    node._value = len(opts) == 1 and opts[0] or opts
+    process_click_referred(node.context, method, node)

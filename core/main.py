@@ -7,7 +7,8 @@ from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
 
 from core.components.context import Context
-from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop
+from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
+    process_select
 from core.components.htmlnode import collect_styles
 import core.database as db
 from core.components.render import ContextShot, RenderMixin
@@ -23,6 +24,7 @@ routes = web.RouteTableDef()
 async def get_main_page(request: Request):
     body = template.replace('{{hostname}}', f'{request.host}/{request.match_info["app"]}')
     body = body.replace('{{session_id}}', Session.gen_session_id())
+    body = body.replace('{{app}}', request.match_info["app"])
     return web.Response(body=body, content_type='text/html')
 
 
@@ -59,6 +61,9 @@ async def get_ws(request: Request):
             elif command == 'CLICK':
                 process_click(data['method'], int(data['oid']))
 
+            elif command == 'SELECT':
+                process_select(data['method'], int(data['oid']), data['opts'])
+
             elif command == 'M':
                 RenderMixin._set_metrics(int(data['oid']), data)
 
@@ -88,9 +93,17 @@ async def get_ws(request: Request):
 
 @routes.get(r'/css/global.css')
 async def get_global_css(request: Request):
-    styles = collect_styles()
+    styles = collect_styles(COMPONENTS_PATH)
     return web.Response(body=styles, content_type='text/css')
 
+@routes.get(r'/css/{app:\w*}.local.css')
+async def get_local_css(request: Request):
+    app = request.match_info['app']
+    if not app:
+        return web.Response()
+    app_path = os.path.join(APPS_PATH, app)
+    styles = collect_styles(app_path)
+    return web.Response(body=styles, content_type='text/css')
 
 @routes.get(r'/css/{name:.+?}.scss')
 async def get_static_scss(request: Request):
@@ -104,8 +117,8 @@ async def get_static_scss(request: Request):
     else:
         return web.Response(body=css, content_type='text/css')
 
-routes.static('/js', os.path.join(BASE_PATH, 'js'))
-routes.static('/css', os.path.join(BASE_PATH, 'css'))
+routes.static('/js', os.path.join(BASE_PATH, 'js'), append_version=True)
+routes.static('/css', os.path.join(BASE_PATH, 'css'), append_version=True)
 
 
 async def startup(app):

@@ -1,64 +1,58 @@
-function do_none(event) {
+function do_nothing(event) {
     event.stopPropagation();
     event.preventDefault();
 }
 
-class SimpleListener {
-    constructor(method, oid) {
+class EventListener {
+    constructor(method, oid=null) {
         this.method = method;
         this.oid = oid;
     }
     handleEvent(event) {
         event.stopPropagation();
-        process_click(this.method, this.oid);
     }
 }
 
-class SimpleCommonListener {
-    constructor(method) {
-        this.method = method;
-    }
+class SimpleListener extends EventListener {
     handleEvent(event) {
-        event.stopPropagation();
-        process_click(this.method, get_oid(event.target));
+        super.handleEvent(event);
+        process_click(this.method, this.oid || get_oid(event.target));
+    }
+}
+
+class SelectListener extends EventListener {
+    handleEvent(event) {
+        super.handleEvent(event);
+        process_select(this.method, this.oid || get_oid(event.target), event.target.selectedOptions);
     }
 }
 
 let drag_mode_active = false;
 let drag_events_attached = false;
-class DragListener {
-    constructor(method, oid) {
-        this.method = method;
-        this.oid = oid;
-    }
+class DragListener extends EventListener {
     handleEvent(event) {
-        event.stopPropagation();
-        process_drag_start(this.method, this.oid, event);
-    }
-}
-
-class DragCommonListener {
-    constructor(method) {
-        this.method = method;
-    }
-    handleEvent(event) {
-        event.stopPropagation();
-        process_drag_start(this.method, get_oid(event.target), event);
+        super.handleEvent(event);
+        process_drag_start(this.method, this.oid || get_oid(event.target), event);
     }
 }
 
 function process_special_attribute(attr, value, node, oid, is_new = false) {
-    if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
+    if (attr === 'on:change' && node.tagName === 'SELECT') {
+        if (is_new) {
+            node.addEventListener('change', new SelectListener(value, oid));
+        }
+        return true;
+    } else if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
         if (is_new) {
             node.addEventListener(attr.slice(3), new SimpleListener(value, oid));
             if (attr === 'on:click')
-                node.addEventListener('mousedown', do_none);
+                node.addEventListener('mousedown', do_nothing);
         }
         return true;
     } else if (attr === 'on:drag') {
         if (is_new) {
-            node.addEventListener('dragstart', do_none);
-            node.addEventListener('selectstart', do_none);
+            node.addEventListener('dragstart', do_nothing);
+            node.addEventListener('selectstart', do_nothing);
             node.addEventListener('mousedown', new DragListener(value, oid));
             attach_drag_events();
         }
@@ -72,10 +66,10 @@ function attach_drag_events() {
         drag_events_attached = true;
         let root = root_node();
         root.addEventListener('selectstart', (event) => {
-            if (drag_mode_active) do_none(event);
+            if (drag_mode_active) do_nothing(event);
         });
         root.addEventListener('dragstart', (event) => {
-            if (drag_mode_active) do_none(event);
+            if (drag_mode_active) do_nothing(event);
         });
         root.addEventListener('mousemove', (event) => {
             if (drag_mode_active) {
@@ -97,17 +91,19 @@ let event_registered = [];
 let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
 
 function process_event_attribute(ctx, selector, attr, value) {
-    if (event_registered.includes(selector)) return;
-    event_registered.push(selector);
+    if (event_registered.includes(selector + attr)) return;
+    event_registered.push(selector + attr);
 
-    if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
-        addEventHandler(attr.slice(3), selector, new SimpleCommonListener(value));
+    if (attr === 'on:change' && node.tagName === 'select') {
+        addEventHandler('change', selector, new SelectListener(value));
+    } else if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
+        addEventHandler(attr.slice(3), selector, new SimpleListener(value));
         if (attr === 'on:click')
-            addEventHandler('mousedown', selector, do_none);
+            addEventHandler('mousedown', selector, do_nothing);
     } else if (attr === 'on:drag') {
-        addEventHandler('dragstart', selector, do_none);
-        addEventHandler('selectstart', selector, do_none);
-        addEventHandler('mousedown', selector, new DragCommonListener(value));
+        addEventHandler('dragstart', selector, do_nothing);
+        addEventHandler('selectstart', selector, do_nothing);
+        addEventHandler('mousedown', selector, new DragListener(value));
         attach_drag_events();
     }
 }

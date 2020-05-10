@@ -74,7 +74,7 @@ class EventSerializer(bsdf.Extension):
         return type(v) == EventNode
 
     def encode(self, s, v):
-        return None
+        return {'ctx': v.context.template.name, 'a': v.attributes}
 
 
 serializer = bsdf.BsdfSerializer([HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer],

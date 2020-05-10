@@ -83,10 +83,10 @@ def collect_template(session: Session, name) -> Optional[HTMLTemplate]:
     '''
 
 
-def collect_styles() -> str:
+def collect_styles(app_path) -> str:
     import core.components.loader as loader
     styles = []
-    for root, dirs, files in os.walk(COMPONENTS_PATH):
+    for root, dirs, files in os.walk(app_path):
         for file in files:  # type: str
             if file.endswith('html'):
                 name, ext = os.path.splitext(file)

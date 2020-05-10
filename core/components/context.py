@@ -7,13 +7,13 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
-from core.common import DynamicStyles, AnyNode, EmptyCaller
+from ..common import DynamicStyles, AnyNode, EmptyCaller
 from .htmlnode import HTMLNode, HTMLTemplate, collect_template
 
 from .render import RenderMixin, DefaultRenderer
 
 if TYPE_CHECKING:
-    from core.common import DynamicString
+    from ..common import DynamicString
     from .render import ContextShot
     from ..session import Session
 
@@ -72,21 +72,24 @@ class Context(AnyNode, RenderMixin):
 class HTMLElement(HTMLNode, RenderMixin):
     __slots__ = ['text', 'style']
 
-    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, **kwargs):
+    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = '', **kwargs):
         if parent and not parent.context.ns_type:
             return super().__new__(cls)
         instance = super().__new__(NSElement)
         instance.ns_type = parent.context.ns_type
         return instance
 
-    def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, **kwargs):
+    def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = '', **kwargs):
         super().__init__(tag_name=tag_name, parent=parent, attributes=attributes)
         RenderMixin.__init__(self, parent, **kwargs)
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
-        self.text: Union[str, DynamicString] = ''
+        self.text: Union[str, DynamicString] = text
 
     def render(self, content: Union[str, AnyNode]):
         self.context.render(self, content)
+
+    def __getitem__(self, item: str):
+        return self.context[item]
 
     def __str__(self):
         return f'HTML: {self.tag_name} {self.oid}'
@@ -94,9 +97,6 @@ class HTMLElement(HTMLNode, RenderMixin):
 
 class NSElement(HTMLElement):
     __slots__ = ['ns_type']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def __str__(self):
         return f'{NSType(self.ns_type).name}: {self.tag_name} {self.oid}'

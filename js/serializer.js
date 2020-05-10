@@ -48,7 +48,8 @@ const HTMLElementSerializer = {
                     element.removeAttribute(at);
         }
         if (!!v.C)
-            element.className = v.C;
+            //element.className = v.C;
+            element.setAttribute('class', v.C);
         else
             element.removeAttribute('class');
         if (!!v.s)
@@ -140,7 +141,11 @@ const TextSerializer = {
 const EventSerializer = {
     name: 'e',
     decode: function (s, v) {
-        return null;
+        let selector = v.a.selector;
+        for (let attr in v.a) {
+            if (attr !== 'selector')
+                process_event_attribute(v.ctx, selector, attr, v.a[attr]);
+        }
     }
 };
 

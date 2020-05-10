@@ -178,7 +178,7 @@ class StyleVisitor(BCDParserVisitor):
         if self.global_mode:
             self.styles.append(text)
         else:
-            base_class = f'.default .ctx-{self.class_name}'
+            base_class = f'.ctx-{self.class_name}'
 
             def go(l):
                 res = []

@@ -72,3 +72,11 @@ function process_drag_stop(event) {
     send_message({C: 'DU', x: event.pageX, y: event.pageY});
 
 }
+
+function process_select(method, oid, options) {
+    let opts = Object.values(options).reduce((acc, cur) => {
+        acc.push(get_oid(cur));
+        return acc;
+    }, []);
+    send_message({C: 'SELECT', method: method, oid: oid, opts: opts});
+}
