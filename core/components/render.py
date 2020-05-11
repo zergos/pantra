@@ -1,52 +1,49 @@
 from __future__ import annotations
 
-import threading
-from contextlib import contextmanager
-from copy import deepcopy
+from functools import lru_cache
 from typing import *
 
-from attrdict import AttrDict
-
-from core.common import DynamicString, DynamicStyles, DynamicClasses, MetricsData, WebUnits
+from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename
 from core.components.htmlnode import HTMLTemplate, collect_template
-from core.oid import get_node
 from core.session import Session
 
 if TYPE_CHECKING:
-    from core.components.context import Context, AnyNode, HTMLElement, ConditionNode, Condition, LoopNode, \
-        TextNode, NSElement
+    from core.components.context import AnyNode, Context, HTMLElement, Condition, \
+        TextNode, Slot
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class RenderMixin:
-    # __slots__ = ['context', 'shot', 'session', '_set_focus', '_metrics', '_metrics_cv', '_value', '_value_cv']
+class RenderNode(UniqueNode):
+    __slots__ = ['context', 'shot', 'session']
 
-    def __init__(self, parent: Optional[AnyNode], **kwargs):
-        from core.components.context import Context, TextNode, HTMLElement, NSElement, EventNode
-        self.shot: 'ContextShot' = kwargs.get('shot') or parent.shot
-        self.session: Session = kwargs.get('session') or parent.session
-        if type(self) in [HTMLElement, NSElement, TextNode, Context, EventNode]:
+    def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+        super().__init__(parent)
+        self.shot: 'ContextShot' = shot or parent.shot
+        self.session: Session = session or parent.session
+        if render_this:
             self.shot(self)
-        if type(self) == Context:
+        if typename(self) == 'Context':
             self.context = self
         else:
-            self.context = kwargs.get('context') or parent.context
-        self._set_focus = False
+            self.context = parent.context
 
     def empty(self):
-        for child in self._NodeMixin__children_:  # type: AnyNode
+        for child in self.children:  # type: RenderNode
             self.shot -= child
             child.empty()
-        self._NodeMixin__children_.clear()
+        self.children.clear()
 
-    def remove(self):
-        self.empty()
-        self.shot -= self
-        if hasattr(self, '_NodeMixin__parent'):
-            self._NodeMixin__parent._NodeMixin__children.remove(self)
+    def remove(self, node=None):
+        if node:
+            super().remove(node)
+        else:
+            self.empty()
+            self.shot -= self
+            if self.parent:
+                self.parent.remove(self)
 
     def update(self):
         self.context.render.update(self)
@@ -54,128 +51,65 @@ class RenderMixin:
     def update_tree(self):
         self.context.render.update(self, True)
 
-    @staticmethod
-    def _set_metrics(oid: int, metrics: Dict[str, int]):
-        self = get_node(oid)
-        if self is None: return
-        self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
-        self.session.metrics_stack.append(self)
-        with self._metrics_cv:
-            self._metrics_cv.notify()
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        return None
 
-    def request_metrics(self):
-        if not hasattr(self, '_metrics_cv'):
-            self._metrics_cv = threading.Condition()
-        with self._metrics_cv:
-            self.session.request_metrics(self)
-            self._metrics_cv.wait()
-
-    @property
-    def metrics(self):
-        if hasattr(self, '_metrics'):
-            return self._metrics
-        self.request_metrics()
-        return self._metrics
-
-    def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]], shift: int = 0, grow: int = 0):
-        if isinstance(m, dict):
-            m = AttrDict(m)
-        elif isinstance(m, list):
-            m = AttrDict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
-        self.style.position = 'fixed'
-        self.style.left = WebUnits(m.left) + shift
-        self.style.top = WebUnits(m.top) + shift
-        self.style.width = WebUnits(m.width) + grow
-        self.style.height = WebUnits(m.height) + grow
-        self.shot(self)
-
-    @staticmethod
-    def _set_value(oid: int, value):
-        self = get_node(oid)
-        if self is None: return
-        self._value = value
-        with self._value_cv:
-            self._value_cv.notify()
-
-    @property
-    def value(self):
-        if hasattr(self, '_value'):
-            return self._value
-        if not hasattr(self, '_value_cv'):
-            self._value_cv = threading.Condition()
-        with self._value_cv:
-            self.session.request_value(self)
-            self._value_cv.wait()
-        return self._value
-
-    def move(self, delta_x, delta_y):
-        self.style.left += delta_x
-        self.style.top += delta_y
-        self.shot(self)
-
-    def clone(self, new_parent: Optional[AnyNode] = None) -> HTMLElement:
-        from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode
+    def clone(self, new_parent: Optional[AnyNode] = None) -> Optional[HTMLElement, TextNode]:
         if new_parent is None:
             new_parent = self.context
-        clone: Optional[AnyNode] = None
-        if isinstance(self, HTMLElement):
-            clone: HTMLElement = HTMLElement(self.tag_name, new_parent, shot=self.shot, session=self.session, context=self.context)
-            clone.attributes = AttrDict({
-                k: v
-                for k, v in self.attributes.items() if k[:3] != 'on:' and not k.startswith('ref:')
-            })
-            clone.text = self.text
-            clone.classes = deepcopy(self.classes)
-            clone.style = deepcopy(self.style)
-        elif type(self) == Context:
-            clone = HTMLElement(self.template.name, new_parent)
-        elif type(self) == LoopNode:
-            clone = HTMLElement('loop', new_parent)
-        elif type(self) == ConditionNode:
-            clone = HTMLElement('condition', new_parent)
-        elif type(self) == TextNode:
-            clone: TextNode = TextNode(new_parent, self.text)
 
-        for child in self.children:
-            clone.append(child.clone(clone))
+        clone: Optional[AnyNode] = self._clone(new_parent)
+        if clone:
+            for child in self.children:
+                sub = child.clone(clone)
+                if sub:
+                    clone.append(sub)
         return clone
 
-    def focus(self):
-        self._set_focus = True
+
+@lru_cache(None, False)
+def common_globals():
+    globals = {}
+    exec('from core.ctx import *', globals)
+    return globals
 
 
 class DefaultRenderer:
     __slots__ = ['ctx']
 
     def __init__(self, ctx: Context):
-        self.ctx = ctx
+        self.ctx: Context = ctx
 
     def __call__(self, node: AnyNode, content: Union[str, AnyNode]):
         self.render(node, content)
 
     def build(self):
-        self.build_node(self.ctx.template, self.ctx, True)
+        self.build_node(self.ctx.template, self.ctx)
 
-    def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
+    def build_func(self, text: str, node: RenderNode) -> Callable[[], Any]:
         return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
 
-    def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
+    @staticmethod
+    def strip_quotes(s):
+        return s.strip('" ''')
+
+    def build_string(self, source: str, node: RenderNode) -> Optional[Union[str, DynamicString]]:
         if not source:
             return None
 
         if '{' in source:
             return DynamicString(self.build_func('f'+source, node))
         else:
-            return source.strip('"'' ')
+            return self.strip_quotes(source)
 
-    def eval_string(self, source: str, node: AnyNode) -> Any:
+    def eval_string(self, source: str, node: RenderNode) -> Any:
         if not source:
             return None
 
         if '{' in source:
             return self.build_func(source.strip('" ''{}'), node)()
         else:
-            return source.strip('" ''')
+            return self.strip_quotes(source)
 
     def process_special_attribute(self, attr: str, value: str, node: Optional[HTMLElement] = None) -> bool:
         if attr.startswith('ref:'):
@@ -187,33 +121,33 @@ class DefaultRenderer:
             node.context.locals[name] = self.eval_string(value, node)
             return True
         elif attr == 'on:render':
-            value = value.strip('" ''')
+            value = self.strip_quotes(value)
             self.ctx[value](node)
             return True
         elif attr == 'style':
             if '{' in value:
                 node.style = self.build_string(value, node)
             else:
-                node.style = DynamicStyles(value.strip('" '''))
+                node.style = DynamicStyles(self.strip_quotes(value))
             return True
         return False
 
-    def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode], is_root_node: bool = False) -> Optional[AnyNode]:
-        from core.components.context import Context, ConditionNode, Condition, HTMLElement, LoopNode, EventNode, Slot, TextNode
+    def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode]) -> Optional[RenderNode]:
+        import core.components.context as c
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
             if template.tag_name == '#if':
-                node = ConditionNode(parent)
+                node = c.ConditionNode(parent)
                 for child_template in template.children:  # type: HTMLTemplate
                     if child_template.tag_name != '#else':
-                        item = Condition(self.build_func(child_template.macro, node), child_template)
+                        item = c.Condition(self.build_func(child_template.macro, node), child_template)
                     else:
-                        item = Condition((lambda: True), child_template)
+                        item = c.Condition((lambda: True), child_template)
                     node.conditions.append(item)
                 self.update(node)
 
             elif template.tag_name == '#for':
-                node = LoopNode(parent, template)
+                node = c.LoopNode(parent, template)
                 chunks = template.macro.split(' in ')
                 node.var_name = chunks[0].strip()
                 node.iterator = self.build_func(chunks[1], node)
@@ -221,11 +155,11 @@ class DefaultRenderer:
 
         elif template.tag_name[0].isupper():
             node_template = collect_template(self.ctx.session, template.tag_name)
-            node = Context(template=node_template, parent=parent)
+            node = c.Context(node_template, parent)
 
             # attach slots
             if template.children:
-                node.slot = Slot(self.ctx, template)
+                node.slot = c.Slot(self.ctx, template)
 
             # evaluate attributes
             for attr, value in template.attributes.items():
@@ -259,21 +193,23 @@ class DefaultRenderer:
                 self.ctx = current_ctx
 
         elif template.tag_name == 'python':
-            saved = dict(self.ctx.locals)
-            self.ctx.locals += {'ctx': self.ctx, 'refs': self.ctx.refs}
-            try:
-                if not template.code:
-                    template.code = compile(template.text, template.filename, 'exec')
-                exec(template.code, self.ctx.locals)
-            except Exception as e:
-                logger.error(
-                    f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
-            else:
-                self.ctx.locals.update(saved)
-                if 'init' in self.ctx.locals:
-                    self.ctx.locals.init()
-                if 'ns_type' in self.ctx.locals:
-                    self.ctx.ns_type = self.ctx.locals.ns_type
+            if not self.ctx._executed:
+                self.ctx._executed = True
+                initial_locals = dict(self.ctx.locals)
+                self.ctx.locals += {'ctx': self.ctx, 'refs': self.ctx.refs}
+                try:
+                    if not template.code:
+                        template.code = compile(template.text, template.filename, 'exec')
+                    # exec(template.code, common_globals(), self.ctx.locals)
+                    exec(template.code, self.ctx.locals)
+                    self.ctx.locals.update(initial_locals)
+                    if 'init' in self.ctx.locals:
+                        self.ctx.locals.init()
+                    if 'ns_type' in self.ctx.locals:
+                        self.ctx.ns_type = self.ctx.locals.ns_type
+                except Exception as e:
+                    logger.error(
+                        f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
@@ -281,30 +217,32 @@ class DefaultRenderer:
                 self.ctx.render_base = True
 
         elif template.tag_name == 'event':
-            node = EventNode(parent)
+            node = c.EventNode(parent)
             for k, v in template.attributes.items():
                 if k == 'selector':
-                    node.attributes[k] = ','.join(f'.ctx-{self.ctx.template.name} {s}' for s in v.strip('" ''').split(','))
+                    node.attributes[k] = ','.join(f'.ctx-{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
             self.ctx.render_base = True
 
         elif template.tag_name == '@text':
-            node = TextNode(parent=parent, text=template.text.strip('"'' '))
+            node = c.TextNode(parent, self.strip_quotes(template.text))
+
+        elif template.tag_name[0] == '$':
+            node = self.ctx
+            node.context = node
+
+            for child in template.children:
+                self.build_node(child, node)
 
         else:
             # reconstruct HTML element
 
-            if is_root_node:
-                node = self.ctx
-                node.context = node
-
-            else:
-                node = HTMLElement(template.tag_name, parent=parent)
-                # evaluate attributes
-                for attr, value in template.attributes.items():
-                    if not self.process_special_attribute(attr, value, node):
-                        node.attributes[attr] = self.build_string(value, node)
+            node = c.HTMLElement(template.tag_name, parent=parent)
+            # evaluate attributes
+            for attr, value in template.attributes.items():
+                if not self.process_special_attribute(attr, value, node):
+                    node.attributes[attr] = self.build_string(value, node)
 
             node.classes = self.build_string(template.classes, node)
             if type(node.classes) == str:
@@ -328,8 +266,7 @@ class DefaultRenderer:
             self.update(child, True)
 
     def update(self, node: AnyNode, recursive: bool = False):
-        from core.components.context import HTMLElement, Context, TextNode, ConditionNode, LoopNode
-        if isinstance(node, HTMLElement):
+        if typename(node) in ('HTMLElement', 'NSElement'):
             # attributes, classes and text evaluation
             for k, v in node.attributes.items():
                 if type(v) == DynamicString:
@@ -344,20 +281,19 @@ class DefaultRenderer:
                 node.text = node.text()
             node.shot(node)
 
-        elif type(node) == Context:
+        elif typename(node) == 'Context':
             if node.children:
                 node.empty()
-            node.shot(node)
-            self.build_node(node.template, node, True)
+            self.build_node(node.template, node)
             return  # prevent repeated updates
 
-        elif type(node) == TextNode:
+        elif typename(node) == 'TextNode':
             if type(node.text) == DynamicString:
                 node.text = node.text()
             node.shot(node)
             return  # no children ever
 
-        elif type(node) == ConditionNode:
+        elif typename(node) == 'ConditionNode':
             state: int = -1
             condition: Optional[Condition] = None
             for i, c in enumerate(node.conditions):
@@ -377,7 +313,7 @@ class DefaultRenderer:
 
                 return  # prevent repeated updates
 
-        elif type(node) == LoopNode:
+        elif typename(node) == 'LoopNode':
             node.empty()
             for value in node.iterator():
                 self.ctx.locals[node.var_name] = value
@@ -387,7 +323,6 @@ class DefaultRenderer:
 
         if recursive:
             self.update_children(node)
-
 
     def render(self, node: AnyNode, content: Union[str, AnyNode]):
         if type(content) == str:
@@ -421,6 +356,6 @@ class ContextShot:
         return self
 
     @property
-    def rendered(self) -> List[AnyNode]:
+    def rendered(self) -> List[RenderNode]:
         from core.components.context import Context
         return [node for node in self.updated if type(node) != Context or node.render_base]

@@ -6,12 +6,12 @@ import sass
 from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
 
-from core.components.context import Context
+from core.components.context import Context, HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
     process_select
 from core.components.htmlnode import collect_styles
 import core.database as db
-from core.components.render import ContextShot, RenderMixin
+from core.components.render import ContextShot
 from core.serializer import serializer
 from core.defaults import *
 from core.session import Session
@@ -65,10 +65,10 @@ async def get_ws(request: Request):
                 process_select(data['method'], int(data['oid']), data['opts'])
 
             elif command == 'M':
-                RenderMixin._set_metrics(int(data['oid']), data)
+                HTMLElement._set_metrics(int(data['oid']), data)
 
             elif command == 'V':
-                RenderMixin._set_value(int(data['oid']), data['value'])
+                HTMLElement._set_value(int(data['oid']), data['value'])
 
             elif command == 'DD':
                 process_drag_start(ctx, data['method'], int(data['oid']), data['x'], data['y'], data['button'])
@@ -100,7 +100,7 @@ async def get_global_css(request: Request):
 async def get_local_css(request: Request):
     app = request.match_info['app']
     if not app:
-        return web.Response()
+        return web.Response(content_type='text/css')
     app_path = os.path.join(APPS_PATH, app)
     styles = collect_styles(app_path)
     return web.Response(body=styles, content_type='text/css')

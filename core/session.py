@@ -9,7 +9,7 @@ from attrdict import AttrDict
 
 from core.workers import async_worker
 if TYPE_CHECKING:
-    from core.components.context import Context, ContextShot, AnyNode, HTMLElement
+    from core.components.context import Context, ContextShot, RenderNode, HTMLElement
 
 
 class Session:
@@ -52,7 +52,7 @@ class Session:
             self.send_message({'m': 'u', 'l': shot.rendered})
         shot.reset()
 
-    def request_metrics(self, node: AnyNode):
+    def request_metrics(self, node: RenderNode):
         self.send_message({'m': 'm', 'l': node.oid})
 
     def drop_metrics(self):
@@ -60,7 +60,7 @@ class Session:
             if hasattr(node, '_metrics'):
                 delattr(node, '_metrics')
 
-    def request_value(self, node: AnyNode):
+    def request_value(self, node: RenderNode):
         self.send_message({'m': 'v', 'l': node.oid})
 
     def log(self, message):

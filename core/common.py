@@ -1,43 +1,62 @@
 from dataclasses import dataclass
 from typing import *
-from anytree import NodeMixin
 from attrdict import AttrDict
 
-__all__ = ['UniNode', 'AnyNode', 'DynamicString', 'DynamicClasses']
+__all__ = ['UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses']
 
 from core.oid import gen_id
 
 
-class UniNode(NodeMixin):
-    __slots__ = ()
+def typename(t):
+    return type(t).__name__
 
-    def __init__(self, parent=None, children=None, *args, **kwargs):
-        self.parent = parent
-        if children:
-            self.children = children
+
+class UniNode:
+    __slots__ = ['children', '_parent']
+
+    def __init__(self, parent: Optional['UniNode'] = None):
+        self._parent: Optional[UniNode] = parent
+        if parent:
+            parent.append(self)
+        self.children: List[UniNode] = []
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self, parent):
+        if self._parent:
+            self._parent.remove(self)
+        if parent:
+            parent.append(self)
+        self._parent = parent
 
     def append(self, node):
-        self._NodeMixin__children_.append(node)
+        self.children.append(node)
+
+    def remove(self, node):
+        self.children.remove(node)
 
     def clear(self):
-        self._NodeMixin__children_.clear()
+        self.children.clear()
 
     def index(self):
-        return self._NodeMixin__parent._NodeMixin__children.index(self)
+        return self._parent.children.index(self)
 
-    def __str__(self):
-        return self.__class__.__name__
+    def __contains__(self, item):
+        return item in self.children
 
     def __getitem__(self, item):
-        return self._NodeMixin__children[item]
+        return self.children[item]
 
 
-class AnyNode(UniNode):
+class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent=None):
         self.oid = gen_id(self)
-        super().__init__(*args, **kwargs)
+        super().__init__(parent)
 
 
 class DynamicString(str):

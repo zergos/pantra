@@ -8,7 +8,7 @@ from core.session import Session, trace_errors
 from core.workers import thread_worker
 
 if TYPE_CHECKING:
-    from core.components.context import Context, AnyNode, HTMLElement
+    from core.components.context import Context, RenderNode, HTMLElement
 
 
 class Controller(ABC):
@@ -81,7 +81,7 @@ class DragController(Controller):
 @thread_worker
 @trace_errors
 def process_drag_start(ctx: Context, method: str, oid: int, x: int, y: int, button: int):
-    node: AnyNode = get_node(oid)
+    node: RenderNode = get_node(oid)
     if node is None: return
     node.session.state.drag: DragController = node.context.locals[method](node)
     if node.session.state.drag._mousedown(node, x, y, button):
@@ -110,7 +110,7 @@ def process_click(method: str, oid: int):
 
 
 @trace_errors
-def process_click_referred(context: Context, method: str, node: AnyNode):
+def process_click_referred(context: Context, method: str, node: RenderNode):
     func = context[method]
     if not func: return
     if callable(func):

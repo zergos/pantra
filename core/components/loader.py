@@ -5,7 +5,6 @@ import typing
 import cssutils
 import sass
 from antlr4.error.ErrorListener import ErrorListener
-from attrdict import AttrDict
 from cssutils.css import CSSMediaRule, CSSStyleRule
 
 from .htmlnode import HTMLTemplate
@@ -17,8 +16,7 @@ from .grammar.BCDParserVisitor import BCDParserVisitor
 
 from logging import getLogger
 
-from ..common import DynamicClasses
-from ..defaults import BASE_PATH, CSS_PATH
+from ..defaults import CSS_PATH
 
 logger = getLogger(__name__)
 
@@ -29,7 +27,7 @@ class MyVisitor(BCDParserVisitor):
 
     def __init__(self, filename: str):
         name = os.path.splitext(os.path.basename(filename))[0]
-        root = HTMLTemplate(f'in{name}')
+        root = HTMLTemplate(f'${name}')
         root.filename = filename
         self.root: typing.Optional[HTMLTemplate] = root
         self.current: typing.Optional[HTMLTemplate] = root
@@ -54,7 +52,7 @@ class MyVisitor(BCDParserVisitor):
         text = ctx.getText().strip()
         self.current = HTMLTemplate(text[1:], parent=self.current)
         # raw nodes goes first
-        self.current.parent._NodeMixin__children_.insert(0, self.current.parent._NodeMixin__children_.pop())
+        self.current.parent.children.insert(0, self.current.parent.children.pop())
 
     def visitRawCloseTag(self, ctx: BCDParser.RawCloseTagContext):
         self.current = self.current.parent
@@ -134,16 +132,6 @@ class ErrorVisitor(ErrorListener):
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         logger.error(f"{self.filename}: line {line}:{column} {msg}")
-
-    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
-        pass
-
-    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
-        # logger.error(f"{self.filename}: full context {startIndex}:{stopIndex} {conflictingAlts!r}")
-        pass
-
-    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
-        pass
 
 
 def load(filename: str):

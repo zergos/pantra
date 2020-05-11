@@ -6,7 +6,7 @@ from typing import *
 
 from attrdict import AttrDict
 
-from core.common import DynamicString, AnyNode
+from core.common import DynamicString, UniNode
 from core.defaults import COMPONENTS_PATH
 
 if TYPE_CHECKING:
@@ -18,11 +18,11 @@ logger = getLogger(__name__)
 templates: Dict[str, 'HTMLTemplate'] = {}
 
 
-class HTMLNode(AnyNode):
+class HTMLNode(UniNode):
     __slots__ = ('tag_name', 'attributes', 'classes')
 
-    def __init__(self, tag_name: str, parent: Optional['HTMLNode'] = None, children: Optional[List['HTMLNode']] = None, attributes: Optional[Union[Dict, AttrDict]] = None):
-        super().__init__(parent, children)
+    def __init__(self, tag_name: str, parent: Optional['HTMLNode'] = None, attributes: Optional[Union[Dict, AttrDict]] = None):
+        super().__init__(parent)
         self.tag_name: str = tag_name
         self.attributes: AttrDict = attributes and AttrDict(attributes) or AttrDict()
         self.classes: Optional[Union[DynamicString, str]] = None
@@ -34,8 +34,8 @@ class HTMLNode(AnyNode):
 class HTMLTemplate(HTMLNode):
     __slots__ = ('text', 'macro', 'name', 'filename', 'code')
 
-    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, children: Optional[List['HTMLTemplate']] = None, attributes: Optional[List[Union[Dict, AttrDict]]] = None, text: str = None):
-        super().__init__(tag_name, parent, children, attributes)
+    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, AttrDict]]] = None, text: str = None):
+        super().__init__(tag_name, parent, attributes)
         self.text: str = text
         self.macro: str = ""
         self.name: Optional[str] = None

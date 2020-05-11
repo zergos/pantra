@@ -2,8 +2,8 @@ import bsdf
 import typing
 
 from core.oid import gen_id
-from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode, EventNode, NSElement
-from core.common import AnyNode
+from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode, EventNode, NSElement, \
+    AnyNode
 
 __all__ = ['serializer']
 

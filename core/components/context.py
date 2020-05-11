@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from copy import deepcopy
 from enum import Enum, auto
 from typing import *
@@ -7,16 +8,19 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
-from ..common import DynamicStyles, AnyNode, EmptyCaller
-from .htmlnode import HTMLNode, HTMLTemplate, collect_template
+from ..common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
+from .htmlnode import HTMLTemplate, collect_template
 
-from .render import RenderMixin, DefaultRenderer
+from .render import RenderNode, DefaultRenderer
+from ..oid import get_node
 
 if TYPE_CHECKING:
     from ..common import DynamicString
     from .render import ContextShot
     from ..session import Session
 
+
+AnyNode = Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
 
 class NSType(Enum):
     HTML = auto()       # http://www.w3.org/1999/xhtml
@@ -31,18 +35,16 @@ class Slot(NamedTuple):
     template: HTMLTemplate
 
 
-class Context(AnyNode, RenderMixin):
-    __slots__ = ['locals', 'server_events', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type']
+class Context(RenderNode):
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type']
 
-    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[AnyNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
-        self.locals = AttrDict()
-        self.server_events = AttrDict()
+    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+        self.locals: AttrDict = AttrDict()
+        self._executed: bool = False
         self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
         self.slot: Optional[Slot] = None
 
-        super().__init__(parent=parent)
-
-        RenderMixin.__init__(self, parent, shot=shot, session=session)
+        super().__init__(parent=parent, render_this=True, shot=shot, session=session)
 
         if type(template) == HTMLTemplate:
             self.template: HTMLTemplate = template
@@ -52,6 +54,9 @@ class Context(AnyNode, RenderMixin):
         self.render: DefaultRenderer = DefaultRenderer(self)
         self.render_base = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
+
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        return HTMLElement(self.template.name, new_parent)
 
     @property
     def tag_name(self):
@@ -69,24 +74,102 @@ class Context(AnyNode, RenderMixin):
         return f'Context: {self.template.name} {self.oid}'
 
 
-class HTMLElement(HTMLNode, RenderMixin):
-    __slots__ = ['text', 'style']
+class HTMLElement(RenderNode):
+    __slots__ = ['tag_name', 'attributes', 'classes', 'text', 'style',
+                 '_set_focus', '_metrics', '_metrics_cv', '_value', '_value_cv'
+                 ]
 
-    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = '', **kwargs):
+    def __new__(cls, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = ''):
         if parent and not parent.context.ns_type:
             return super().__new__(cls)
         instance = super().__new__(NSElement)
         instance.ns_type = parent.context.ns_type
         return instance
 
-    def __init__(self, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = '', **kwargs):
-        super().__init__(tag_name=tag_name, parent=parent, attributes=attributes)
-        RenderMixin.__init__(self, parent, **kwargs)
+    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = ''):
+        super().__init__(parent, True)
+        self.tag_name: str = tag_name
+        self.attributes: AttrDict = attributes and AttrDict(attributes) or AttrDict()
+        self.classes: Optional[Union[DynamicClasses, DynamicString, str]] = DynamicClasses()
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
-        self.text: Union[str, DynamicString] = text
+        self.text: Union[DynamicString, str] = text
+        self._set_focus = False
 
-    def render(self, content: Union[str, AnyNode]):
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        clone: HTMLElement = HTMLElement(self.tag_name, new_parent)
+        clone.attributes = AttrDict({
+            k: v
+            for k, v in self.attributes.items() if k[:3] != 'on:' and not k.startswith('ref:')
+        })
+        clone.text = self.text
+        clone.classes = deepcopy(self.classes)
+        clone.style = deepcopy(self.style)
+        return clone
+
+    def render(self, content: Union[str, RenderNode]):
         self.context.render(self, content)
+
+    @staticmethod
+    def _set_metrics(oid: int, metrics: Dict[str, int]):
+        self = get_node(oid)
+        if self is None: return
+        self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
+        self.session.metrics_stack.append(self)
+        with self._metrics_cv:
+            self._metrics_cv.notify()
+
+    def request_metrics(self):
+        if not hasattr(self, '_metrics_cv'):
+            self._metrics_cv = threading.Condition()
+        with self._metrics_cv:
+            self.session.request_metrics(self)
+            self._metrics_cv.wait()
+
+    @property
+    def metrics(self):
+        if hasattr(self, '_metrics'):
+            return self._metrics
+        self.request_metrics()
+        return self._metrics
+
+    def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]], shift: int = 0, grow: int = 0):
+        if isinstance(m, dict):
+            m = AttrDict(m)
+        elif isinstance(m, list):
+            m = AttrDict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
+        self.style.position = 'fixed'
+        self.style.left = WebUnits(m.left) + shift
+        self.style.top = WebUnits(m.top) + shift
+        self.style.width = WebUnits(m.width) + grow
+        self.style.height = WebUnits(m.height) + grow
+        self.shot(self)
+
+    @staticmethod
+    def _set_value(oid: int, value):
+        self = get_node(oid)
+        if self is None: return
+        self._value = value
+        with self._value_cv:
+            self._value_cv.notify()
+
+    @property
+    def value(self):
+        if hasattr(self, '_value'):
+            return self._value
+        if not hasattr(self, '_value_cv'):
+            self._value_cv = threading.Condition()
+        with self._value_cv:
+            self.session.request_value(self)
+            self._value_cv.wait()
+        return self._value
+
+    def move(self, delta_x, delta_y):
+        self.style.left += delta_x
+        self.style.top += delta_y
+        self.shot(self)
+
+    def focus(self):
+        self._set_focus = True
 
     def __getitem__(self, item: str):
         return self.context[item]
@@ -109,14 +192,16 @@ class Condition:
     template: HTMLTemplate
 
 
-class ConditionNode(AnyNode, RenderMixin):
+class ConditionNode(RenderNode):
     __slots__ = ['state', 'conditions']
 
-    def __init__(self, parent: AnyNode):
-        super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent)
+    def __init__(self, parent: RenderNode):
+        super().__init__(parent, False)
         self.state = -1
         self.conditions: Optional[List[Condition]] = []
+
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        return HTMLElement('condition', new_parent)
 
     @property
     def tag_name(self):
@@ -126,16 +211,18 @@ class ConditionNode(AnyNode, RenderMixin):
         return f'Condition {self.oid}'
 
 
-class LoopNode(AnyNode, RenderMixin):
+class LoopNode(RenderNode):
     __slots__ = ['template', 'var_name', 'iterator']
 
-    def __init__(self, parent: AnyNode, template: HTMLTemplate):
-        super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent)
+    def __init__(self, parent: RenderNode, template: HTMLTemplate):
+        super().__init__(parent, False)
 
         self.template: Optional[HTMLTemplate] = template
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
+
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        return HTMLElement('loop', new_parent)
 
     @property
     def tag_name(self):
@@ -145,13 +232,15 @@ class LoopNode(AnyNode, RenderMixin):
         return f'Loop {self.oid}'
 
 
-class TextNode(AnyNode, RenderMixin):
+class TextNode(RenderNode):
     __slots__ = ['text']
 
-    def __init__(self, parent: AnyNode, text: str):
-        super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent)
+    def __init__(self, parent: RenderNode, text: str):
+        super().__init__(parent, True)
         self.text: str = text
+
+    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+        return TextNode(new_parent, self.text)
 
     @property
     def tag_name(self):
@@ -161,10 +250,10 @@ class TextNode(AnyNode, RenderMixin):
         return f'Text {self.oid}'
 
 
-class EventNode(AnyNode, RenderMixin):
+class EventNode(RenderNode):
     __slots__ = ['attributes']
 
-    def __init__(self, parent: AnyNode, attributes: Optional[AttrDict] = None):
-        super().__init__(parent=parent)
-        RenderMixin.__init__(self, parent)
+    def __init__(self, parent: RenderNode, attributes: Optional[AttrDict] = None):
+        super().__init__(parent, True)
         self.attributes = attributes or AttrDict()
+
