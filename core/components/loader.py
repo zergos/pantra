@@ -187,13 +187,6 @@ def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
     return templates[key]
 
 
-def refresh_template(filename: str):
-    for k, v in templates:  # type: str, HTMLTemplate
-        if v.filename == filename:
-            Session.error_later(f'component {k} has updated')
-            del templates[k]
-
-
 class StyleVisitor(BCDParserVisitor):
     parser = cssutils.CSSParser(validate=False, raiseExceptions=True)
 

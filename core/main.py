@@ -13,8 +13,7 @@ from core.components.context import Context, HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
     process_select
 import core.database as db
-from core.components.loader import collect_styles
-from core.components.render import ContextShot
+from core.components.loader import collect_styles, templates
 from core.serializer import serializer
 from core.defaults import *
 from core.session import Session
@@ -145,7 +144,7 @@ async def startup(app):
     db.connect()
     start_task_workers()
     init_async_worker()
-    start_observer()
+    start_observer(templates, Session)
 
 
 async def shutdown(app):
