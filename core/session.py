@@ -3,6 +3,7 @@ import random
 import string
 import functools
 import traceback
+from queue import Queue
 from typing import *
 from aiohttp import web
 from attrdict import AttrDict
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 
 class Session:
     sessions: Dict[str, 'Session'] = dict()
+    pending_errors: Queue[str] = Queue()
 
     def __new__(cls, session_id: str, *args, **kwargs):
         if session_id in cls.sessions:
@@ -25,10 +27,12 @@ class Session:
     def __init__(self, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
         if not hasattr(self, "state"):
             self.state: AttrDict = AttrDict()
-        self.root: Context
+        self.root: Optional[Context] = None
         self.ws: web.WebSocketResponse = ws
         self.app: Optional[str] = app
         self.metrics_stack: List[HTMLElement] = []
+        self.just_connected: bool = True
+        self.pending_messages: Queue[bytes] = Queue()
 
     @staticmethod
     def gen_session_id():
@@ -37,10 +41,26 @@ class Session:
     @async_worker
     async def send_message(self, message: Dict['str', Any]):
         from core.serializer import serializer
-        await self.ws.send_bytes(serializer.encode(message))
+        if not self.ws or self.ws.closed:
+            self.pending_messages.put(serializer.encode(message))
+        else:
+            await self.ws.send_bytes(serializer.encode(message))
 
     def error(self, error: str):
         self.send_message({'m': 'e', 'l': error})
+
+    @staticmethod
+    def error_later(message):
+        Session.pending_errors.put(message)
+
+    async def remind_errors(self):
+        while not Session.pending_errors.empty():
+            error = Session.pending_errors.get()
+            await self.send_message({'m': 'e', 'l': error})
+
+    async def recover_messages(self):
+        while not self.pending_messages.empty():
+            await self.ws.send_bytes(self.pending_messages.get())
 
     def send_context(self, ctx: Context):
         self.send_message({'m': 'c', 'l': ctx})

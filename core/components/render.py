@@ -4,7 +4,8 @@ from functools import lru_cache
 from typing import *
 
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename
-from core.components.htmlnode import HTMLTemplate, collect_template
+from core.components.htmlnode import HTMLTemplate
+from core.components.loader import collect_template
 from core.session import Session
 
 if TYPE_CHECKING:
@@ -155,6 +156,7 @@ class DefaultRenderer:
 
         elif template.tag_name[0].isupper():
             node_template = collect_template(self.ctx.session, template.tag_name)
+            if not node_template: return None
             node = c.Context(node_template, parent)
 
             # attach slots

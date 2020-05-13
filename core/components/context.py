@@ -8,8 +8,9 @@ from dataclasses import dataclass
 
 from attrdict import AttrDict
 
+from .loader import collect_template
 from ..common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
-from .htmlnode import HTMLTemplate, collect_template
+from .htmlnode import HTMLTemplate
 
 from .render import RenderNode, DefaultRenderer
 from ..oid import get_node
@@ -76,7 +77,7 @@ class Context(RenderNode):
 
 class HTMLElement(RenderNode):
     __slots__ = ['tag_name', 'attributes', 'classes', 'text', 'style',
-                 '_set_focus', '_metrics', '_metrics_cv', '_value', '_value_cv'
+                 '_set_focus', '_metrics', '_metrics_ev', '_value', '_value_ev'
                  ]
 
     def __new__(cls, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = ''):
@@ -115,15 +116,13 @@ class HTMLElement(RenderNode):
         if self is None: return
         self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
         self.session.metrics_stack.append(self)
-        with self._metrics_cv:
-            self._metrics_cv.notify()
+        self._metrics_ev.set()
 
     def request_metrics(self):
         if not hasattr(self, '_metrics_cv'):
-            self._metrics_cv = threading.Condition()
-        with self._metrics_cv:
-            self.session.request_metrics(self)
-            self._metrics_cv.wait()
+            self._metrics_ev = threading.Event()
+        self.session.request_metrics(self)
+        self._metrics_cv.wait()
 
     @property
     def metrics(self):
@@ -149,18 +148,16 @@ class HTMLElement(RenderNode):
         self = get_node(oid)
         if self is None: return
         self._value = value
-        with self._value_cv:
-            self._value_cv.notify()
+        self._value_ev.set()
 
     @property
     def value(self):
         if hasattr(self, '_value'):
             return self._value
         if not hasattr(self, '_value_cv'):
-            self._value_cv = threading.Condition()
-        with self._value_cv:
-            self.session.request_value(self)
-            self._value_cv.wait()
+            self._value_ev = threading.Event()
+        self.session.request_value(self)
+        self._value_ev.wait()
         return self._value
 
     def move(self, delta_x, delta_y):

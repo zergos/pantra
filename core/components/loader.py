@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import typing
@@ -14,13 +16,16 @@ from .grammar.BCDLexer import BCDLexer
 from .grammar.BCDParser import BCDParser
 from .grammar.BCDParserVisitor import BCDParserVisitor
 
-from logging import getLogger
+from core.defaults import CSS_PATH, COMPONENTS_PATH
 
-from ..defaults import CSS_PATH
+if typing.TYPE_CHECKING:
+    from core.session import Session
 
-logger = getLogger(__name__)
+__all__ = ['collect_styles', 'collect_template', 'refresh_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
+
+templates: typing.Dict[str, HTMLTemplate] = {}
 
 
 class MyVisitor(BCDParserVisitor):
@@ -122,34 +127,75 @@ class MyVisitor(BCDParserVisitor):
         macro.macro = ctx.children[1].getText()
 
     def visitErrorNode(self, node):
-        logger.error(f'{self.root.name}> {node.getText()}')
+        raise IllegalStateException(f'{self.root.filename}> wrong node {node.getText()}')
 
 
 class ErrorVisitor(ErrorListener):
-    def __init__(self, filename):
+    def __init__(self, filename, error_callback):
         super().__init__()
         self.filename = filename
+        self.error_callback = error_callback
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        logger.error(f"{self.filename}: line {line}:{column} {msg}")
+        self.error_callback(f"{self.filename}: line {line}:{column} {msg}")
 
 
-def load(filename: str):
+def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.Optional[HTMLTemplate]:
     in_stream = FileStream(filename, encoding='utf-8')
     lexer = BCDLexer(in_stream)
     stream = CommonTokenStream(lexer)
     parser = BCDParser(stream)
     parser.removeErrorListeners()
-    parser.addErrorListener(ErrorVisitor(filename))
+    parser.addErrorListener(ErrorVisitor(filename, error_callback))
     tree = parser.process()
 
     visitor = MyVisitor(filename)
-    visitor.visit(tree)
+    try:
+        visitor.visit(tree)
+    except IllegalStateException as e:
+        error_callback(str(e))
+        return None
     return visitor.root
 
 
+def _search_component(path, name):
+    for root, dirs, files in os.walk(path):
+        for file in files:  # type: str
+            if file.endswith('html'):
+                if os.path.basename(file) == f'{name}.html':
+                    return os.path.join(root, file)
+    return None
+
+
+def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
+    global templates
+
+    key = '/'.join([session.app, name])
+    if key in templates:
+        return templates[key]
+
+    path = _search_component(session.app, name)
+    if not path:
+        path = _search_component(COMPONENTS_PATH, name)
+        if not path:
+            session.error(f'component {name} not found')
+            return None
+
+    templates[key] = load(path, session.error)
+    if templates[key]:
+        templates[key].name = name
+    return templates[key]
+
+
+def refresh_template(filename: str):
+    for k, v in templates:  # type: str, HTMLTemplate
+        if v.filename == filename:
+            Session.error_later(f'component {k} has updated')
+            del templates[k]
+
+
 class StyleVisitor(BCDParserVisitor):
-    parser = cssutils.CSSParser(validate=False)
+    parser = cssutils.CSSParser(validate=False, raiseExceptions=True)
 
     def __init__(self, class_name: str):
         self.class_name = class_name
@@ -163,6 +209,7 @@ class StyleVisitor(BCDParserVisitor):
 
         text = ctx.getText()
         text = sass.compile(string=text, output_style='compact', include_paths=[CSS_PATH])
+
         if self.global_mode:
             self.styles.append(text)
         else:
@@ -199,6 +246,9 @@ class StyleVisitor(BCDParserVisitor):
     def visitRawCloseTag(self, ctx: BCDParser.RawCloseTagContext):
         self.in_style = False
 
+    def visitErrorNode(self, node):
+        raise IllegalStateException(f'wrong node {node.getText()}')
+
 
 def load_styles(name: str, filename: str):
     in_stream = FileStream(filename, encoding='utf-8')
@@ -210,3 +260,22 @@ def load_styles(name: str, filename: str):
     visitor = StyleVisitor(name)
     visitor.visit(tree)
     return '\n'.join(visitor.styles)
+
+
+def collect_styles(app_path, error_callback: typing.Callable[[str], None]) -> str:
+    styles = []
+    for root, dirs, files in os.walk(app_path):
+        for file in files:  # type: str
+            if file.endswith('html'):
+                name, ext = os.path.splitext(file)
+                path = os.path.join(root, file)
+                try:
+                    res = load_styles(name, path)
+                except Exception as e:
+                    error_callback(f'{path}> {e}')
+                else:
+                    if res:
+                        styles.append(res)
+
+    return '\n'.join(styles)
+
