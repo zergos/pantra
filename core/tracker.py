@@ -17,6 +17,7 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         super().__init__(['*.html'])
 
     def on_modified(self, event):
+        print(f'file {event.src_path} changed, refreshing')
         refresh_template(event.src_path)
 
 

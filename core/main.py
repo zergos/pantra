@@ -1,10 +1,13 @@
 import asyncio
 import sys
+import traceback
 from typing import *
+from concurrent.futures import TimeoutError
 
 import sass
 from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
+from aiohttp_session import setup, SimpleCookieStorage, get_session
 
 from core.components.context import Context, HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
@@ -23,8 +26,13 @@ routes = web.RouteTableDef()
 
 @routes.get(r'/{app:\w*}')
 async def get_main_page(request: Request):
+    session = await get_session(request)
     body = bootstrap.replace('{{hostname}}', f'{request.host}/{request.match_info["app"]}')
-    body = body.replace('{{session_id}}', Session.gen_session_id())
+    session_id = session.get('id')
+    if not session_id:
+        session_id = Session.gen_session_id()
+        session['id'] = session_id
+    body = body.replace('{{session_id}}', session_id)
     body = body.replace('{{app}}', request.match_info["app"])
     return web.Response(body=body, content_type='text/html')
 
@@ -49,23 +57,17 @@ async def get_ws(request: Request):
             if msg.type == WSMsgType.BINARY:
                 data = serializer.decode(msg.data)
                 command = data['C']
-                if command == 'REFRESH':
+                if command in ('REFRESH', 'UP'):
                     if session.just_connected:
                         session.just_connected = False
-                        shot = ContextShot()
-                        await session.remind_errors()
-                        await session.send_message({'m': 'rst'})
-
                         @thread_worker
-                        def build_root():
-                            ctx.render.build()
-                            session.root = ctx
-                            session.send_shot(shot)
-
-                        ctx = Context("Main", shot=shot, session=session)
-                        build_root()
+                        def restart():
+                            session.restart()
+                        restart()
                     else:
                         ctx = session.root
+                        if command == 'REFRESH':
+                            await session.send_root()
                         await session.recover_messages()
 
                 elif command == 'CLICK':
@@ -99,7 +101,7 @@ async def get_ws(request: Request):
         pass
     except Exception as e:
         session.ws = None
-        await session.send_message({'m': 'e', 'l': str(e)})
+        await session.send_message({'m': 'e', 'l': traceback.format_exc()})
     session.ws = None
 
     return ws
@@ -154,6 +156,8 @@ async def shutdown(app):
 async def main():
     app = web.Application()
     app.add_routes(routes)
+
+    setup(app, SimpleCookieStorage(cookie_name='s'))
 
     app.on_startup.append(startup)
     app.on_shutdown.append(shutdown)

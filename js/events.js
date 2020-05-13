@@ -16,14 +16,14 @@ class EventListener {
 class SimpleListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_click(this.method, this.oid || get_oid(event.target));
+        process_click(this.method, this.oid || OID.get(event.target));
     }
 }
 
 class SelectListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_select(this.method, this.oid || get_oid(event.target), event.target.selectedOptions);
+        process_select(this.method, this.oid || OID.get(event.target), event.target.selectedOptions);
     }
 }
 
@@ -32,7 +32,7 @@ let drag_events_attached = false;
 class DragListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_drag_start(this.method, this.oid || get_oid(event.target), event);
+        process_drag_start(this.method, this.oid || OID.get(event.target), event);
     }
 }
 
