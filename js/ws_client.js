@@ -4,6 +4,7 @@ class WSClient {
 		this.autoReconnectInterval = 5*1000;
 		this.connected = false;
 		this.init = false;
+		this.show_logs = false;
 	}
 	refresh(callback=null) {
 		if (!this.connected) {
@@ -26,7 +27,8 @@ class WSClient {
 		console.log('refreshing connection')
 	}
 	onopen() {
-		console.log(`WSClient: connected`);
+		if (this.show_logs)
+			console.log(`WSClient: connected`);
 		this.connected = true;
 		if (this.init)
 			this.onrefresh();
@@ -43,7 +45,8 @@ class WSClient {
 				this.reconnect();
 				break;
 			case 1000:
-				console.log('WSClient: connection suspended');
+				if (this.show_logs)
+					console.log('WSClient: connection suspended');
 				break;
 			default:
 				console.error(`WSClient: unrecoverable error ${e.code}`);
