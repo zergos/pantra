@@ -61,6 +61,11 @@ class UniNode:
     def __getitem__(self, item):
         return self.children[item]
 
+    def path(self):
+        if not self.parent:
+            return str(self)
+        return f'{self.parent.path()}/{self}'
+
 
 class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']

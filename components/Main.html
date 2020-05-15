@@ -1,5 +1,5 @@
 <GridX fullscreen>
-    <CardForm caption="Starting facility">
+    <CardForm ref:root caption="Starting facility">
         <SelectBox caption="Select user" wide>
             {{#for user in get_users()}}
             <SelectItem caption="{user}"></SelectItem>
@@ -13,17 +13,18 @@
             <InputPassword ref:passw caption="Password" required></InputPassword>
             <InputPassword ref:passw2 caption="Password again" required></InputPassword>
             <GridX>
-                <Button action="go" caption="Create and login"></Button>
+                <Button action="create_first_admin" caption="Create and login"></Button>
             </GridX>
         </InputBox>
         {{#else}}
         <InputPassword caption="Password"></InputPassword>
+        <Button action="login" caption="Login"></Button>
         {{/if}}
     </CardForm>
 </GridX>
 
 <python>
-from pony.orm import db_session
+from pony.orm import db_session, flush
 from db.models import User
 from core.ctx import *
 
@@ -36,11 +37,17 @@ def get_users():
     for user in User.select():
         yield user.name
 
-def go(node):
-    errors = 0
-    errors += refs.login.validate() is False
-    errors += refs.passw.validate() is False
-    errors += refs.passw2.validate(refs.passw.value == refs.passw2.value, "Passwords don't match") is False
-    ctx.session.log(f'errors: {errors}')
+def create_first_admin(node):
+    ok = True
+    ok &= refs.login.validate()
+    ok &= refs.passw.validate()
+    ok &= refs.passw2.validate(refs.passw.value == refs.passw2.value, "Passwords don't match")
+    if ok:
+        with db_session:
+            admin = User(name = refs.login.value, is_admin=True)
+            admin.set_password(refs.passw.value)
+        refs.root.update_tree()
 
+def login(node):
+    pass
 </python>

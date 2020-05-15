@@ -88,16 +88,18 @@ class DefaultRenderer:
     def build(self):
         self.build_node(self.ctx.template, self.ctx)
 
-    def trace_eval(self, text: str, node: AnyNode):
+    @staticmethod
+    def trace_eval(ctx: Context, text: str, node: AnyNode):
         try:
-            return eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
+            return eval(text, {'ctx': ctx, 'this': node}, ctx.locals)
         except Exception as e:
-            self.ctx.session.error(f'{self.ctx.template.name}/{node}: evaluation error: {e}')
+            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {e}')
             return None
 
     def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
         # return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
-        return lambda: self.trace_eval(text, node)
+        ctx = self.ctx  # save ctx to lambda instead of self, as ctx could be temporarily changed by slot
+        return lambda: self.trace_eval(ctx, text, node)
 
     @staticmethod
     def strip_quotes(s):
@@ -132,7 +134,7 @@ class DefaultRenderer:
             return True
         elif attr.startswith('class:'):
             cls = attr.split(':')[1].strip()
-            if value in None:
+            if value is None:
                 func = lambda: self.ctx.locals[cls]
             else:
                 value = self.strip_quotes(value)
@@ -231,10 +233,14 @@ class DefaultRenderer:
                 for child in template.children:
                     self.build_node(child, parent)
             else:
+                # temporarily replace local context
+                # I know it's dirty, but it eliminates the need to add param context to all builders
                 current_ctx = self.ctx
+                parent.context = slot.ctx
                 self.ctx = slot.ctx
                 for child in slot_template.children:
                     self.build_node(child, parent)
+                parent.context = current_ctx
                 self.ctx = current_ctx
 
         elif template.tag_name == 'python':
@@ -311,8 +317,11 @@ class DefaultRenderer:
         return node
 
     def update_children(self, node: AnyNode):
-        for child in node.children:
-            self.update(child, True)
+        for child in node.children:  # type: AnyNode
+            if child.context == self.ctx:
+                self.update(child, True)
+            else:
+                child.update_tree()
 
     def update(self, node: AnyNode, recursive: bool = False):
         if typename(node) in ('HTMLElement', 'NSElement'):

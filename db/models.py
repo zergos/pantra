@@ -11,9 +11,9 @@ class User(db.Entity):
     name = Required(str)
     password = Optional(str)
     salt = Optional(str)
-    email = Required(str, unique=True)
+    email = Optional(str, unique=True)
     created_at = Required(datetime, sql_default='CURRENT_TIMESTAMP')
-    is_admin = Required(bool)
+    is_admin = Required(bool, default=False)
 
     apps = Set('App')
 

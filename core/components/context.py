@@ -79,7 +79,9 @@ class Context(RenderNode):
         else:
             object.__getattribute__(self, 'locals')[key] = value
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: Union[str, int]):
+        if type(item) == int:
+            return self.children[item]
         if item in self.locals:
             return self.locals[item]
         return self.parent.context[item] if self.parent else EmptyCaller()
@@ -88,7 +90,7 @@ class Context(RenderNode):
         self.locals[key] = value
 
     def __str__(self):
-        return f'Context: {self.template.name} {self.oid}'
+        return f'${self.template.name}'
 
 
 class ConditionalClass(NamedTuple):
@@ -203,18 +205,20 @@ class HTMLElement(RenderNode):
     def focus(self):
         self._set_focus = True
 
-    def __getitem__(self, item: str):
+    def __getitem__(self, item: Union[str, int]):
+        if type(item) == int:
+            return self.children[item]
         return self.context[item]
 
     def __str__(self):
-        return f'HTML: {self.tag_name} {self.oid}'
+        return self.tag_name
 
 
 class NSElement(HTMLElement):
     __slots__ = ['ns_type']
 
     def __str__(self):
-        return f'{NSType(self.ns_type).name}: {self.tag_name} {self.oid}'
+        return f'{NSType(self.ns_type).name}:{self.tag_name}'
 
 
 @dataclass
@@ -240,7 +244,7 @@ class ConditionNode(RenderNode):
         return 'condition'
 
     def __str__(self):
-        return f'Condition {self.oid}'
+        return '?'
 
 
 class LoopNode(RenderNode):
@@ -262,7 +266,7 @@ class LoopNode(RenderNode):
         return 'loop'
 
     def __str__(self):
-        return f'Loop {self.oid}'
+        return '⟳'
 
 
 class TextNode(RenderNode):
@@ -280,7 +284,7 @@ class TextNode(RenderNode):
         return 'text'
 
     def __str__(self):
-        return f'Text {self.oid}'
+        return f'Text'
 
 
 class EventNode(RenderNode):
