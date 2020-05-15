@@ -13,8 +13,13 @@ def typename(t):
 
 class ADict(dict):
     __setattr__ = dict.__setitem__
-    __getattr__ = dict.__getitem__
     __delattr__ = dict.__delitem__
+
+    def __getattr__(self, item):
+        try:
+            return self.__getitem__(item)
+        except KeyError:
+            raise AttributeError
 
 
 class UniNode:
