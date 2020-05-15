@@ -17,9 +17,26 @@ class ADict(dict):
 
     def __getattr__(self, item):
         try:
-            return self.__getitem__(item)
+            return self[item]
         except KeyError:
             raise AttributeError
+
+
+class HookDict(ADict):
+    @staticmethod
+    def hook_set():
+        HookDict.__getitem__ = HookDict.hook__getitem__
+
+    @staticmethod
+    def hook_clear():
+        HookDict.__getitem__ = ADict.__getitem__
+
+    @staticmethod
+    def hook__getitem__(self, item):
+        res = ADict.__getitem__(self, item)
+        if item != '_hook':
+            ADict.__getitem__(self, '_hook')(item)
+        return res
 
 
 class UniNode:

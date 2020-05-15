@@ -20,6 +20,7 @@ class SimpleListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
         process_click(this.method, this.get_oid(event));
+        event.preventDefault();
     }
 }
 

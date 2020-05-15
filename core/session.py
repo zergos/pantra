@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import os
 import random
 import string
 import functools
@@ -9,6 +11,8 @@ from aiohttp import web
 
 from core.common import ADict, UniNode, typename
 from core.workers import async_worker
+from defaults import APPS_PATH
+
 if TYPE_CHECKING:
     from core.components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
 
@@ -44,10 +48,14 @@ class Session:
         from core.components.context import Context
         self.send_message({'m': 'rst'})
         shot = ContextShot()
-        ctx = Context("Main", shot=shot, session=self)
-        ctx.render.build()
-        self.root = ctx
-        self.send_shot()
+        try:
+            ctx = Context("Main", shot=shot, session=self)
+            if ctx.template:
+                ctx.render.build()
+                self.root = ctx
+                self.send_shot()
+        except Exception as e:
+            print(traceback.format_exc())
         self.remind_errors()
 
     @async_worker
@@ -114,6 +122,14 @@ class Session:
 
     def log(self, message):
         self.send_message({'m': 'log', 'l': message})
+
+    @staticmethod
+    def get_apps():
+        (_, dirs, _) = next(os.walk(APPS_PATH), (None, [], None))
+        return dirs
+
+    def start_app(self, app):
+        self.send_message({'m': 'app', 'l': app})
 
 
 def trace_errors(func):

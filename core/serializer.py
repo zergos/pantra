@@ -21,7 +21,7 @@ class HTMLElementSerializer(bsdf.Extension):
         return isinstance(v, HTMLElement)
 
     def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
-        res = {'n': v.tag_name, 'i': v.oid, 'p': get_parent_oid(v), 'a': v.attributes, 'C': v.classes + v.con_classes(), 't': v.text, 's': str(v.style), 'f': v._set_focus}
+        res = {'n': v.tag_name, 'i': v.oid, 'p': get_parent_oid(v), 'a': v.attributes, 'C': v.classes + v.con_classes.cache, 't': v.text, 's': str(v.style), 'f': v._set_focus}
         if type(v) == NSElement:
             res['x'] = v.ns_type.value
         return res

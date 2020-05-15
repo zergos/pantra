@@ -134,14 +134,15 @@ class DefaultRenderer:
             return True
         elif attr.startswith('class:'):
             cls = attr.split(':')[1].strip()
+            ctx = self.ctx
             if value is None:
-                func = lambda: self.ctx.locals[cls]
+                func = lambda: ctx.locals[cls]
             else:
                 value = self.strip_quotes(value)
                 if '{' in value:
                     func = self.build_func(value.strip('{}'), node)
                 else:
-                    func = lambda: self.ctx.locals[value]
+                    func = lambda: ctx.locals[value]
             node.con_classes.append((func, cls))
             return True
         elif attr == 'on:render':
@@ -150,7 +151,8 @@ class DefaultRenderer:
             return True
         elif attr == 'bind:value':
             value = self.strip_quotes(value)
-            node.attributes.value = DynamicString(lambda: self.ctx.locals.get(value))
+            ctx = self.ctx
+            node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
             return False
         elif attr == 'style':
             if '{' in value:
@@ -172,7 +174,7 @@ class DefaultRenderer:
                     else:
                         item = c.Condition((lambda: True), child_template)
                     node.conditions.append(item)
-                self.update(node)
+                self.update(node, record_reactions=True)
 
             elif template.tag_name == '#for':
                 node: c.LoopNode = c.LoopNode(parent, template.children[0])
@@ -194,9 +196,10 @@ class DefaultRenderer:
                 node.slot = c.Slot(self.ctx, template)
 
             # evaluate attributes
-            for attr, value in template.attributes.items():
-                if not self.process_special_attribute(attr, value, node):
-                    node.locals[attr] = self.build_string(value, node) if value else True
+            with self.ctx.record_reactions(node):
+                for attr, value in template.attributes.items():
+                    if not self.process_special_attribute(attr, value, node):
+                        node.locals[attr] = self.build_string(value, node) if value else True
 
             node.render.build()
 
@@ -207,11 +210,12 @@ class DefaultRenderer:
             node = parent
             node.template = node_template
             # evaluate attributes
-            for attr, value in template.attributes.items():
-                if attr == 'template':
-                    continue
-                if not self.process_special_attribute(attr, value, node):
-                    node.locals[attr] = self.build_string(value, node)
+            with self.ctx.record_reactions(node):
+                for attr, value in template.attributes.items():
+                    if attr == 'template':
+                        continue
+                    if not self.process_special_attribute(attr, value, node):
+                        node.locals[attr] = self.build_string(value, node)
 
             node.render.build()
 
@@ -281,6 +285,9 @@ class DefaultRenderer:
         elif template.tag_name == '@text':
             node = c.TextNode(parent, self.strip_quotes(template.text))
 
+        elif template.tag_name == '@macro':
+            node = c.TextNode(parent, DynamicString(self.build_func(template.macro, node)))
+
         elif template.tag_name[0] == '$':
             node = self.ctx
             node.context = node
@@ -292,28 +299,34 @@ class DefaultRenderer:
             # reconstruct HTML element
 
             node = c.HTMLElement(template.tag_name, parent=parent)
-            # evaluate attributes
-            for attr, value in template.attributes.items():
-                if not self.process_special_attribute(attr, value, node):
-                    node.attributes[attr] = self.build_string(value, node)
 
-            node.classes = self.build_string(template.classes, node)
-            if node.classes is None:
-                node.classes = DynamicClasses()
-            elif type(node.classes) == str:
-                node.classes = DynamicClasses(node.classes)
+            with self.ctx.record_reactions(node):
+                # evaluate attributes
+                for attr, value in template.attributes.items():
+                    if not self.process_special_attribute(attr, value, node):
+                        node.attributes[attr] = self.build_string(value, node)
 
-            # evaluate body
-            # element.text = self.build_string(template.text)
+                node.classes = self.build_string(template.classes, node)
+                if node.classes is None:
+                    node.classes = DynamicClasses()
+                elif type(node.classes) == str:
+                    node.classes = DynamicClasses(node.classes)
+                node.con_classes()
 
-            # evaluate children
-            if template.tag_name == 'macro':
-                node.text = DynamicString(self.build_func(template.macro, node))
-            elif len(template.children) == 1 and template.children[0].tag_name == '@text':
-                node.text = template.children[0].text
-            else:
-                for child in template.children:
-                    self.build_node(child, node)
+                # evaluate body
+                # element.text = self.build_string(template.text)
+
+                # evaluate children
+                if len(template.children) == 1:
+                    if template.children[0].tag_name == '@text':
+                        node.text = template.children[0].text
+                        return node
+                    elif template.children[0].tag_name == '@macro':
+                        node.text = DynamicString(self.build_func(template.children[0].macro, node))
+                        return node
+
+            for child in template.children:
+                self.build_node(child, node)
         return node
 
     def update_children(self, node: AnyNode):
@@ -323,7 +336,7 @@ class DefaultRenderer:
             else:
                 child.update_tree()
 
-    def update(self, node: AnyNode, recursive: bool = False):
+    def update(self, node: AnyNode, recursive: bool = False, record_reactions: bool = False):
         if typename(node) in ('HTMLElement', 'NSElement'):
             # attributes, classes and text evaluation
             for k, v in node.attributes.items():
@@ -334,6 +347,7 @@ class DefaultRenderer:
             else:
                 if type(node.classes) == str:
                     node.classes = DynamicClasses(node.classes)
+            node.con_classes()
 
             if type(node.style) == DynamicString:
                 node.style = node.style()
@@ -359,11 +373,18 @@ class DefaultRenderer:
         elif typename(node) == 'ConditionNode':
             state: int = -1
             condition: Optional[Condition] = None
-            for i, c in enumerate(node.conditions):
-                if c.func():
-                    state = i
-                    condition = c
-                    break
+            if record_reactions:
+                with self.ctx.record_reactions(node):
+                    for i, c in enumerate(node.conditions):
+                        if c.func() and state < 0:
+                            state = i
+                            condition = c
+            else:
+                for i, c in enumerate(node.conditions):
+                    if c.func():
+                        state = i
+                        condition = c
+                        break
 
             if node.state != state:
                 if node.state >= 0:
@@ -380,11 +401,13 @@ class DefaultRenderer:
         elif typename(node) == 'LoopNode':
             node.empty()
             empty = True
-            for value in node.iterator():
-                empty = False
-                self.ctx.locals[node.var_name] = value
-                for temp_child in node.template.children:
-                    self.build_node(temp_child, node)
+            iter = node.iterator()
+            if iter:
+                for value in iter:
+                    empty = False
+                    self.ctx.locals[node.var_name] = value
+                    for temp_child in node.template.children:
+                        self.build_node(temp_child, node)
             if empty and node.else_template:
                 for temp_child in node.else_template.children:
                     self.build_node(temp_child, node)

@@ -65,7 +65,7 @@ label {
   }
 
   &.error {
-    > input {
+    > input, > select {
      border-color: $color-error !important;
     }
     > .message {

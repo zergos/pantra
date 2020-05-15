@@ -24,5 +24,6 @@ MIGRATION_PATH = os.path.join(BASE_PATH, 'migrations')
 
 TASK_THREADS = 2
 SOCKET_TIMEOUT = 300
+MAX_MESSAGE_SIZE = 4 * 1024 * 1024
 
 DEFAULT_APP = COMPONENTS_PATH #os.path.join(BASE_PATH, 'apps', 'score_parser')

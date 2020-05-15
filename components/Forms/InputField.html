@@ -17,9 +17,7 @@ placeholder: str = ''
 error: str = ''
 
 def set_error(err):
-    global error
-    error = err
-    ctx.update_tree()
+    ctx.error = err
 
 def validate(condition = None, message: str = ''):
     if condition is not None:

@@ -131,7 +131,7 @@ class MyVisitor(BCDParserVisitor):
         self.current = self.current.parent
 
     def visitInlineMacro(self, ctx: BCDParser.InlineMacroContext):
-        macro = HTMLTemplate('macro', parent=self.current)
+        macro = HTMLTemplate('@macro', parent=self.current)
         macro.macro = ctx.children[1].getText()
 
     def visitErrorNode(self, node):

@@ -10,46 +10,70 @@ main.onrefresh = () => {
 
 main.onmessage = (data) => {
     let obj = serializer.decode(data);
-    if (obj.m === 'u') {
-        //root_node().style.visibility = 'visible';
-    } else if (obj.m === 'c') {
-        let display = root_node();
-        display.innerText = '';
-        display.append(obj.l);
-    } else if (obj.m === 'e') {
-        console.error(obj.l);
-    } else if (obj.m === 'd') {
-        for (let v of obj.l) {
-            let element = OID.node(v);
-            if (!!element) {
-                se_log(`removing ${v} ${element.tagName}`);
-                element.remove();
-                OID.delete(v);
+    switch (obj.m) {
+        case 'u':
+            //root_node().style.visibility = 'visible';
+            break;
+
+        case 'c':
+            let display = root_node();
+            display.innerText = '';
+            display.append(obj.l);
+            break;
+
+        case 'e':
+            console.error(obj.l);
+            break;
+
+        case 'd':
+            for (let v of obj.l) {
+                let element = OID.node(v);
+                if (!!element) {
+                    se_log(`removing ${v} ${element.tagName}`);
+                    element.remove();
+                    OID.delete(v);
+                }
             }
+            //root_node().style.visibility = 'hidden';
+            break;
+
+        case 'm': {
+            let node = OID.node(obj.l);
+            let rect = node.getBoundingClientRect();
+            send_message({
+                C: 'M',
+                oid: obj.l,
+                x: Math.round(rect.left),
+                y: Math.round(rect.top),
+                w: Math.round(rect.width),
+                h: Math.round(rect.height)
+            });
+            break;
         }
-        //root_node().style.visibility = 'hidden';
-    } else if (obj.m === 'm') {
-        let node = OID.node(obj.l);
-        let rect = node.getBoundingClientRect();
-        send_message({
-            C: 'M',
-            oid: obj.l,
-            x: Math.round(rect.left),
-            y: Math.round(rect.top),
-            w: Math.round(rect.width),
-            h: Math.round(rect.height)
-        });
-    } else if (obj.m === 'v') {
-        let node = OID.node(obj.l);
-        send_message({C: 'V', oid: obj.l, value: node.value});
-    } else if (obj.m === 'dm') {
-        drag_mode_active = true;
-    } else if (obj.m === 'log') {
-        console.log(obj.l);
-    } else if (obj.m === 'rst') {
-        root_node().textContent = '';
-        OID.clear();
-        drag_mode_active = false;
+
+        case 'v': {
+            let node = OID.node(obj.l);
+            send_message({C: 'V', oid: obj.l, value: node.value});
+            break;
+        }
+
+        case 'dm':
+            drag_mode_active = true;
+            break;
+
+        case 'log':
+            console.log(obj.l);
+            break;
+
+        case 'rst':
+            root_node().textContent = '';
+            OID.clear();
+            drag_mode_active = false;
+            break;
+
+        case 'app':
+            document.location = obj.l;
+            break;
     }
 };
 

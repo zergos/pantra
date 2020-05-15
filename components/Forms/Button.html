@@ -1,6 +1,8 @@
-<button type="button" on:click="action">{{caption}}</button>
+<button type="{'submit' if default else 'button'}" on:click="action">{{caption}}</button>
 
 <python>
+default: bool = False
+
 def action(node):
     pass
 </python>

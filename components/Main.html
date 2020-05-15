@@ -1,6 +1,12 @@
 <GridX fullscreen>
     <CardForm ref:root caption="Starting facility">
-        <SelectBox caption="Select user" wide>
+        <SelectBox ref:app caption="Select app" blank wide>
+            <SelectItem caption="system"></SelectItem>
+            {{#for app in get_apps()}}
+            <SelectItem caption="{app}"></SelectItem>
+            {{/for}}
+        </SelectBox>
+        <SelectBox ref:user caption="Select user" blank wide>
             {{#for user in get_users()}}
             <SelectItem caption="{user}"></SelectItem>
             {{#else}}
@@ -13,24 +19,29 @@
             <InputPassword ref:passw caption="Password" required></InputPassword>
             <InputPassword ref:passw2 caption="Password again" required></InputPassword>
             <GridX>
-                <Button action="create_first_admin" caption="Create and login"></Button>
+                <Button default action="create_first_admin" caption="Create and login"></Button>
             </GridX>
         </InputBox>
         {{#else}}
-        <InputPassword caption="Password"></InputPassword>
-        <Button action="login" caption="Login"></Button>
+        <InputPassword ref:password caption="Password"></InputPassword>
+        <GridX>
+            <Button default action="login" caption="Login"></Button>
+        </GridX>
         {{/if}}
     </CardForm>
 </GridX>
 
 <python>
-from pony.orm import db_session, flush
+from pony.orm import db_session
 from db.models import User
 from core.ctx import *
 
 @db_session
 def get_users_count():
     return User.select().count()
+
+def get_apps():
+    return ctx.session.get_apps()
 
 @db_session
 def get_users():
@@ -48,6 +59,10 @@ def create_first_admin(node):
             admin.set_password(refs.passw.value)
         refs.root.update_tree()
 
+@db_session
 def login(node):
-    pass
+    username = refs.user.value
+    user = User.get(name=username)
+    refs.user.error = 'User not available'
+
 </python>

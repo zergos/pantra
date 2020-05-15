@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import inspect
 import threading
+from collections import defaultdict
+from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
 from typing import *
 from dataclasses import dataclass
 
-from core.common import ADict
+from core.common import ADict, HookDict
 
 from .loader import collect_template
 from ..common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
@@ -39,10 +41,10 @@ class Slot(NamedTuple):
 
 
 class Context(RenderNode):
-    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type']
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type', 'react_vars']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
-        self.locals: ADict = ADict()
+        self.locals: HookDict = HookDict()
         self._executed: bool = False
         self.refs: Dict[str, Union['Context', HTMLElement]] = ADict()
         self.slot: Optional[Slot] = None
@@ -58,12 +60,22 @@ class Context(RenderNode):
         self.render_base = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
+        self.react_vars: Dict[str, Set] = defaultdict(set)
+
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement(self.template.name, new_parent)
 
     @property
     def tag_name(self):
         return self.template.name
+
+    @contextmanager
+    def record_reactions(self, node: AnyNode):
+        self.locals._hook = lambda item: self.react_vars[item].add(node)
+        HookDict.hook_set()
+        yield
+        HookDict.hook_clear()
+        del self.locals['_hook']
 
     def __getattr__(self, item):
         if hasattr(Context, item):
@@ -78,6 +90,9 @@ class Context(RenderNode):
             object.__setattr__(self, key, value)
         else:
             object.__getattribute__(self, 'locals')[key] = value
+            if key in self.react_vars:
+                for node in self.react_vars[key]:
+                    node.update()
 
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
@@ -99,7 +114,11 @@ class ConditionalClass(NamedTuple):
 
 
 class ConditionalClasses(list):
-    __slots__ = []
+    __slots__ = ['cache']
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.cache = ''
 
     def __call__(self):
         if not self:
@@ -108,7 +127,8 @@ class ConditionalClasses(list):
         for check in self:
             if check[0]():
                 res.append(check[1])
-        return ' '.join(res)
+        self.cache = ' '.join(res)
+        return self.cache
 
 
 class HTMLElement(RenderNode):
@@ -272,9 +292,9 @@ class LoopNode(RenderNode):
 class TextNode(RenderNode):
     __slots__ = ['text']
 
-    def __init__(self, parent: RenderNode, text: str):
+    def __init__(self, parent: RenderNode, text: Union[DynamicString, str]):
         super().__init__(parent, True)
-        self.text: str = text
+        self.text: Union[DynamicString, str] = text
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return TextNode(new_parent, self.text)

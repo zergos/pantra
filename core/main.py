@@ -38,7 +38,7 @@ async def get_main_page(request: Request):
 
 @routes.get(r'/{app:\w*}/ws/{session_id:\w+}')
 async def get_ws(request: Request):
-    ws = web.WebSocketResponse(receive_timeout=SOCKET_TIMEOUT)
+    ws = web.WebSocketResponse(receive_timeout=SOCKET_TIMEOUT, max_msg_size=MAX_MESSAGE_SIZE)
     await ws.prepare(request)
 
     app = request.match_info['app']
