@@ -1,30 +1,46 @@
-<h1 ref:caption>Mini app tester</h1>
-
-<Menu ref:menu caption="Main menu">
-    <MenuItem caption="Test" action="do_test" />
-</Menu>
-<div ref:mdi_container />
-
-<DataTable ref:table src="TestTable"></DataTable>
-
-<button on:click="do_demo">Demo</button>
-<button on:click="do_demo2">Demo2</button>
-
-<style>
-    h1 {color: green;}
-</style>
+<GridX fullscreen>
+    <CardForm caption="Starting facility">
+        <SelectBox caption="Select user" wide>
+            {{#for user in get_users()}}
+            <SelectItem caption="{user}"></SelectItem>
+            {{#else}}
+            <option disabled>no users available</option>
+            {{/for}}
+        </SelectBox>
+        {{#if not get_users_count()}}
+        <InputBox caption="Create new admin user">
+            <InputText ref:login caption="Login" required></InputText>
+            <InputPassword ref:passw caption="Password" required></InputPassword>
+            <InputPassword ref:passw2 caption="Password again" required></InputPassword>
+            <GridX>
+                <Button action="go" caption="Create and login"></Button>
+            </GridX>
+        </InputBox>
+        {{#else}}
+        <InputPassword caption="Password"></InputPassword>
+        {{/if}}
+    </CardForm>
+</GridX>
 
 <python>
+from pony.orm import db_session
+from db.models import User
 from core.ctx import *
 
-def do_test(node):
-    refs.mdi_container.render("Hello")
+@db_session
+def get_users_count():
+    return User.select().count()
 
-def do_demo(node):
-    refs.caption.attributes.style = "color: red;"
-    refs.caption.render("123")
+@db_session
+def get_users():
+    for user in User.select():
+        yield user.name
 
-def do_demo2(node):
-    refs.table.update()
+def go(node):
+    errors = 0
+    errors += refs.login.validate() is False
+    errors += refs.passw.validate() is False
+    errors += refs.passw2.validate(refs.passw.value == refs.passw2.value, "Passwords don't match") is False
+    ctx.session.log(f'errors: {errors}')
 
 </python>

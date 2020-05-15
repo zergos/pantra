@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import inspect
 import threading
 from copy import deepcopy
 from enum import Enum, auto
 from typing import *
 from dataclasses import dataclass
 
-from attrdict import AttrDict
+from core.common import ADict
 
 from .loader import collect_template
 from ..common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 
 
 AnyNode = Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
+
 
 class NSType(Enum):
     HTML = auto()       # http://www.w3.org/1999/xhtml
@@ -40,9 +42,9 @@ class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
-        self.locals: AttrDict = AttrDict()
+        self.locals: ADict = ADict()
         self._executed: bool = False
-        self.refs: Dict[str, Union['Context', HTMLElement]] = AttrDict()
+        self.refs: Dict[str, Union['Context', HTMLElement]] = ADict()
         self.slot: Optional[Slot] = None
 
         super().__init__(parent=parent, render_this=True, shot=shot, session=session)
@@ -63,6 +65,20 @@ class Context(RenderNode):
     def tag_name(self):
         return self.template.name
 
+    def __getattr__(self, item):
+        if hasattr(Context, item):
+            return object.__getattribute__(self, item)
+        if item in self.locals:
+            return self.locals[item]
+        else:
+            raise AttributeError
+
+    def __setattr__(self, key, value):
+        if hasattr(Context, key):
+            object.__setattr__(self, key, value)
+        else:
+            object.__getattribute__(self, 'locals')[key] = value
+
     def __getitem__(self, item: str):
         if item in self.locals:
             return self.locals[item]
@@ -75,30 +91,49 @@ class Context(RenderNode):
         return f'Context: {self.template.name} {self.oid}'
 
 
+class ConditionalClass(NamedTuple):
+    condition: Callable[[], bool]
+    cls: str
+
+
+class ConditionalClasses(list):
+    __slots__ = []
+
+    def __call__(self):
+        if not self:
+            return ''
+        res = []
+        for check in self:
+            if check[0]():
+                res.append(check[1])
+        return ' '.join(res)
+
+
 class HTMLElement(RenderNode):
-    __slots__ = ['tag_name', 'attributes', 'classes', 'text', 'style',
+    __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style',
                  '_set_focus', '_metrics', '_metrics_ev', '_value', '_value_ev'
                  ]
 
-    def __new__(cls, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = ''):
+    def __new__(cls, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
         if parent and not parent.context.ns_type:
             return super().__new__(cls)
         instance = super().__new__(NSElement)
         instance.ns_type = parent.context.ns_type
         return instance
 
-    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, AttrDict]] = None, text: str = ''):
+    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
         super().__init__(parent, True)
         self.tag_name: str = tag_name
-        self.attributes: AttrDict = attributes and AttrDict(attributes) or AttrDict()
-        self.classes: Optional[Union[DynamicClasses, DynamicString, str]] = DynamicClasses()
+        self.attributes: ADict = attributes and ADict(attributes) or ADict()
+        self.classes: Union[DynamicClasses, DynamicString, str] = DynamicClasses()
+        self.con_classes: ConditionalClasses = ConditionalClasses()
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
         self.text: Union[DynamicString, str] = text
         self._set_focus = False
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         clone: HTMLElement = HTMLElement(self.tag_name, new_parent)
-        clone.attributes = AttrDict({
+        clone.attributes = ADict({
             k: v
             for k, v in self.attributes.items() if k[:3] != 'on:' and not k.startswith('ref:')
         })
@@ -122,7 +157,7 @@ class HTMLElement(RenderNode):
         if not hasattr(self, '_metrics_cv'):
             self._metrics_ev = threading.Event()
         self.session.request_metrics(self)
-        self._metrics_cv.wait()
+        self._metrics_ev.wait()
 
     @property
     def metrics(self):
@@ -133,9 +168,9 @@ class HTMLElement(RenderNode):
 
     def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]], shift: int = 0, grow: int = 0):
         if isinstance(m, dict):
-            m = AttrDict(m)
+            m = ADict(m)
         elif isinstance(m, list):
-            m = AttrDict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
+            m = ADict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
         self.style.position = 'fixed'
         self.style.left = WebUnits(m.left) + shift
         self.style.top = WebUnits(m.top) + shift
@@ -209,7 +244,7 @@ class ConditionNode(RenderNode):
 
 
 class LoopNode(RenderNode):
-    __slots__ = ['template', 'var_name', 'iterator']
+    __slots__ = ['template', 'else_template', 'var_name', 'iterator']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
         super().__init__(parent, False)
@@ -217,6 +252,7 @@ class LoopNode(RenderNode):
         self.template: Optional[HTMLTemplate] = template
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
+        self.else_template: Optional[HTMLElement] = None
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('loop', new_parent)
@@ -250,7 +286,7 @@ class TextNode(RenderNode):
 class EventNode(RenderNode):
     __slots__ = ['attributes']
 
-    def __init__(self, parent: RenderNode, attributes: Optional[AttrDict] = None):
+    def __init__(self, parent: RenderNode, attributes: Optional[ADict] = None):
         super().__init__(parent, True)
-        self.attributes = attributes or AttrDict()
+        self.attributes = attributes or ADict()
 

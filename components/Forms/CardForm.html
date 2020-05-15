@@ -1,0 +1,38 @@
+<form class:with-header="caption">
+    {{#if caption}}
+    <div class="header">{{caption}}</div>
+    <div class="content">
+        <slot></slot>
+    </div>
+    {{#else}}
+    <slot></slot>
+    {{/if}}
+</form>
+
+<style type="text/scss">
+    @import "defaults";
+
+    .header {
+        width: 100%;
+        text-align: center;
+        font-weight: bold;
+        padding: 0.5em;
+        background-color: $color-decoration;
+        border: $form-border;
+        color: $header-color;
+        border-top-left-radius: $form-radius;
+        border-top-right-radius: $form-radius;
+    }
+
+    form.with-header {
+        padding: 0;
+
+        > .content {
+            padding: $form-padding;
+        }
+    }
+</style>
+
+<python>
+caption: str = ''
+</python>

@@ -6,12 +6,11 @@ import traceback
 from queue import Queue
 from typing import *
 from aiohttp import web
-from attrdict import AttrDict
 
+from core.common import ADict, UniNode, typename
 from core.workers import async_worker
 if TYPE_CHECKING:
-    from core.components.context import Context, ContextShot, RenderNode, HTMLElement
-    from core.common import UniNode
+    from core.components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
 
 
 class Session:
@@ -28,7 +27,7 @@ class Session:
 
     def __init__(self, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
         if not hasattr(self, "state"):
-            self.state: AttrDict = AttrDict()
+            self.state: ADict = ADict()
             self.just_connected: bool = True
             self.root: Optional[Context] = None
             self.app: Optional[str] = app
@@ -44,12 +43,12 @@ class Session:
         from core.components.render import ContextShot
         from core.components.context import Context
         self.send_message({'m': 'rst'})
-        self.remind_errors()
         shot = ContextShot()
         ctx = Context("Main", shot=shot, session=self)
         ctx.render.build()
         self.root = ctx
-        self.send_shot(shot)
+        self.send_shot()
+        self.remind_errors()
 
     @async_worker
     async def send_message(self, message: Dict['str', Any]):
@@ -79,21 +78,27 @@ class Session:
     def send_context(self, ctx: Context):
         self.send_message({'m': 'c', 'l': ctx})
 
-    def send_shot(self, shot: ContextShot):
+    def send_shot(self):
+        shot: ContextShot = self.root.shot
         if shot.deleted:
             self.send_message({'m': 'd', 'l': list(shot.deleted)})
         if shot.updated:
             self.send_message({'m': 'u', 'l': shot.rendered})
         shot.reset()
 
-    def _collect_children(self, node: UniNode, lst: List[UniNode]):
-        lst.append(node)
-        for child in node.children:
-            self._collect_children(child, lst)
+    def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
+        for child in children:  # type: AnyNode
+            if not child:
+                continue
+            if not child.render_this or typename(child) == 'Context' and not child.render_base:
+                pass
+            else:
+                lst.append(child)
+            self._collect_children(child.children, lst)
 
     async def send_root(self):
         lst = []
-        self._collect_children(self.root, lst)
+        self._collect_children([self.root], lst)
         await self.send_message({'m': 'u', 'l': lst})
 
     def request_metrics(self, node: RenderNode):
@@ -114,11 +119,13 @@ class Session:
 def trace_errors(func):
     @functools.wraps(func)
     def res(*args, **kwargs):
+        if args[0] is None:
+            return
         try:
             func(*args, **kwargs)
         except:
-            args[0].session.error(traceback.format_exc())
+            args[0].error(traceback.format_exc())
         else:
-            args[0].session.send_shot(args[0].shot)
+            args[0].send_shot()
     res.call = func
     return res

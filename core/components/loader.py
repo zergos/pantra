@@ -21,7 +21,7 @@ from core.defaults import CSS_PATH, COMPONENTS_PATH
 if typing.TYPE_CHECKING:
     from core.session import Session
 
-__all__ = ['collect_styles', 'collect_template', 'refresh_template']
+__all__ = ['collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
 
@@ -92,23 +92,31 @@ class MyVisitor(BCDParserVisitor):
             raise IllegalStateException(f"close tag don't match {tag_name}")
         self.current = self.current.parent
 
-    def visitMacroBegin(self, ctx: BCDParser.MacroBeginContext):
-        self.current = HTMLTemplate("#condition", parent=self.current)
-        self.visitChildren(ctx)
-
     def visitMacroCommand(self, ctx: BCDParser.MacroCommandContext):
         command = ctx.getText()
+
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
-        self.current.tag_name = '#' + macro_chunks.group(1).strip()
-        self.current.macro = macro_chunks.group(2).strip()
+        if not macro_chunks:
+            tag_name = '#' + command.strip()
+            macro = ''
+        else:
+            tag_name = '#' + macro_chunks.group(1).strip()
+            macro = macro_chunks.group(2).strip()
 
         # gen 'if' subtree
-        if self.current.tag_name == '#if':
-            self.current = HTMLTemplate('#choice', parent=self.current)
-            self.current.macro = self.current.parent.macro
-        elif self.current.tag_name == '#elif':
-            self.current.tag_name = '#choice'
-
+        if tag_name == '#if':
+            parent = HTMLTemplate('#if', self.current)
+            self.current = HTMLTemplate('#choice', parent=parent)
+            self.current.macro = macro or "True"
+        elif tag_name == '#for':
+            parent = HTMLTemplate('#for', self.current)
+            parent.macro = macro
+            self.current = HTMLTemplate('#loop', parent=parent)
+        elif tag_name == '#elif':
+            self.current = HTMLTemplate('#choice', parent=self.current.parent)
+            self.current.macro = macro or "True"
+        elif tag_name == '#else':
+            self.current = HTMLTemplate('#else', parent=self.current.parent)
 
     def visitMacroEnd(self, ctx: BCDParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
@@ -181,10 +189,11 @@ def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
             session.error(f'component {name} not found')
             return None
 
-    templates[key] = load(path, session.error)
-    if templates[key]:
-        templates[key].name = name
-    return templates[key]
+    template = load(path, session.error)
+    if template:
+        template.name = name
+        templates[key] = template
+    return template
 
 
 class StyleVisitor(BCDParserVisitor):

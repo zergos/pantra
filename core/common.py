@@ -1,15 +1,20 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import *
-from attrdict import AttrDict
 
-__all__ = ['UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses']
+__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses']
 
 from core.oid import gen_id
 
 
 def typename(t):
     return type(t).__name__
+
+
+class ADict(dict):
+    __setattr__ = dict.__setitem__
+    __getattr__ = dict.__getitem__
+    __delattr__ = dict.__delitem__
 
 
 class UniNode:
@@ -85,7 +90,10 @@ class DynamicString(str):
 
 
 class DynamicClasses(str):
+    __slots__ = []
+
     def __add__(self, other):
+        if not other: return self
         return DynamicClasses(super().__add__(f' {other}'))
 
     def __sub__(self, other):
@@ -98,10 +106,13 @@ class DynamicClasses(str):
         return DynamicClasses(' '.join(l))
 
     def __mul__(self, other):
-        return DynamicClasses(other)
+        if other in self:
+            return self - other
+        else:
+            return self + other
 
 
-class DynamicStyles(AttrDict):
+class DynamicStyles(ADict):
     def __init__(self, style: Optional[str] = None):
         if style:
             data = {

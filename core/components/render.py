@@ -18,12 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session']
+    __slots__ = ['context', 'shot', 'session', 'render_this']
 
     def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
         self.shot: 'ContextShot' = shot or parent.shot
         self.session: Session = session or parent.session
+        self.render_this: bool = render_this
         if render_this:
             self.shot(self)
         if typename(self) == 'Context':
@@ -87,14 +88,22 @@ class DefaultRenderer:
     def build(self):
         self.build_node(self.ctx.template, self.ctx)
 
-    def build_func(self, text: str, node: RenderNode) -> Callable[[], Any]:
-        return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
+    def trace_eval(self, text: str, node: AnyNode):
+        try:
+            return eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
+        except Exception as e:
+            self.ctx.session.error(f'{self.ctx.template.name}/{node}: evaluation error: {e}')
+            return None
+
+    def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
+        # return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
+        return lambda: self.trace_eval(text, node)
 
     @staticmethod
     def strip_quotes(s):
         return s.strip('" ''')
 
-    def build_string(self, source: str, node: RenderNode) -> Optional[Union[str, DynamicString]]:
+    def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
             return None
 
@@ -103,12 +112,12 @@ class DefaultRenderer:
         else:
             return self.strip_quotes(source)
 
-    def eval_string(self, source: str, node: RenderNode) -> Any:
+    def eval_string(self, source: str, node: AnyNode) -> Any:
         if not source:
             return None
 
         if '{' in source:
-            return self.build_func(source.strip('" ''{}'), node)()
+            return self.build_func(self.strip_quotes(source), node)()
         else:
             return self.strip_quotes(source)
 
@@ -121,10 +130,26 @@ class DefaultRenderer:
             name = attr.split(':')[1].strip()
             node.context.locals[name] = self.eval_string(value, node)
             return True
+        elif attr.startswith('class:'):
+            cls = attr.split(':')[1].strip()
+            if value in None:
+                func = lambda: self.ctx.locals[cls]
+            else:
+                value = self.strip_quotes(value)
+                if '{' in value:
+                    func = self.build_func(value.strip('{}'), node)
+                else:
+                    func = lambda: self.ctx.locals[value]
+            node.con_classes.append((func, cls))
+            return True
         elif attr == 'on:render':
             value = self.strip_quotes(value)
             self.ctx[value](node)
             return True
+        elif attr == 'bind:value':
+            value = self.strip_quotes(value)
+            node.attributes.value = DynamicString(lambda: self.ctx.locals.get(value))
+            return False
         elif attr == 'style':
             if '{' in value:
                 node.style = self.build_string(value, node)
@@ -133,7 +158,7 @@ class DefaultRenderer:
             return True
         return False
 
-    def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode]) -> Optional[RenderNode]:
+    def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode]) -> Optional[AnyNode]:
         import core.components.context as c
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
@@ -148,10 +173,13 @@ class DefaultRenderer:
                 self.update(node)
 
             elif template.tag_name == '#for':
-                node = c.LoopNode(parent, template)
+                node: c.LoopNode = c.LoopNode(parent, template.children[0])
                 chunks = template.macro.split(' in ')
                 node.var_name = chunks[0].strip()
                 node.iterator = self.build_func(chunks[1], node)
+
+                if len(template.children) > 1:
+                    node.else_template = template.children[1]
                 self.update(node)
 
         elif template.tag_name[0].isupper():
@@ -165,6 +193,21 @@ class DefaultRenderer:
 
             # evaluate attributes
             for attr, value in template.attributes.items():
+                if not self.process_special_attribute(attr, value, node):
+                    node.locals[attr] = self.build_string(value, node) if value else True
+
+            node.render.build()
+
+        elif template.tag_name == 'reuse':
+            node_template = collect_template(self.ctx.session, self.strip_quotes(template.attributes.template))
+            if not node_template: return None
+
+            node = parent
+            node.template = node_template
+            # evaluate attributes
+            for attr, value in template.attributes.items():
+                if attr == 'template':
+                    continue
                 if not self.process_special_attribute(attr, value, node):
                     node.locals[attr] = self.build_string(value, node)
 
@@ -198,7 +241,7 @@ class DefaultRenderer:
             if not self.ctx._executed:
                 self.ctx._executed = True
                 initial_locals = dict(self.ctx.locals)
-                self.ctx.locals += {'ctx': self.ctx, 'refs': self.ctx.refs}
+                self.ctx.locals.update({'ctx': self.ctx, 'refs': self.ctx.refs})
                 try:
                     if not template.code:
                         template.code = compile(template.text, template.filename, 'exec')
@@ -209,8 +252,10 @@ class DefaultRenderer:
                         self.ctx.locals.init()
                     if 'ns_type' in self.ctx.locals:
                         self.ctx.ns_type = self.ctx.locals.ns_type
+                except ImportError as e:
+                    self.ctx.session.error_later(f'{template.filename}:\n{e}')
                 except Exception as e:
-                    logger.error(
+                    self.ctx.session.error_later(
                         f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
 
         elif template.tag_name == 'style':
@@ -247,7 +292,9 @@ class DefaultRenderer:
                     node.attributes[attr] = self.build_string(value, node)
 
             node.classes = self.build_string(template.classes, node)
-            if type(node.classes) == str:
+            if node.classes is None:
+                node.classes = DynamicClasses()
+            elif type(node.classes) == str:
                 node.classes = DynamicClasses(node.classes)
 
             # evaluate body
@@ -275,8 +322,10 @@ class DefaultRenderer:
                     node.attributes[k] = v()
             if type(node.classes) == DynamicString:
                 node.classes = node.classes()
-            elif type(node.classes) == str:
-                node.classes = DynamicClasses(node.classes)
+            else:
+                if type(node.classes) == str:
+                    node.classes = DynamicClasses(node.classes)
+
             if type(node.style) == DynamicString:
                 node.style = node.style()
             if type(node.text) == DynamicString:
@@ -284,10 +333,13 @@ class DefaultRenderer:
             node.shot(node)
 
         elif typename(node) == 'Context':
+            '''
             if node.children:
                 node.empty()
             self.build_node(node.template, node)
             return  # prevent repeated updates
+            '''
+            node.shot(node)
 
         elif typename(node) == 'TextNode':
             if type(node.text) == DynamicString:
@@ -307,6 +359,7 @@ class DefaultRenderer:
             if node.state != state:
                 if node.state >= 0:
                     node.empty()
+                node.state = state
                 if state == -1:
                     return
 
@@ -317,10 +370,16 @@ class DefaultRenderer:
 
         elif typename(node) == 'LoopNode':
             node.empty()
+            empty = True
             for value in node.iterator():
+                empty = False
                 self.ctx.locals[node.var_name] = value
                 for temp_child in node.template.children:
                     self.build_node(temp_child, node)
+            if empty and node.else_template:
+                for temp_child in node.else_template.children:
+                    self.build_node(temp_child, node)
+
             return  # prevent repeated updates
 
         if recursive:

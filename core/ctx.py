@@ -1,11 +1,8 @@
-from typing import *
-from dataclasses import *
+import typing
 
-from attrdict import AttrDict
-from core.common import *
-from core.components.controllers import *
-from core.components.context import *
+if typing.TYPE_CHECKING:
+    from core.common import ADict
+    from core.components.context import Context
 
-if TYPE_CHECKING:
-    refs = AttrDict()
-    ctx = AttrDict()
+    refs: ADict
+    ctx: Context

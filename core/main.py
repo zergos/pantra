@@ -11,7 +11,7 @@ from aiohttp_session import setup, SimpleCookieStorage, get_session
 
 from core.components.context import Context, HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
-    process_select
+    process_select, process_bind_value
 import core.database as db
 from core.components.loader import collect_styles, templates
 from core.serializer import serializer
@@ -49,7 +49,6 @@ async def get_ws(request: Request):
     session = Session(request.match_info['session_id'], ws, app)
 
     # token = request.match_info['token']
-    ctx: Optional[Context] = None
 
     try:
         async for msg in ws:  # type: WSMessage
@@ -64,31 +63,33 @@ async def get_ws(request: Request):
                             session.restart()
                         restart()
                     else:
-                        ctx = session.root
                         if command == 'REFRESH':
                             await session.send_root()
                         await session.recover_messages()
 
                 elif command == 'CLICK':
-                    process_click(data['method'], int(data['oid']))
+                    process_click(data['method'], data['oid'])
 
                 elif command == 'SELECT':
-                    process_select(data['method'], int(data['oid']), data['opts'])
+                    process_select(data['method'], data['oid'], data['opts'])
+
+                elif command == 'B':
+                    process_bind_value(data['oid'], data['v'], data['x'])
 
                 elif command == 'M':
-                    HTMLElement._set_metrics(int(data['oid']), data)
+                    HTMLElement._set_metrics(data['oid'], data)
 
                 elif command == 'V':
-                    HTMLElement._set_value(int(data['oid']), data['value'])
+                    HTMLElement._set_value(data['oid'], data['value'])
 
                 elif command == 'DD':
-                    process_drag_start(ctx, data['method'], int(data['oid']), data['x'], data['y'], data['button'])
+                    process_drag_start(session, data['method'], data['oid'], data['x'], data['y'], data['button'])
 
                 elif command == 'DM':
-                    process_drag_move(ctx, data['x'], data['y'])
+                    process_drag_move(session, data['x'], data['y'])
 
                 elif command == 'DU':
-                    process_drag_stop(ctx, data['x'], data['y'])
+                    process_drag_stop(session, data['x'], data['y'])
 
                 #await send_shot()
                 #print(f'message processed {command}')

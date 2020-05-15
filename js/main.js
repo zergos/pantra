@@ -78,4 +78,8 @@ function process_select(method, oid, options) {
     send_message({C: 'SELECT', method: method, oid: oid, opts: opts});
 }
 
+function process_bind_value(variable, oid, value) {
+    send_message({C: 'B', v: variable, oid: oid, x: value})
+}
+
 send_message({C: 'REFRESH'});

@@ -1,7 +1,7 @@
 form {
   border: $form-border;
-  border-radius: .4rem;
-  padding: .375rem .56rem .75rem .56rem;
+  border-radius: $form-radius;
+  padding: $form-padding;
   background: $form-bg;
 }
 
@@ -49,6 +49,10 @@ label {
       border: 1px solid $color-active;
       outline: 0;
       box-shadow: 0 0 0 3px rgba($color-active, 0.58);
+    }
+
+    &.wide {
+      width: 100%;
     }
   }
 

@@ -1,0 +1,22 @@
+<div class="box" class:fullscreen>
+    <div>
+        <slot></slot>
+    </div>
+</div>
+
+<style type="text/scss">
+    .box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+
+        &.fullscreen {
+            height: 100vh;
+        }
+    }
+</style>
+
+<python>
+fullscreen: bool = False
+</python>

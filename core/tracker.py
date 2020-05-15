@@ -20,7 +20,7 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
 
     def refresh_template(self, filename: str):
         for k, v in list(self.templates.items()):
-            if v.filename == filename:
+            if v and v.filename == filename:
                 self.sessions.error_later(f'component {k} has updated')
                 del self.templates[k]
 

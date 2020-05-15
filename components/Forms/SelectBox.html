@@ -1,6 +1,6 @@
-<label class="{get_block_class()}">
+<label class:inline="inline" class:block="{not inline}">
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select multiple="{multiple}" on:change="action">
+    <select class:wide="wide" multiple="{multiple}" on:change="action">
         <slot>
             <option disabled>Empty</option>
         </slot>
@@ -12,8 +12,5 @@ inline: bool = False
 caption: str = ''
 multiple: str = ''
 action: str = ''
-
-def get_block_class():
-    return inline and 'inline' or 'block'
-
+wide: bool = False
 </python>

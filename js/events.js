@@ -8,6 +8,9 @@ class EventListener {
         this.method = method;
         this.oid = oid;
     }
+    get_oid(event) {
+        return this.oid || OID.get(event.target);
+    }
     handleEvent(event) {
         event.stopPropagation();
     }
@@ -16,14 +19,21 @@ class EventListener {
 class SimpleListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_click(this.method, this.oid || OID.get(event.target));
+        process_click(this.method, this.get_oid(event));
     }
 }
 
 class SelectListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_select(this.method, this.oid || OID.get(event.target), event.target.selectedOptions);
+        process_select(this.method, this.get_oid(event), event.target.selectedOptions);
+    }
+}
+
+class ValueListener extends EventListener {
+    handleEvent(event) {
+        super.handleEvent(event);
+        process_bind_value(this.method, this.get_oid(event), event.target.value);
     }
 }
 
@@ -32,7 +42,7 @@ let drag_events_attached = false;
 class DragListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_drag_start(this.method, this.oid || OID.get(event.target), event);
+        process_drag_start(this.method, this.get_oid(event), event);
     }
 }
 
@@ -55,6 +65,14 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
             node.addEventListener('selectstart', do_nothing);
             node.addEventListener('mousedown', new DragListener(value, oid));
             attach_drag_events();
+        }
+        return true;
+    } else if (attr === 'bind:value') {
+        if (is_new) {
+            if (node.tagName === 'INPUT')
+                node.addEventListener('input', new ValueListener(value, oid));
+            else
+                node.addEventListener('change',  new ValueListener(value, oid));
         }
         return true;
     }

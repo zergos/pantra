@@ -1,18 +1,16 @@
 from types import CodeType
 from typing import *
 
-from attrdict import AttrDict
-
-from core.common import DynamicString, UniNode
+from core.common import ADict, DynamicString, UniNode
 
 
 class HTMLNode(UniNode):
     __slots__ = ('tag_name', 'attributes', 'classes')
 
-    def __init__(self, tag_name: str, parent: Optional['HTMLNode'] = None, attributes: Optional[Union[Dict, AttrDict]] = None):
+    def __init__(self, tag_name: str, parent: Optional['HTMLNode'] = None, attributes: Optional[Union[Dict, ADict]] = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
-        self.attributes: AttrDict = attributes and AttrDict(attributes) or AttrDict()
+        self.attributes: ADict = attributes and ADict(attributes) or ADict()
         self.classes: Optional[Union[DynamicString, str]] = None
 
     def __str__(self):
@@ -22,7 +20,7 @@ class HTMLNode(UniNode):
 class HTMLTemplate(HTMLNode):
     __slots__ = ('text', 'macro', 'name', 'filename', 'code')
 
-    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, AttrDict]]] = None, text: str = None):
+    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
         super().__init__(tag_name, parent, attributes)
         self.text: str = text
         self.macro: str = ""

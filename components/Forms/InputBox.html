@@ -1,0 +1,10 @@
+<fieldset class:separated="separated">
+    {{#if caption}}
+    <legend>{{caption}}</legend>
+    {{/if}}
+    <slot></slot>
+</fieldset>
+
+<python>
+separated: bool = False
+</python>

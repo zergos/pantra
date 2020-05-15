@@ -4,15 +4,11 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple, Optional, TYPE_CHECKING, List
 
 from core.oid import get_node
-from core.session import Session, trace_errors
+from core.session import trace_errors, Session
 from core.workers import thread_worker
 
 if TYPE_CHECKING:
     from core.components.context import Context, RenderNode, HTMLElement
-
-
-class Controller(ABC):
-    pass
 
 
 class DragOptions(NamedTuple):
@@ -25,7 +21,7 @@ class DragOptions(NamedTuple):
     right: Optional[int] = None
 
 
-class DragController(Controller):
+class DragController(ABC):
     def __init__(self, node: HTMLElement):
         self.from_x: int = 0
         self.from_y: int = 0
@@ -80,25 +76,25 @@ class DragController(Controller):
 
 @thread_worker
 @trace_errors
-def process_drag_start(ctx: Context, method: str, oid: int, x: int, y: int, button: int):
+def process_drag_start(session: Session, method: str, oid: int, x: int, y: int, button: int):
     node: RenderNode = get_node(oid)
     if node is None: return
-    node.session.state.drag: DragController = node.context.locals[method](node)
-    if node.session.state.drag._mousedown(node, x, y, button):
-        ctx.session.send_message({'m': 'dm'})
+    session.state.drag: DragController = node.context.locals[method](node)
+    if session.state.drag._mousedown(node, x, y, button):
+        session.send_message({'m': 'dm'})
 
 
 @thread_worker
 @trace_errors
-def process_drag_move(ctx: Context, x: int, y: int):
-    ctx.session.state.drag._mousemove(x, y)
+def process_drag_move(session: Session, x: int, y: int):
+    session.state.drag._mousemove(x, y)
 
 
 @thread_worker
 @trace_errors
-def process_drag_stop(ctx: Context, x: int, y: int):
-    ctx.session.state.drag._mouseup()
-    delattr(ctx.session.state, "drag")
+def process_drag_stop(session: Session, x: int, y: int):
+    session.state.drag._mouseup()
+    delattr(session.state, "drag")
 
 
 @thread_worker
@@ -106,17 +102,17 @@ def process_click(method: str, oid: int):
     node = get_node(oid)
     if node is None or not method: return
     context = node.context
-    process_click_referred(context, method, node)
+    process_click_referred(context.session, context, method, node)
 
 
 @trace_errors
-def process_click_referred(context: Context, method: str, node: RenderNode):
+def process_click_referred(session: Session, context: Context, method: str, node: RenderNode):
     func = context[method]
     if not func: return
     if callable(func):
         func(node)
     elif context.parent:
-        process_click_referred.call(context.parent.context, func, node)
+        process_click_referred.call(session, context.parent.context, func, node)
 
 
 @thread_worker
@@ -125,4 +121,12 @@ def process_select(method: str, oid: int, opts: List[int]):
     if not node or not method: return
     opts = [get_node(i) for i in opts]
     node._value = len(opts) == 1 and opts[0] or opts
-    process_click_referred(node.context, method, node)
+    process_click_referred(node.context.session, node.context, method, node)
+
+
+@thread_worker
+def process_bind_value(oid: int, var_name: str, value: str):
+    node = get_node(oid)
+    if not node: return
+    node.context.locals[var_name] = value
+    node.attributes.value = value
