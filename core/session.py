@@ -51,8 +51,8 @@ class Session:
         try:
             ctx = Context("Main", shot=shot, session=self)
             if ctx.template:
-                ctx.render.build()
                 self.root = ctx
+                ctx.render.build()
                 self.send_shot()
         except Exception as e:
             print(traceback.format_exc())
@@ -71,6 +71,7 @@ class Session:
 
     @staticmethod
     def error_later(message):
+        print(f'Evaluation error:\n{message}')
         Session.pending_errors.put(message)
 
     @async_worker
@@ -145,3 +146,9 @@ def trace_errors(func):
             args[0].send_shot()
     res.call = func
     return res
+
+
+@trace_errors
+def run_safe(ctx: Context, func: Callable, *args, **kwargs):
+    func(*args, **kwargs)
+

@@ -1,36 +1,12 @@
-<label class:inline="inline" class:block="{not inline}" class:required="required" class:error="error"><span>{{caption}}</span>
-    <input type="{type}" bind:value="value" placeholder="{placeholder}">
+<label class:inline class:block="{not inline}" class:required class:error><span>{{caption}}</span>
+    <input type="{type}" bind:value placeholder="{placeholder}">
     {{#if error}}
     <div class="message">{{error}}</div>
     {{/if}}
 </label>
 
-<python>
-from core.ctx import *
-
+<python namespace="inputs">
 inline: bool = False
-required: bool = False
-caption: str = ''
 type: str = 'text'
-value: str = ''
 placeholder: str = ''
-error: str = ''
-
-def set_error(err):
-    ctx.error = err
-
-def validate(condition = None, message: str = ''):
-    if condition is not None:
-        if not condition:
-            set_error(message)
-            return False
-        else:
-            set_error('')
-            return True
-    if required and not value:
-        set_error(f'{caption} field is required')
-        return False
-    set_error('')
-    return True
-
 </python>

@@ -6,12 +6,12 @@ import typing
 
 import cssutils
 import sass
+from antlr4 import FileStream, CommonTokenStream, IllegalStateException
 from antlr4.error.ErrorListener import ErrorListener
 from cssutils.css import CSSMediaRule, CSSStyleRule
 
 from .htmlnode import HTMLTemplate
 
-from antlr4 import *
 from .grammar.BCDLexer import BCDLexer
 from .grammar.BCDParser import BCDParser
 from .grammar.BCDParserVisitor import BCDParserVisitor
@@ -40,7 +40,7 @@ class MyVisitor(BCDParserVisitor):
 
     def visitText(self, ctx: BCDParser.TextContext):
         text = ctx.getText().strip().strip('\uFEFF')
-        if text:
+        if text and self.current != self.root:
             HTMLTemplate('@text', parent=self.current, text=text)
 
     def visitRawText(self, ctx: BCDParser.RawTextContext):
@@ -79,6 +79,13 @@ class MyVisitor(BCDParserVisitor):
             self.current.classes = ctx.getText().strip()
         else:
             self.current.attributes[self.cur_attr] = ctx.getText()
+
+    def visitRawName(self, ctx:BCDParser.RawNameContext):
+        self.cur_attr = ctx.getText()
+        self.current.attributes[self.cur_attr] = None
+
+    def visitRawValue(self, ctx:BCDParser.RawValueContext):
+        self.current.attributes[self.cur_attr] = ctx.getText()
 
     def visitTagEnd(self, ctx: BCDParser.TagEndContext):
         tag_name = ctx.children[1].getText()

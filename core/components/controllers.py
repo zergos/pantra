@@ -10,6 +10,8 @@ from core.workers import thread_worker
 if TYPE_CHECKING:
     from core.components.context import Context, RenderNode, HTMLElement
 
+__all__ = ['DragOptions', 'DragController']
+
 
 class DragOptions(NamedTuple):
     button: int = 1

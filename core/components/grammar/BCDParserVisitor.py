@@ -99,6 +99,11 @@ class BCDParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by BCDParser#rawValue.
+    def visitRawValue(self, ctx:BCDParser.RawValueContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by BCDParser#rawText.
     def visitRawText(self, ctx:BCDParser.RawTextContext):
         return self.visitChildren(ctx)

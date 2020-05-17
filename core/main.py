@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import traceback
-from typing import *
 from concurrent.futures import TimeoutError
 
 import sass
@@ -9,7 +8,7 @@ from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp_session import setup, SimpleCookieStorage, get_session
 
-from core.components.context import Context, HTMLElement
+from core.components.context import HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
     process_select, process_bind_value
 import core.database as db
@@ -18,7 +17,9 @@ from core.serializer import serializer
 from core.defaults import *
 from core.session import Session
 from core.workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
-from tracker import start_observer, stop_observer
+from core.tracker import start_observer, stop_observer
+from core.compiler import code_base
+
 
 routes = web.RouteTableDef()
 
@@ -145,7 +146,7 @@ async def startup(app):
     db.connect()
     start_task_workers()
     init_async_worker()
-    start_observer(templates, Session)
+    start_observer(templates, Session, code_base)
 
 
 async def shutdown(app):

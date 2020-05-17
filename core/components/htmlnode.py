@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+import typing
 from types import CodeType
-from typing import *
+
+if typing.TYPE_CHECKING:
+    from typing import *
 
 from core.common import ADict, DynamicString, UniNode
+
+__all__ = ['HTMLNode', 'HTMLTemplate']
 
 
 class HTMLNode(UniNode):
@@ -18,6 +25,7 @@ class HTMLNode(UniNode):
 
 
 class HTMLTemplate(HTMLNode):
+    code_base: Dict[str, CodeType] = {}
     __slots__ = ('text', 'macro', 'name', 'filename', 'code')
 
     def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):

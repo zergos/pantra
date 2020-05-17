@@ -1,6 +1,6 @@
-<label ref:label class:inline="inline" class:block="{not inline}" class:error="error">
+<label ref:label class:inline class:block="{not inline}" class:error class:required>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select class:wide="wide" multiple="{multiple}" on:change="action">
+    <select class:wide multiple="{multiple}" on:change="action">
         {{#if blank}}
         <SelectItem caption="" selected></SelectItem>
         {{/if}}
@@ -11,24 +11,14 @@
     <div ref:error class="message">{{error}}</div>
 </label>
 
-<python>
-from core.ctx import *
-
+<python namespace="inputs">
 inline: bool = False
-caption: str = ''
 multiple: str = ''
-action: str = ''
 wide: bool = False
 blank: bool = False
-value: str = ''
-error: str = ''
 
 def action(node):
     global value
     value = node.value.text if type(node.value) != list else [v.text for v in node.value]
-
-def set_error(message):
-    global error
-    ctx.error = message
 
 </python>

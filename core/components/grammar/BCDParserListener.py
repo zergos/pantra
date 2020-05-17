@@ -170,6 +170,15 @@ class BCDParserListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by BCDParser#rawValue.
+    def enterRawValue(self, ctx:BCDParser.RawValueContext):
+        pass
+
+    # Exit a parse tree produced by BCDParser#rawValue.
+    def exitRawValue(self, ctx:BCDParser.RawValueContext):
+        pass
+
+
     # Enter a parse tree produced by BCDParser#rawText.
     def enterRawText(self, ctx:BCDParser.RawTextContext):
         pass

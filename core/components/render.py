@@ -1,20 +1,19 @@
 from __future__ import annotations
 
-from functools import lru_cache
-from typing import *
+import typing
 
+from compiler import compile_context_code
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename
 from core.components.htmlnode import HTMLTemplate
 from core.components.loader import collect_template
-from core.session import Session
+from core.session import Session, run_safe
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
+    from typing import *
     from core.components.context import AnyNode, Context, HTMLElement, Condition, \
         TextNode, Slot
 
-import logging
-
-logger = logging.getLogger(__name__)
+__all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 
 class RenderNode(UniqueNode):
@@ -32,18 +31,31 @@ class RenderNode(UniqueNode):
         else:
             self.context = parent.context
 
+    def _cleanup_node(self, node):
+        if node in self.context.react_nodes:
+            self.context.react_nodes.remove(node)
+            for v in self.context.react_vars.values():
+                if node in v:
+                    v.remove(node)
+        if node in self.context.refs.values():
+            k = next(k for k, v in self.context.refs.items() if v == node)
+            del self.context.refs[k]
+
     def empty(self):
         for child in self.children:  # type: RenderNode
             self.shot -= child
+            self._cleanup_node(child)
             child.empty()
         self.children.clear()
 
     def remove(self, node=None):
         if node:
+            node.parent.context._cleanup_node(node)
             super().remove(node)
         else:
             self.empty()
             self.shot -= self
+            self._cleanup_node(self)
             if self.parent:
                 self.parent.remove(self)
 
@@ -67,13 +79,6 @@ class RenderNode(UniqueNode):
                 if sub:
                     clone.append(sub)
         return clone
-
-
-@lru_cache(None, False)
-def common_globals():
-    globals = {}
-    exec('from core.ctx import *', globals)
-    return globals
 
 
 class DefaultRenderer:
@@ -146,10 +151,10 @@ class DefaultRenderer:
             node.con_classes.append((func, cls))
             return True
         elif attr == 'on:render':
-            value = self.strip_quotes(value)
-            self.ctx[value](node)
             return True
         elif attr == 'bind:value':
+            if value is None:
+                value = 'value'
             value = self.strip_quotes(value)
             ctx = self.ctx
             node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
@@ -203,6 +208,11 @@ class DefaultRenderer:
 
             node.render.build()
 
+            if 'on:render' in template.attributes:
+                value = self.strip_quotes(template.attributes['on:render'])
+                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+
+
         elif template.tag_name == 'reuse':
             node_template = collect_template(self.ctx.session, self.strip_quotes(template.attributes.template))
             if not node_template: return None
@@ -250,23 +260,7 @@ class DefaultRenderer:
         elif template.tag_name == 'python':
             if not self.ctx._executed:
                 self.ctx._executed = True
-                initial_locals = dict(self.ctx.locals)
-                self.ctx.locals.update({'ctx': self.ctx, 'refs': self.ctx.refs})
-                try:
-                    if not template.code:
-                        template.code = compile(template.text, template.filename, 'exec')
-                    # exec(template.code, common_globals(), self.ctx.locals)
-                    exec(template.code, self.ctx.locals)
-                    self.ctx.locals.update(initial_locals)
-                    if 'init' in self.ctx.locals:
-                        self.ctx.locals.init()
-                    if 'ns_type' in self.ctx.locals:
-                        self.ctx.ns_type = self.ctx.locals.ns_type
-                except ImportError as e:
-                    self.ctx.session.error_later(f'{template.filename}:\n{e}')
-                except Exception as e:
-                    self.ctx.session.error_later(
-                        f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
+                compile_context_code(self.ctx, template)
 
         elif template.tag_name == 'style':
             # styles collected elsewhere
@@ -327,6 +321,11 @@ class DefaultRenderer:
 
             for child in template.children:
                 self.build_node(child, node)
+
+            if 'on:render' in template.attributes:
+                value = self.strip_quotes(template.attributes['on:render'])
+                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+
         return node
 
     def update_children(self, node: AnyNode):

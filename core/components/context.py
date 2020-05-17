@@ -1,30 +1,32 @@
 from __future__ import annotations
 
-import inspect
+import typing
 import threading
 from collections import defaultdict
 from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
-from typing import *
 from dataclasses import dataclass
 
+from common import UniNode
 from core.common import ADict, HookDict
 
 from .loader import collect_template
-from ..common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
-from .htmlnode import HTMLTemplate
+from core.common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
+from core.components.htmlnode import HTMLTemplate
 
-from .render import RenderNode, DefaultRenderer
-from ..oid import get_node
+from core.components.render import RenderNode, DefaultRenderer
+from core.oid import get_node
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
+    from typing import *
     from ..common import DynamicString
     from .render import ContextShot
     from ..session import Session
 
+__all__ = ['NSType', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'AnyNode']
 
-AnyNode = Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
+AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
 
 
 class NSType(Enum):
@@ -35,13 +37,13 @@ class NSType(Enum):
     MATH = auto()       # http://www.w3.org/1998/Math/MathML
 
 
-class Slot(NamedTuple):
+class Slot(typing.NamedTuple):
     ctx: 'Context'
     template: HTMLTemplate
 
 
 class Context(RenderNode):
-    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type', 'react_vars']
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type', 'react_vars', 'react_nodes']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         self.locals: HookDict = HookDict()
@@ -60,7 +62,8 @@ class Context(RenderNode):
         self.render_base = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
-        self.react_vars: Dict[str, Set] = defaultdict(set)
+        self.react_vars: Dict[str, Set[AnyNode]] = defaultdict(set)
+        self.react_nodes: Set[AnyNode] = set()
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement(self.template.name, new_parent)
@@ -71,11 +74,18 @@ class Context(RenderNode):
 
     @contextmanager
     def record_reactions(self, node: AnyNode):
-        self.locals._hook = lambda item: self.react_vars[item].add(node)
+        self.locals._hook = lambda item: self.react_vars[item].add(node) or self.react_nodes.add(node)
         HookDict.hook_set()
         yield
         HookDict.hook_clear()
         del self.locals['_hook']
+
+    def select(self, predicate: Union[Iterable[str], Callable[[UniNode], bool]]) -> Generator[UniNode]:
+        if isinstance(predicate, typing.Iterable):
+            yield from super().select(lambda node: node.tag_name in predicate)
+        else:
+            yield from super().select(predicate)
+
 
     def __getattr__(self, item):
         if hasattr(Context, item):
@@ -91,7 +101,7 @@ class Context(RenderNode):
         else:
             object.__getattribute__(self, 'locals')[key] = value
             if key in self.react_vars:
-                for node in self.react_vars[key]:
+                for node in frozenset(self.react_vars[key]):
                     node.update()
 
     def __getitem__(self, item: Union[str, int]):
@@ -108,7 +118,7 @@ class Context(RenderNode):
         return f'${self.template.name}'
 
 
-class ConditionalClass(NamedTuple):
+class ConditionalClass(typing.NamedTuple):
     condition: Callable[[], bool]
     cls: str
 

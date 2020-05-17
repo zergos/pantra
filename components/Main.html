@@ -1,12 +1,13 @@
+"""
 <GridX fullscreen>
-    <CardForm ref:root caption="Starting facility">
-        <SelectBox ref:app caption="Select app" blank wide>
+    <CardForm ref:form caption="Starting facility">
+        <SelectBox ref:app caption="Select app" blank wide required>
             <SelectItem caption="system"></SelectItem>
             {{#for app in get_apps()}}
             <SelectItem caption="{app}"></SelectItem>
             {{/for}}
         </SelectBox>
-        <SelectBox ref:user caption="Select user" blank wide>
+        <SelectBox ref:user caption="Select user" blank wide required>
             {{#for user in get_users()}}
             <SelectItem caption="{user}"></SelectItem>
             {{#else}}
@@ -17,13 +18,13 @@
         <InputBox caption="Create new admin user">
             <InputText ref:login caption="Login" required></InputText>
             <InputPassword ref:passw caption="Password" required></InputPassword>
-            <InputPassword ref:passw2 caption="Password again" required></InputPassword>
+            <InputPassword ref:passw2 caption="Password again" required on:render="passw_render"></InputPassword>
             <GridX>
                 <Button default action="create_first_admin" caption="Create and login"></Button>
             </GridX>
         </InputBox>
         {{#else}}
-        <InputPassword ref:password caption="Password"></InputPassword>
+        <InputPassword ref:password caption="Password" required></InputPassword>
         <GridX>
             <Button default action="login" caption="Login"></Button>
         </GridX>
@@ -32,6 +33,7 @@
 </GridX>
 
 <python>
+#"""
 from pony.orm import db_session
 from db.models import User
 from core.ctx import *
@@ -48,21 +50,19 @@ def get_users():
     for user in User.select():
         yield user.name
 
+def passw_render(node):
+    node.validate(lambda: refs.passw.value == refs.passw2.value, "Passwords don't match")
+
 def create_first_admin(node):
-    ok = True
-    ok &= refs.login.validate()
-    ok &= refs.passw.validate()
-    ok &= refs.passw2.validate(refs.passw.value == refs.passw2.value, "Passwords don't match")
-    if ok:
+    if 'passw' in refs and refs.form.is_valid():
         with db_session:
             admin = User(name = refs.login.value, is_admin=True)
             admin.set_password(refs.passw.value)
-        refs.root.update_tree()
+        refs.form.update_tree()
 
 @db_session
 def login(node):
     username = refs.user.value
     user = User.get(name=username)
     refs.user.error = 'User not available'
-
-</python>
+#</python>

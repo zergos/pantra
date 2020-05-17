@@ -9,46 +9,47 @@ import sys
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\34")
-        buf.write("\u0085\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u0089\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
-        buf.write("\4\24\t\24\4\25\t\25\3\2\7\2,\n\2\f\2\16\2/\13\2\3\3\3")
-        buf.write("\3\3\3\3\3\3\3\5\3\66\n\3\3\4\3\4\5\4:\n\4\3\5\3\5\3\5")
-        buf.write("\7\5?\n\5\f\5\16\5B\13\5\3\5\3\5\3\6\3\6\3\6\3\6\3\7\3")
-        buf.write("\7\3\7\5\7M\n\7\3\b\3\b\3\b\3\b\5\bS\n\b\5\bU\n\b\3\t")
-        buf.write("\3\t\3\n\3\n\5\n[\n\n\3\13\3\13\3\13\3\13\3\f\3\f\3\f")
-        buf.write("\3\f\3\r\3\r\3\16\3\16\3\16\3\16\3\17\3\17\3\20\3\20\7")
-        buf.write("\20o\n\20\f\20\16\20r\13\20\3\20\3\20\3\20\3\20\3\21\3")
-        buf.write("\21\3\22\3\22\3\22\5\22}\n\22\3\23\3\23\3\24\3\24\3\25")
-        buf.write("\3\25\3\25\2\2\26\2\4\6\b\n\f\16\20\22\24\26\30\32\34")
-        buf.write("\36 \"$&(\2\3\3\2\r\16\2}\2-\3\2\2\2\4\65\3\2\2\2\69\3")
-        buf.write("\2\2\2\b;\3\2\2\2\nE\3\2\2\2\fI\3\2\2\2\16T\3\2\2\2\20")
-        buf.write("V\3\2\2\2\22Z\3\2\2\2\24\\\3\2\2\2\26`\3\2\2\2\30d\3\2")
-        buf.write("\2\2\32f\3\2\2\2\34j\3\2\2\2\36l\3\2\2\2 w\3\2\2\2\"y")
-        buf.write("\3\2\2\2$~\3\2\2\2&\u0080\3\2\2\2(\u0082\3\2\2\2*,\5\4")
-        buf.write("\3\2+*\3\2\2\2,/\3\2\2\2-+\3\2\2\2-.\3\2\2\2.\3\3\2\2")
-        buf.write("\2/-\3\2\2\2\60\66\5\6\4\2\61\66\5\22\n\2\62\66\5\32\16")
-        buf.write("\2\63\66\5\34\17\2\64\66\5\36\20\2\65\60\3\2\2\2\65\61")
-        buf.write("\3\2\2\2\65\62\3\2\2\2\65\63\3\2\2\2\65\64\3\2\2\2\66")
-        buf.write("\5\3\2\2\2\67:\5\b\5\28:\5\n\6\29\67\3\2\2\298\3\2\2\2")
-        buf.write(":\7\3\2\2\2;<\7\7\2\2<@\7\22\2\2=?\5\f\7\2>=\3\2\2\2?")
-        buf.write("B\3\2\2\2@>\3\2\2\2@A\3\2\2\2AC\3\2\2\2B@\3\2\2\2CD\t")
-        buf.write("\2\2\2D\t\3\2\2\2EF\7\b\2\2FG\7\22\2\2GH\7\r\2\2H\13\3")
-        buf.write("\2\2\2IL\5\16\b\2JK\7\17\2\2KM\5\20\t\2LJ\3\2\2\2LM\3")
-        buf.write("\2\2\2M\r\3\2\2\2NU\7\22\2\2OR\7\22\2\2PQ\7\20\2\2QS\7")
-        buf.write("\22\2\2RP\3\2\2\2RS\3\2\2\2SU\3\2\2\2TN\3\2\2\2TO\3\2")
-        buf.write("\2\2U\17\3\2\2\2VW\7\21\2\2W\21\3\2\2\2X[\5\24\13\2Y[")
-        buf.write("\5\26\f\2ZX\3\2\2\2ZY\3\2\2\2[\23\3\2\2\2\\]\7\t\2\2]")
-        buf.write("^\5\30\r\2^_\7\24\2\2_\25\3\2\2\2`a\7\n\2\2ab\7\25\2\2")
-        buf.write("bc\7\24\2\2c\27\3\2\2\2de\7\25\2\2e\31\3\2\2\2fg\7\13")
-        buf.write("\2\2gh\7\25\2\2hi\7\24\2\2i\33\3\2\2\2jk\7\f\2\2k\35\3")
-        buf.write("\2\2\2lp\5 \21\2mo\5\"\22\2nm\3\2\2\2or\3\2\2\2pn\3\2")
-        buf.write("\2\2pq\3\2\2\2qs\3\2\2\2rp\3\2\2\2st\7\26\2\2tu\5&\24")
-        buf.write("\2uv\5(\25\2v\37\3\2\2\2wx\7\6\2\2x!\3\2\2\2y|\5$\23\2")
-        buf.write("z{\7\27\2\2{}\7\30\2\2|z\3\2\2\2|}\3\2\2\2}#\3\2\2\2~")
-        buf.write("\177\7\31\2\2\177%\3\2\2\2\u0080\u0081\7\34\2\2\u0081")
-        buf.write("\'\3\2\2\2\u0082\u0083\7\33\2\2\u0083)\3\2\2\2\f-\659")
-        buf.write("@LRTZp|")
+        buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\3\2\7\2.\n\2\f\2\16\2\61")
+        buf.write("\13\2\3\3\3\3\3\3\3\3\3\3\5\38\n\3\3\4\3\4\5\4<\n\4\3")
+        buf.write("\5\3\5\3\5\7\5A\n\5\f\5\16\5D\13\5\3\5\3\5\3\6\3\6\3\6")
+        buf.write("\3\6\3\7\3\7\3\7\5\7O\n\7\3\b\3\b\3\b\3\b\5\bU\n\b\5\b")
+        buf.write("W\n\b\3\t\3\t\3\n\3\n\5\n]\n\n\3\13\3\13\3\13\3\13\3\f")
+        buf.write("\3\f\3\f\3\f\3\r\3\r\3\16\3\16\3\16\3\16\3\17\3\17\3\20")
+        buf.write("\3\20\7\20q\n\20\f\20\16\20t\13\20\3\20\3\20\3\20\3\20")
+        buf.write("\3\21\3\21\3\22\3\22\3\22\5\22\177\n\22\3\23\3\23\3\24")
+        buf.write("\3\24\3\25\3\25\3\26\3\26\3\26\2\2\27\2\4\6\b\n\f\16\20")
+        buf.write("\22\24\26\30\32\34\36 \"$&(*\2\3\3\2\r\16\2\u0080\2/\3")
+        buf.write("\2\2\2\4\67\3\2\2\2\6;\3\2\2\2\b=\3\2\2\2\nG\3\2\2\2\f")
+        buf.write("K\3\2\2\2\16V\3\2\2\2\20X\3\2\2\2\22\\\3\2\2\2\24^\3\2")
+        buf.write("\2\2\26b\3\2\2\2\30f\3\2\2\2\32h\3\2\2\2\34l\3\2\2\2\36")
+        buf.write("n\3\2\2\2 y\3\2\2\2\"{\3\2\2\2$\u0080\3\2\2\2&\u0082\3")
+        buf.write("\2\2\2(\u0084\3\2\2\2*\u0086\3\2\2\2,.\5\4\3\2-,\3\2\2")
+        buf.write("\2.\61\3\2\2\2/-\3\2\2\2/\60\3\2\2\2\60\3\3\2\2\2\61/")
+        buf.write("\3\2\2\2\628\5\6\4\2\638\5\22\n\2\648\5\32\16\2\658\5")
+        buf.write("\34\17\2\668\5\36\20\2\67\62\3\2\2\2\67\63\3\2\2\2\67")
+        buf.write("\64\3\2\2\2\67\65\3\2\2\2\67\66\3\2\2\28\5\3\2\2\29<\5")
+        buf.write("\b\5\2:<\5\n\6\2;9\3\2\2\2;:\3\2\2\2<\7\3\2\2\2=>\7\7")
+        buf.write("\2\2>B\7\22\2\2?A\5\f\7\2@?\3\2\2\2AD\3\2\2\2B@\3\2\2")
+        buf.write("\2BC\3\2\2\2CE\3\2\2\2DB\3\2\2\2EF\t\2\2\2F\t\3\2\2\2")
+        buf.write("GH\7\b\2\2HI\7\22\2\2IJ\7\r\2\2J\13\3\2\2\2KN\5\16\b\2")
+        buf.write("LM\7\17\2\2MO\5\20\t\2NL\3\2\2\2NO\3\2\2\2O\r\3\2\2\2")
+        buf.write("PW\7\22\2\2QT\7\22\2\2RS\7\20\2\2SU\7\22\2\2TR\3\2\2\2")
+        buf.write("TU\3\2\2\2UW\3\2\2\2VP\3\2\2\2VQ\3\2\2\2W\17\3\2\2\2X")
+        buf.write("Y\7\21\2\2Y\21\3\2\2\2Z]\5\24\13\2[]\5\26\f\2\\Z\3\2\2")
+        buf.write("\2\\[\3\2\2\2]\23\3\2\2\2^_\7\t\2\2_`\5\30\r\2`a\7\24")
+        buf.write("\2\2a\25\3\2\2\2bc\7\n\2\2cd\7\25\2\2de\7\24\2\2e\27\3")
+        buf.write("\2\2\2fg\7\25\2\2g\31\3\2\2\2hi\7\13\2\2ij\7\25\2\2jk")
+        buf.write("\7\24\2\2k\33\3\2\2\2lm\7\f\2\2m\35\3\2\2\2nr\5 \21\2")
+        buf.write("oq\5\"\22\2po\3\2\2\2qt\3\2\2\2rp\3\2\2\2rs\3\2\2\2su")
+        buf.write("\3\2\2\2tr\3\2\2\2uv\7\26\2\2vw\5(\25\2wx\5*\26\2x\37")
+        buf.write("\3\2\2\2yz\7\6\2\2z!\3\2\2\2{~\5$\23\2|}\7\27\2\2}\177")
+        buf.write("\5&\24\2~|\3\2\2\2~\177\3\2\2\2\177#\3\2\2\2\u0080\u0081")
+        buf.write("\7\31\2\2\u0081%\3\2\2\2\u0082\u0083\7\30\2\2\u0083\'")
+        buf.write("\3\2\2\2\u0084\u0085\7\34\2\2\u0085)\3\2\2\2\u0086\u0087")
+        buf.write("\7\33\2\2\u0087+\3\2\2\2\f/\67;BNTV\\r~")
         return buf.getvalue()
 
 
@@ -92,13 +93,14 @@ class BCDParser ( Parser ):
     RULE_rawTag = 15
     RULE_rawAttr = 16
     RULE_rawName = 17
-    RULE_rawText = 18
-    RULE_rawCloseTag = 19
+    RULE_rawValue = 18
+    RULE_rawText = 19
+    RULE_rawCloseTag = 20
 
     ruleNames =  [ "process", "atom", "tag", "tagBegin", "tagEnd", "attr", 
                    "attrName", "attrValue", "macro", "macroBegin", "macroEnd", 
                    "macroCommand", "inlineMacro", "text", "rawBlock", "rawTag", 
-                   "rawAttr", "rawName", "rawText", "rawCloseTag" ]
+                   "rawAttr", "rawName", "rawValue", "rawText", "rawCloseTag" ]
 
     EOF = Token.EOF
     COMMENT=1
@@ -177,13 +179,13 @@ class BCDParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 43
+            self.state = 45
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << BCDParser.RAW_TAG) | (1 << BCDParser.OPEN_BEGIN) | (1 << BCDParser.OPEN_END) | (1 << BCDParser.OPEN_MACRO_BEGIN) | (1 << BCDParser.OPEN_MACRO_END) | (1 << BCDParser.INLINE_MACRO) | (1 << BCDParser.TEXT))) != 0):
-                self.state = 40
+                self.state = 42
                 self.atom()
-                self.state = 45
+                self.state = 47
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -247,32 +249,32 @@ class BCDParser ( Parser ):
         localctx = BCDParser.AtomContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_atom)
         try:
-            self.state = 51
+            self.state = 53
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [BCDParser.OPEN_BEGIN, BCDParser.OPEN_END]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 46
+                self.state = 48
                 self.tag()
                 pass
             elif token in [BCDParser.OPEN_MACRO_BEGIN, BCDParser.OPEN_MACRO_END]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 47
+                self.state = 49
                 self.macro()
                 pass
             elif token in [BCDParser.INLINE_MACRO]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 48
+                self.state = 50
                 self.inlineMacro()
                 pass
             elif token in [BCDParser.TEXT]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 49
+                self.state = 51
                 self.text()
                 pass
             elif token in [BCDParser.RAW_TAG]:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 50
+                self.state = 52
                 self.rawBlock()
                 pass
             else:
@@ -326,17 +328,17 @@ class BCDParser ( Parser ):
         localctx = BCDParser.TagContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_tag)
         try:
-            self.state = 55
+            self.state = 57
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [BCDParser.OPEN_BEGIN]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 53
+                self.state = 55
                 self.tagBegin()
                 pass
             elif token in [BCDParser.OPEN_END]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 54
+                self.state = 56
                 self.tagEnd()
                 pass
             else:
@@ -403,21 +405,21 @@ class BCDParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 57
+            self.state = 59
             self.match(BCDParser.OPEN_BEGIN)
-            self.state = 58
+            self.state = 60
             self.match(BCDParser.NAME)
-            self.state = 62
+            self.state = 64
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==BCDParser.NAME:
-                self.state = 59
+                self.state = 61
                 self.attr()
-                self.state = 64
+                self.state = 66
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 65
+            self.state = 67
             _la = self._input.LA(1)
             if not(_la==BCDParser.CLOSE or _la==BCDParser.SLASH_CLOSE):
                 self._errHandler.recoverInline(self)
@@ -474,11 +476,11 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 8, self.RULE_tagEnd)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 67
-            self.match(BCDParser.OPEN_END)
-            self.state = 68
-            self.match(BCDParser.NAME)
             self.state = 69
+            self.match(BCDParser.OPEN_END)
+            self.state = 70
+            self.match(BCDParser.NAME)
+            self.state = 71
             self.match(BCDParser.CLOSE)
         except RecognitionException as re:
             localctx.exception = re
@@ -533,15 +535,15 @@ class BCDParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 71
+            self.state = 73
             self.attrName()
-            self.state = 74
+            self.state = 76
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==BCDParser.EQ:
-                self.state = 72
+                self.state = 74
                 self.match(BCDParser.EQ)
-                self.state = 73
+                self.state = 75
                 self.attrValue()
 
 
@@ -595,26 +597,26 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 12, self.RULE_attrName)
         self._la = 0 # Token type
         try:
-            self.state = 82
+            self.state = 84
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,6,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 76
+                self.state = 78
                 self.match(BCDParser.NAME)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 77
+                self.state = 79
                 self.match(BCDParser.NAME)
-                self.state = 80
+                self.state = 82
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==BCDParser.COLON:
-                    self.state = 78
+                    self.state = 80
                     self.match(BCDParser.COLON)
-                    self.state = 79
+                    self.state = 81
                     self.match(BCDParser.NAME)
 
 
@@ -665,7 +667,7 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 14, self.RULE_attrValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 84
+            self.state = 86
             self.match(BCDParser.STRING)
         except RecognitionException as re:
             localctx.exception = re
@@ -715,17 +717,17 @@ class BCDParser ( Parser ):
         localctx = BCDParser.MacroContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_macro)
         try:
-            self.state = 88
+            self.state = 90
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [BCDParser.OPEN_MACRO_BEGIN]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 86
+                self.state = 88
                 self.macroBegin()
                 pass
             elif token in [BCDParser.OPEN_MACRO_END]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 87
+                self.state = 89
                 self.macroEnd()
                 pass
             else:
@@ -782,11 +784,11 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 18, self.RULE_macroBegin)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 90
-            self.match(BCDParser.OPEN_MACRO_BEGIN)
-            self.state = 91
-            self.macroCommand()
             self.state = 92
+            self.match(BCDParser.OPEN_MACRO_BEGIN)
+            self.state = 93
+            self.macroCommand()
+            self.state = 94
             self.match(BCDParser.CLOSE_MACRO)
         except RecognitionException as re:
             localctx.exception = re
@@ -838,11 +840,11 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 20, self.RULE_macroEnd)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 94
-            self.match(BCDParser.OPEN_MACRO_END)
-            self.state = 95
-            self.match(BCDParser.COMMAND)
             self.state = 96
+            self.match(BCDParser.OPEN_MACRO_END)
+            self.state = 97
+            self.match(BCDParser.COMMAND)
+            self.state = 98
             self.match(BCDParser.CLOSE_MACRO)
         except RecognitionException as re:
             localctx.exception = re
@@ -888,7 +890,7 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 22, self.RULE_macroCommand)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 98
+            self.state = 100
             self.match(BCDParser.COMMAND)
         except RecognitionException as re:
             localctx.exception = re
@@ -940,11 +942,11 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 24, self.RULE_inlineMacro)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 100
-            self.match(BCDParser.INLINE_MACRO)
-            self.state = 101
-            self.match(BCDParser.COMMAND)
             self.state = 102
+            self.match(BCDParser.INLINE_MACRO)
+            self.state = 103
+            self.match(BCDParser.COMMAND)
+            self.state = 104
             self.match(BCDParser.CLOSE_MACRO)
         except RecognitionException as re:
             localctx.exception = re
@@ -990,7 +992,7 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 26, self.RULE_text)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 104
+            self.state = 106
             self.match(BCDParser.TEXT)
         except RecognitionException as re:
             localctx.exception = re
@@ -1056,23 +1058,23 @@ class BCDParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 106
+            self.state = 108
             self.rawTag()
-            self.state = 110
+            self.state = 112
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==BCDParser.RAW_NAME:
-                self.state = 107
+                self.state = 109
                 self.rawAttr()
-                self.state = 112
+                self.state = 114
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 113
-            self.match(BCDParser.RAW_CLOSE)
-            self.state = 114
-            self.rawText()
             self.state = 115
+            self.match(BCDParser.RAW_CLOSE)
+            self.state = 116
+            self.rawText()
+            self.state = 117
             self.rawCloseTag()
         except RecognitionException as re:
             localctx.exception = re
@@ -1118,7 +1120,7 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 30, self.RULE_rawTag)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 117
+            self.state = 119
             self.match(BCDParser.RAW_TAG)
         except RecognitionException as re:
             localctx.exception = re
@@ -1142,8 +1144,9 @@ class BCDParser ( Parser ):
         def RAW_EQ(self):
             return self.getToken(BCDParser.RAW_EQ, 0)
 
-        def RAW_STRING(self):
-            return self.getToken(BCDParser.RAW_STRING, 0)
+        def rawValue(self):
+            return self.getTypedRuleContext(BCDParser.RawValueContext,0)
+
 
         def getRuleIndex(self):
             return BCDParser.RULE_rawAttr
@@ -1172,16 +1175,16 @@ class BCDParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 119
+            self.state = 121
             self.rawName()
-            self.state = 122
+            self.state = 124
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==BCDParser.RAW_EQ:
-                self.state = 120
+                self.state = 122
                 self.match(BCDParser.RAW_EQ)
-                self.state = 121
-                self.match(BCDParser.RAW_STRING)
+                self.state = 123
+                self.rawValue()
 
 
         except RecognitionException as re:
@@ -1228,8 +1231,54 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 34, self.RULE_rawName)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 124
+            self.state = 126
             self.match(BCDParser.RAW_NAME)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class RawValueContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def RAW_STRING(self):
+            return self.getToken(BCDParser.RAW_STRING, 0)
+
+        def getRuleIndex(self):
+            return BCDParser.RULE_rawValue
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterRawValue" ):
+                listener.enterRawValue(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitRawValue" ):
+                listener.exitRawValue(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRawValue" ):
+                return visitor.visitRawValue(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def rawValue(self):
+
+        localctx = BCDParser.RawValueContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 36, self.RULE_rawValue)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 128
+            self.match(BCDParser.RAW_STRING)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1271,10 +1320,10 @@ class BCDParser ( Parser ):
     def rawText(self):
 
         localctx = BCDParser.RawTextContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 36, self.RULE_rawText)
+        self.enterRule(localctx, 38, self.RULE_rawText)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 126
+            self.state = 130
             self.match(BCDParser.RAW_TEXT)
         except RecognitionException as re:
             localctx.exception = re
@@ -1317,10 +1366,10 @@ class BCDParser ( Parser ):
     def rawCloseTag(self):
 
         localctx = BCDParser.RawCloseTagContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 38, self.RULE_rawCloseTag)
+        self.enterRule(localctx, 40, self.RULE_rawCloseTag)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 128
+            self.state = 132
             self.match(BCDParser.CLOSE_TAG)
         except RecognitionException as re:
             localctx.exception = re

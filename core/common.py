@@ -1,6 +1,10 @@
-from contextlib import contextmanager
+from __future__ import annotations
+
+import typing
 from dataclasses import dataclass
-from typing import *
+
+if typing.TYPE_CHECKING:
+    from typing import *
 
 __all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses']
 
@@ -82,6 +86,12 @@ class UniNode:
         if not self.parent:
             return str(self)
         return f'{self.parent.path()}/{self}'
+
+    def select(self, predicate: Callable[['UniNode'], bool]) -> Generator['UniNode']:
+        for child in self.children:
+            if predicate(child):
+                yield child
+            yield from child.select(predicate)
 
 
 class UniqueNode(UniNode):
