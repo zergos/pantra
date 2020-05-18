@@ -50,12 +50,12 @@ class MyVisitor(BCDParserVisitor):
             if tag_name == 'python':
                 line_no = ctx.start.line
                 text = '#\n' * (line_no - 1) + text
-                self.current.filename = self.root.filename
             self.current.text = text
 
     def visitRawTag(self, ctx: BCDParser.RawTagContext):
-        text = ctx.getText().strip()
-        self.current = HTMLTemplate(text[1:], parent=self.current)
+        tag_name = ctx.getText().strip()[1:]
+        self.current = HTMLTemplate(tag_name, parent=self.current)
+        self.current.filename = self.root.filename
         # raw nodes goes first
         self.current.parent.children.insert(0, self.current.parent.children.pop())
 

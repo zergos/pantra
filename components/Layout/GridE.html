@@ -28,7 +28,7 @@
         grid-area: header;
         overflow: hidden;
         background: $header-color;
-        background: linear-gradient(125deg, darken($header-color, 5%) 0%, rgba(255,255,255,1) 100%);
+        background: $header-background;
         border-bottom: solid 3px $color-decoration;
     }
     .main {
@@ -37,6 +37,5 @@
     }
 </style>
 
-<python>
-fullscreen: bool = False
+<python namespace="grids">
 </python>

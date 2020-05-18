@@ -74,6 +74,9 @@ main.onmessage = (data) => {
         case 'app':
             document.location = obj.l;
             break;
+
+        case 'title':
+            document.title = obj.l;
     }
 };
 

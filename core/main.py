@@ -66,6 +66,8 @@ async def get_ws(request: Request):
                     else:
                         if command == 'REFRESH':
                             await session.send_root()
+                            if session.title:
+                                await session.send_title(session.title)
                         await session.recover_messages()
 
                 elif command == 'CLICK':

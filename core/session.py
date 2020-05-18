@@ -10,6 +10,7 @@ from typing import *
 from aiohttp import web
 
 from core.common import ADict, UniNode, typename
+from core.compiler import exec_restart
 from core.workers import async_worker
 from defaults import APPS_PATH
 
@@ -21,7 +22,7 @@ class Session:
     sessions: Dict[str, 'Session'] = dict()
     pending_errors: Queue[str] = Queue()
 
-    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user']
+    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title']
 
     def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
         key = f'{session_id}/{app}'
@@ -39,6 +40,7 @@ class Session:
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
+            self.title: str = ''
         self.app: Optional[str] = app
         self.ws: web.WebSocketResponse = ws
 
@@ -91,6 +93,9 @@ class Session:
         self.send_message({'m': 'c', 'l': ctx})
 
     def send_shot(self):
+        if not self.root.shot:
+            print('Shot not prepared yet')
+            return
         shot: ContextShot = self.root.shot
         if shot.deleted:
             self.send_message({'m': 'd', 'l': list(shot.deleted)})
@@ -110,6 +115,8 @@ class Session:
 
     async def send_root(self):
         lst = []
+        if 'on_restart' in self.root.locals:
+            exec_restart(self.root, self.root.template)
         self._collect_children([self.root], lst)
         await self.send_message({'m': 'u', 'l': lst})
 
@@ -134,6 +141,13 @@ class Session:
 
     def start_app(self, app):
         self.send_message({'m': 'app', 'l': app})
+
+    def send_title(self, title):
+        return self.send_message({'m': 'title', 'l': title})
+
+    def set_title(self, title):
+        self.title = title
+        self.send_title(title)
 
 
 def trace_errors(func):

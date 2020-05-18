@@ -1,0 +1,50 @@
+<nav>
+    {{#for l in get_link()}}
+    <a>{{l}}<span class="arrow"></span></a>
+    {{/for}}
+</nav>
+
+<style type="text/scss">
+    @import "defaults";
+
+    nav {
+        width: 100%;
+        padding: 0;
+        background: #9f9f9f;
+        border: 1px solid $color-dark-gray;
+    }
+    a {
+        display: block;
+        color: #fff;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        padding-left: 1em;
+        transition: all .12s ease-in-out;
+        cursor: pointer;
+        border-top: 1px solid black;
+
+        > .arrow {
+            float: right;
+
+            &:after {
+                content: '>';
+            }
+        }
+    }
+    a:first-child {
+        border-top: none;
+    }
+    a:hover {
+        background: #cecece;
+    }
+</style>
+
+<python>
+import random
+import string
+
+def get_link():
+    for i in range(20):
+        yield ''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 20)))
+
+</python>

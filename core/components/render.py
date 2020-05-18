@@ -159,6 +159,20 @@ class DefaultRenderer:
                     func = lambda: ctx.locals[value]
             node.con_classes.append((func, cls))
             return True
+        elif attr.startswith('css:'):
+            if type(node.style) != DynamicStyles:
+                self.ctx.session.error(f'Can not combine dynamic classes with expressions {attr}={value}')
+                return True
+            ctx = self.ctx
+            attr = attr.split(':')[1].strip()
+            if value is None:
+                node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
+            elif '{' in value:
+                node.style[attr] = DynamicString(self.build_func('f'+value, node))
+            else:
+                value = self.strip_quotes(value)
+                node.style[attr] = DynamicString(lambda: ctx.locals.get(value))
+            return True
         elif attr == 'on:render':
             return True
         elif attr == 'bind:value':
@@ -171,6 +185,9 @@ class DefaultRenderer:
             node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
             return True
         elif attr == 'style':
+            if node.style:
+                self.ctx.session.error(f'Style already set before {attr}={value}')
+                return True
             if '{' in value:
                 node.style = self.build_string(value, node)
             else:
@@ -364,6 +381,10 @@ class DefaultRenderer:
 
             if type(node.style) == DynamicString:
                 node.style = node.style()
+            elif type(node.style) == DynamicStyles:
+                for k, v in node.style.items():
+                    if type(v) == DynamicString:
+                        node.style[k] = v()
             if type(node.text) == DynamicString:
                 node.text = node.text()
             node.shot(node)

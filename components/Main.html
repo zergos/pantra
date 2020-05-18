@@ -39,6 +39,9 @@ from db.models import User
 from core.common import ADict
 from core.ctx import *
 
+def init():
+    session.set_title('Authorization')
+
 @db_session
 def get_users_count():
     return User.select().count()

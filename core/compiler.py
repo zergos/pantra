@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 import typing
-from functools import lru_cache
+from functools import lru_cache, wraps
+import traceback
 
 if typing.TYPE_CHECKING:
     from types import CodeType
@@ -31,26 +32,42 @@ def exec_includes(lst: str, rel_name: str, ctx_locals: typing.Dict[str, typing.A
         exec(code_base[filename], ctx_locals)
 
 
+def trace_exec(func):
+    @wraps(func)
+    def try_exec(ctx: Context, template: HTMLTemplate):
+        try:
+            func(ctx, template)
+        except (ImportError, OSError) as e:
+            ctx.session.error_later(f'{template.filename}:\n{e}')
+        except Exception as e:
+            if len(e.args) >= 2 and len(e.args[1]) >= 4:
+                ctx.session.error_later(
+                    f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
+            else:
+                ctx.session.error_later(f'{template.filename}:\n{e}')
+    return try_exec
+
+
+@trace_exec
 def compile_context_code(ctx: Context, template: HTMLTemplate):
     initial_locals = dict(ctx.locals)
     ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session})
-    try:
-        if 'namespace' in template.attributes:
-            exec_includes(template.attributes.namespace.strip('" '''), template.filename, ctx.locals)
+    if 'namespace' in template.attributes:
+        exec_includes(template.attributes.namespace.strip('" '''), template.filename, ctx.locals)
+    if template.text is not None:
         if not template.code:
             template.code = compile(template.text, template.filename, 'exec')
         # exec(template.code, common_globals(), self.ctx.locals)
         exec(template.code, ctx.locals)
-        ctx.locals.update(initial_locals)
-        if 'init' in ctx.locals:
-            ctx.locals.init()
-        if 'ns_type' in ctx.locals:
-            ctx.ns_type = ctx.locals.ns_type
-    except (ImportError, OSError) as e:
-        ctx.session.error_later(f'{template.filename}:\n{e}')
-    except Exception as e:
-        if len(e.args) >= 2 and len(e.args[1]) >= 4:
-            ctx.session.error_later(
-                f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
-        else:
-            ctx.session.error_later(f'{template.filename}:\n{e}')
+    ctx.locals.update(initial_locals)
+    if 'init' in ctx.locals:
+        ctx.locals.init()
+    if 'on_restart' in ctx.locals:
+        ctx.locals.on_restart()
+    if 'ns_type' in ctx.locals:
+        ctx.ns_type = ctx.locals.ns_type
+
+
+@trace_exec
+def exec_restart(ctx: Context, template: HTMLTemplate):
+    ctx.locals.on_restart()

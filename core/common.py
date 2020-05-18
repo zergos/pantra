@@ -6,7 +6,7 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses']
+__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'WebUnits']
 
 from core.oid import gen_id
 
@@ -30,14 +30,23 @@ class HookDict(ADict):
     @staticmethod
     def hook_set():
         HookDict.__getitem__ = HookDict.hook__getitem__
+        HookDict.get = HookDict.hook__get
 
     @staticmethod
     def hook_clear():
         HookDict.__getitem__ = ADict.__getitem__
+        HookDict.get = ADict.get
 
     @staticmethod
     def hook__getitem__(self, item):
         res = ADict.__getitem__(self, item)
+        if item != '_hook':
+            ADict.__getitem__(self, '_hook')(item)
+        return res
+
+    @staticmethod
+    def hook__get(self, item, default=None):
+        res = ADict.get(self, item, default)
         if item != '_hook':
             ADict.__getitem__(self, '_hook')(item)
         return res
@@ -161,7 +170,7 @@ class DynamicStyles(ADict):
             super().__init__()
 
     def __str__(self):
-        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items())
+        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items() if v)
 
     def __enter__(self):
         return self

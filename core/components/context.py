@@ -68,6 +68,13 @@ class Context(RenderNode):
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement(self.template.name, new_parent)
 
+    def div(self, classes: str = '', src: Optional[HTMLElement] = None, from_x: int = 0, from_y: int = 0, attributes: Optional[Dict, None] = None):
+        node = HTMLElement('div', self, attributes)
+        node.classes = DynamicClasses(classes)
+        if src:
+            node.set_metrics(src.metrics, from_x=from_x, from_y=from_y)
+        return node
+
     @property
     def tag_name(self):
         return self.template.name
@@ -199,14 +206,19 @@ class HTMLElement(RenderNode):
         self.request_metrics()
         return self._metrics
 
-    def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]], shift: int = 0, grow: int = 0):
+    def set_metrics(self, m: Union[MetricsData, Dict[str, Union[int, str]], List[Union[int, str]]],
+                    from_x: int = 0, from_y: int = 0, shift_x: int = 0, shift_y: int = 0, grow: int = 0):
         if isinstance(m, dict):
             m = ADict(m)
         elif isinstance(m, list):
             m = ADict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
         self.style.position = 'fixed'
-        self.style.left = WebUnits(m.left) + shift
-        self.style.top = WebUnits(m.top) + shift
+        if from_x:
+            m.left = from_x
+        self.style.left = WebUnits(m.left) + shift_x
+        if from_y:
+            m.top = from_y
+        self.style.top = WebUnits(m.top) + shift_y
         self.style.width = WebUnits(m.width) + grow
         self.style.height = WebUnits(m.height) + grow
         self.shot(self)

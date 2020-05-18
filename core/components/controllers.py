@@ -14,7 +14,7 @@ __all__ = ['DragOptions', 'DragController']
 
 
 class DragOptions(NamedTuple):
-    button: int = 1
+    button: int = 0
     allow_x: bool = True
     allow_y: bool = True
     top: Optional[int] = None

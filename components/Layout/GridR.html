@@ -1,14 +1,16 @@
 <div class="grid" class:fullscreen>
-    <div class="header">
+    <div ref:header class="header" css:height="top_height">
         <slot name="header">
             Header
         </slot>
     </div>
-    <div class="leftcol">
+    <div class="splitter v" on:drag="VDragSplitter"></div>
+    <div ref:leftcol class="leftcol" css:width="left_width">
         <slot name="leftcol">
             Left column
         </slot>
     </div>
+    <div class="splitter h" on:drag="HDragSplitter"></div>
     <div class="main">
         <slot name="main">
             Main content
@@ -21,9 +23,10 @@
 
     .grid {
         display: grid;
-        grid: "header header" minmax($header-height, max-content)
-              "leftcol main" auto /
-              minmax($leftcol-width, max-content) auto;
+        grid: "header header header" minmax($header-height, max-content)
+              "splitter-v splitter-v splitter-v" 3px
+              "leftcol splitter-h main" auto /
+              minmax($leftcol-width, max-content) 3px auto;
 
         &.fullscreen {
             height: 100vh;
@@ -32,17 +35,92 @@
     .header {
         grid-area: header;
         overflow: hidden;
+        background: $header-color;
+        background: $header-background;
     }
     .leftcol {
         grid-area: leftcol;
         overflow: hidden;
+        background: $leftcol-color;
+        background: $leftcol-background;
     }
     .main {
         grid-area: main;
         overflow: auto;
     }
+    .splitter {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        &.h {
+            grid-area: splitter-h;
+            cursor: ew-resize;
+            background: linear-gradient(to bottom, rgba($color-dark-gray, 1) 0%, rgba($color-dark-gray, 0) 100%);
+        }
+        &.v {
+            grid-area: splitter-v;
+            cursor: ns-resize;
+            background: linear-gradient(to right, rgba($color-dark-gray, 1) 0%, rgba($color-dark-gray, 0) 100%);
+        }
+    }
+
+    .moving.h {
+        background: linear-gradient(to bottom, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
+    }
+    .moving.v {
+        background: linear-gradient(to right, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
+    }
 </style>
 
-<python>
-fullscreen: bool = False
+<python namespace="grids">
+from core.imports import *
+from core.ctx import *
+
+top_height: str = ''
+left_width: str = ''
+
+class HDragSplitter(DragController):
+    drag_node: HTMLElement
+    source_width: int
+
+    def get_options(self, node: HTMLElement):
+        return DragOptions(allow_y=False)
+
+    def start(self, node) -> bool:
+        self.source_width = refs.leftcol.metrics.width
+        self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
+        return True
+
+    def move(self):
+        self.drag_node.move(self.delta_x, 0)
+
+    def stop(self):
+        global left_width
+        self.drag_node.remove()
+        width = self.source_width + self.x - self.from_x
+        ctx.left_width = WebUnits(width)
+        refs.leftcol.metrics.width = width
+
+class VDragSplitter(DragController):
+    drag_node: HTMLElement
+    source_height: int
+
+    def get_options(self, node: HTMLElement):
+        return DragOptions(allow_x=False)
+
+    def start(self, node) -> bool:
+        self.source_height = refs.header.metrics.height
+        self.drag_node = ctx.div('moving v', node, from_y=self.from_y)
+        return True
+
+    def move(self):
+        self.drag_node.move(0, self.delta_y)
+
+    def stop(self):
+        global top_height
+        self.drag_node.remove()
+        height = self.source_height + self.y - self.from_y
+        ctx.top_height = WebUnits(height)
+        refs.header.metrics.height = height
+
 </python>
