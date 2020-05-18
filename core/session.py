@@ -21,6 +21,8 @@ class Session:
     sessions: Dict[str, 'Session'] = dict()
     pending_errors: Queue[str] = Queue()
 
+    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user']
+
     def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
         key = f'{session_id}/{app}'
         if key in cls.sessions:
@@ -37,6 +39,7 @@ class Session:
             self.app: Optional[str] = app
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
+            self.user: Dict[str, Any] = ADict()
         self.ws: web.WebSocketResponse = ws
 
     @staticmethod
@@ -71,7 +74,7 @@ class Session:
 
     @staticmethod
     def error_later(message):
-        print(f'Evaluation error:\n{message}')
+        print(f'Evaluation error: {message}')
         Session.pending_errors.put(message)
 
     @async_worker

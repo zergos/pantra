@@ -109,6 +109,9 @@ def process_click(method: str, oid: int):
 
 @trace_errors
 def process_click_referred(session: Session, context: Context, method: str, node: RenderNode):
+    if ' ' in method:
+        for m in method.split(' '):
+            process_click_referred.call(session, context, m, node)
     func = context[method]
     if not func: return
     if callable(func):

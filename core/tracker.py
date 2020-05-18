@@ -24,11 +24,11 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         if filename.endswith('.html'):
             for k, v in list(self.templates.items()):
                 if v and v.filename == filename:
-                    self.sessions.error_later(f'component {k} has updated')
+                    # self.sessions.error_later(f'component {k} has updated')
                     del self.templates[k]
         else:
             if filename in self.code_base:
-                self.sessions.error_later(f'namespace {os.path.basename(filename)} has updated')
+                # self.sessions.error_later(f'namespace {os.path.basename(filename)} has updated')
                 del self.code_base[filename]
 
 

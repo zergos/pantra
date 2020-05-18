@@ -1,6 +1,6 @@
 <label ref:label class:inline class:block="{not inline}" class:error class:required>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select class:wide multiple="{multiple}" on:change="action">
+    <select class:wide multiple="{multiple}" on:change="update_value action">
         {{#if blank}}
         <SelectItem caption="" selected></SelectItem>
         {{/if}}
@@ -16,8 +16,9 @@ inline: bool = False
 multiple: str = ''
 wide: bool = False
 blank: bool = False
+action: str = ''
 
-def action(node):
+def update_value(node):
     global value
     value = node.value.text if type(node.value) != list else [v.text for v in node.value]
 

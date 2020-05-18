@@ -135,7 +135,8 @@ class DefaultRenderer:
             return True
         elif attr.startswith('local:'):
             name = attr.split(':')[1].strip()
-            node.context.locals[name] = self.eval_string(value, node)
+            #node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
+            node.context.locals[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
             return True
         elif attr.startswith('class:'):
             cls = attr.split(':')[1].strip()
@@ -247,15 +248,18 @@ class DefaultRenderer:
                 for child in template.children:
                     self.build_node(child, parent)
             else:
-                # temporarily replace local context
-                # I know it's dirty, but it eliminates the need to add param context to all builders
-                current_ctx = self.ctx
+                # temporarily replace local context, but preserve ns_type
+                # I know it's dirty, but it eliminates the need to add param context to all constructors
+                save_ctx = self.ctx
+                save_ns = slot.ctx.ns_type
                 parent.context = slot.ctx
                 self.ctx = slot.ctx
+                self.ctx.ns_type = save_ctx.ns_type
                 for child in slot_template.children:
                     self.build_node(child, parent)
-                parent.context = current_ctx
-                self.ctx = current_ctx
+                self.ctx.ns_type = save_ns
+                parent.context = save_ctx
+                self.ctx = save_ctx
 
         elif template.tag_name == 'python':
             if not self.ctx._executed:

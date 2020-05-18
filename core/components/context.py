@@ -146,11 +146,18 @@ class HTMLElement(RenderNode):
                  '_set_focus', '_metrics', '_metrics_ev', '_value', '_value_ev'
                  ]
 
-    def __new__(cls, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
-        if parent and not parent.context.ns_type:
-            return super().__new__(cls)
-        instance = super().__new__(NSElement)
-        instance.ns_type = parent.context.ns_type
+    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
+        if parent:
+            if type(parent) == NSElement:
+                instance = super().__new__(NSElement)
+                instance.ns_type = parent.ns_type
+            elif parent.context.ns_type:
+                instance = super().__new__(NSElement)
+                instance.ns_type = parent.context.ns_type
+            else:
+                instance = super().__new__(cls)
+        else:
+            instance = super().__new__(cls)
         return instance
 
     def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
@@ -239,6 +246,12 @@ class HTMLElement(RenderNode):
         if type(item) == int:
             return self.children[item]
         return self.context[item]
+
+    def __getattr__(self, item):
+        if hasattr(HTMLElement, item):
+            return object.__getattribute__(self, item)
+        else:
+            return getattr(self.context, item)
 
     def __str__(self):
         return self.tag_name
