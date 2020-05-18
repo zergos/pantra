@@ -58,6 +58,8 @@ const HTMLElementSerializer = {
             element.removeAttribute('style');
         if (!!v.t)
             element.textContent = v.t;
+        else if (!element.firstElementChild)
+            element.textContent = '';
         if (v.f)
             element.focus();
         return element;

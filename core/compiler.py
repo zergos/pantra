@@ -33,7 +33,7 @@ def exec_includes(lst: str, rel_name: str, ctx_locals: typing.Dict[str, typing.A
 
 def compile_context_code(ctx: Context, template: HTMLTemplate):
     initial_locals = dict(ctx.locals)
-    ctx.locals.update({'ctx': ctx, 'refs': ctx.refs})
+    ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session})
     try:
         if 'namespace' in template.attributes:
             exec_includes(template.attributes.namespace.strip('" '''), template.filename, ctx.locals)

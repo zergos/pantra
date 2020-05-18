@@ -36,10 +36,10 @@ class Session:
             self.state: ADict = ADict()
             self.just_connected: bool = True
             self.root: Optional[Context] = None
-            self.app: Optional[str] = app
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
-            self.user: Dict[str, Any] = ADict()
+            self.user: Optional[Dict[str, Any]] = None
+        self.app: Optional[str] = app
         self.ws: web.WebSocketResponse = ws
 
     @staticmethod

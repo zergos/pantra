@@ -80,13 +80,6 @@ class Context(RenderNode):
         HookDict.hook_clear()
         del self.locals['_hook']
 
-    def select(self, predicate: Union[Iterable[str], Callable[[UniNode], bool]]) -> Generator[UniNode]:
-        if isinstance(predicate, typing.Iterable):
-            yield from super().select(lambda node: node.tag_name in predicate)
-        else:
-            yield from super().select(predicate)
-
-
     def __getattr__(self, item):
         if hasattr(Context, item):
             return object.__getattribute__(self, item)
@@ -99,8 +92,9 @@ class Context(RenderNode):
         if hasattr(Context, key):
             object.__setattr__(self, key, value)
         else:
+            old_value = object.__getattribute__(self, 'locals').get(key)
             object.__getattribute__(self, 'locals')[key] = value
-            if key in self.react_vars:
+            if value != old_value and key in self.react_vars:
                 for node in frozenset(self.react_vars[key]):
                     node.update()
 
@@ -233,6 +227,10 @@ class HTMLElement(RenderNode):
         self.session.request_value(self)
         self._value_ev.wait()
         return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
 
     def move(self, delta_x, delta_y):
         self.style.left += delta_x

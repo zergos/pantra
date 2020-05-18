@@ -80,6 +80,14 @@ class RenderNode(UniqueNode):
                     clone.append(sub)
         return clone
 
+    def select(self, predicate: Union[Iterable[str], Callable[[AnyNode], bool]]) -> Generator[AnyNode]:
+        if isinstance(predicate, str):
+            yield from super().select(lambda node: node.tag_name == predicate)
+        elif isinstance(predicate, typing.Iterable):
+            yield from super().select(lambda node: node.tag_name in predicate)
+        else:
+            yield from super().select(predicate)
+
 
 class DefaultRenderer:
     __slots__ = ['ctx']
@@ -156,10 +164,12 @@ class DefaultRenderer:
         elif attr == 'bind:value':
             if value is None:
                 value = 'value'
-            value = self.strip_quotes(value)
+            else:
+                value = self.strip_quotes(value)
             ctx = self.ctx
+            node.attributes[attr] = value
             node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
-            return False
+            return True
         elif attr == 'style':
             if '{' in value:
                 node.style = self.build_string(value, node)

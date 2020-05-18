@@ -1,8 +1,6 @@
 <label class:inline class:block="{not inline}" class:required class:error><span>{{caption}}</span>
-    <input type="{type}" bind:value placeholder="{placeholder}">
-    {{#if error}}
+    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}">
     <div class="message">{{error}}</div>
-    {{/if}}
 </label>
 
 <python namespace="inputs">

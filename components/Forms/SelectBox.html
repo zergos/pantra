@@ -1,6 +1,6 @@
 <label ref:label class:inline class:block="{not inline}" class:error class:required>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select class:wide multiple="{multiple}" on:change="update_value action">
+    <select class:wide multiple="{multiple}" required="{required}" on:change="update_value action">
         {{#if blank}}
         <SelectItem caption="" selected></SelectItem>
         {{/if}}
@@ -21,5 +21,8 @@ action: str = ''
 def update_value(node):
     global value
     value = node.value.text if type(node.value) != list else [v.text for v in node.value]
+    opts = [node.value] if type(node.value) != list else node.value
+    for opt in node.select('option'):
+        opt.attributes.selected = opt in opts
 
 </python>
