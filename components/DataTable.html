@@ -29,7 +29,7 @@
     </table>
 </div>
 
-<event selector="td, td > macro, td > text" on:click="enter_cell"></event>
+<event selector="td" on:click="enter_cell"></event>
 <event selector="input" on:focusout="exit_cell"></event>
 
 <style type="text/scss">
@@ -181,17 +181,14 @@ class DragResize(DragController):
         refs.colgroup.update_tree()
 
 def enter_cell(node: HTMLElement):
-    if node.tag_name == 'td':
-        node = node.children[0]
-    field = HTMLElement('input', node.parent, {'type': 'text', 'value': str(node.text)})
+    field = HTMLElement('input', node, {'type': 'text', 'value': str(node.text)})
     field.focus()
-    field.update()
-    node.parent.style.padding = 0
-    node.parent.update()
-    node.remove()
+    node.text = ''
+    node.style.padding = 0
+    node.update()
 
 def exit_cell(node: HTMLElement):
-    TextNode(node.parent, node.value).update()
+    node.parent.text = node.value
     node.parent.style -= 'padding'
     node.parent.update()
     node.remove()

@@ -4,13 +4,13 @@
             Header
         </slot>
     </div>
-    <div class="splitter v" on:drag="VDragSplitter"></div>
+    <div class="splitter v" on:drag="VDragSplitter"/>
     <div ref:leftcol class="leftcol" css:width="left_width">
         <slot name="leftcol">
             Left column
         </slot>
     </div>
-    <div class="splitter h" on:drag="HDragSplitter"></div>
+    <div class="splitter h" on:drag="HDragSplitter"/>
     <div class="main">
         <slot name="main">
             Main content

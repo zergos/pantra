@@ -170,7 +170,7 @@ class DynamicStyles(ADict):
             super().__init__()
 
     def __str__(self):
-        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items() if v)
+        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items() if v not in ('', None))
 
     def __enter__(self):
         return self

@@ -42,24 +42,27 @@ const HTMLElementSerializer = {
         }
         for (let at in v.a) {
             if (!process_special_attribute(at, v.a[at], element, v.i, is_new))
-                if (!!v.a[at])
+                if (v.a[at])
                     element.setAttribute(at, v.a[at]);
                 else
                     element.removeAttribute(at);
         }
-        if (!!v.C)
+        if (v.C)
             //element.className = v.C;
             element.setAttribute('class', v.C);
         else
             element.removeAttribute('class');
-        if (!!v.s)
+        if (v.s)
             element.setAttribute('style', v.s);
         else
             element.removeAttribute('style');
-        if (!!v.t)
-            element.textContent = v.t;
-        else if (!element.firstElementChild)
-            element.textContent = '';
+        if (is_new) {
+            if (v.t) element.textContent = v.t;
+        } else if (!element.firstElementChild) {
+            if (v.t !== element.textContent)
+                element.textContent = v.t;
+        } else
+            element.firstChild.nodeValue = v.t || '';
         if (v.f)
             element.focus();
         return element;

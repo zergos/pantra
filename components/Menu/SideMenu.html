@@ -1,7 +1,9 @@
 <nav>
-    {{#for l in get_link()}}
-    <a>{{l}}<span class="arrow"></span></a>
-    {{/for}}
+    <slot>
+        {{#for l in get_filler()}}
+        <a>{{l}}<span class="arrow">{{'>'}}</span></a>
+        {{/for}}
+    </slot>
 </nav>
 
 <style type="text/scss">
@@ -16,19 +18,17 @@
     a {
         display: block;
         color: #fff;
+        font-weight: bold;
         padding-top: 0.2rem;
         padding-bottom: 0.2rem;
-        padding-left: 1em;
+        padding-left: 1rem;
+        padding-right: 0.3rem;
         transition: all .12s ease-in-out;
         cursor: pointer;
         border-top: 1px solid black;
 
         > .arrow {
             float: right;
-
-            &:after {
-                content: '>';
-            }
         }
     }
     a:first-child {
@@ -43,7 +43,7 @@
 import random
 import string
 
-def get_link():
+def get_filler():
     for i in range(20):
         yield ''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 20)))
 

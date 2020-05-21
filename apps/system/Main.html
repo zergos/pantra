@@ -3,13 +3,26 @@
         <h1>System configuration</h1>
     </header>
     <leftcol>
-        <SideMenu></SideMenu>
+        <SideMenu>
+            <MenuItem caption="Users" action="edit_users"/>
+            <MenuItem caption="Apps"/>
+        </SideMenu>
     </leftcol>
+    <main>
+        <div ref:main/>
+    </main>
 </GridR>
 
 <python>
+from core.imports import *
 from core.ctx import *
 
 def init():
     session.set_title('System configuration')
+
+def edit_users(node):
+    c = Context('DataTable', refs.main)
+    c.src = 'User'
+    c.render.build()
+
 </python>

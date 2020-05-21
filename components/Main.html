@@ -2,31 +2,31 @@
 <GridX fullscreen>
     <CardForm ref:form caption="Starting facility">
         <SelectBox ref:app caption="Select app" blank wide required>
-            <SelectItem caption="system"></SelectItem>
+            <SelectItem caption="system"/>
             {{#for app in get_apps()}}
-            <SelectItem caption="{app}"></SelectItem>
+            <SelectItem caption="{app}"/>
             {{/for}}
         </SelectBox>
         <SelectBox ref:user caption="Select user" blank wide required>
             {{#for user in get_users()}}
-            <SelectItem caption="{user}"></SelectItem>
+            <SelectItem caption="{user}"/>
             {{#else}}
             <option disabled>no users available</option>
             {{/for}}
         </SelectBox>
         {{#if not get_users_count()}}
         <InputBox caption="Create new admin user">
-            <InputText ref:login caption="Login" required></InputText>
-            <InputPassword ref:passw caption="Password" required></InputPassword>
-            <InputPassword ref:passw2 caption="Password again" required on:render="passw_render"></InputPassword>
+            <InputText ref:login caption="Login" required/>
+            <InputPassword ref:passw caption="Password" required/>
+            <InputPassword ref:passw2 caption="Password again" required on:render="passw_render"/>
             <GridX>
-                <Button default action="create_first_admin" caption="Create and login"></Button>
+                <Button default action="create_first_admin" caption="Create and login"/>
             </GridX>
         </InputBox>
         {{#else}}
-        <InputPassword ref:password caption="Password" required></InputPassword>
+        <InputPassword ref:password caption="Password" required/>
         <GridX>
-            <Button default action="login" caption="Login"></Button>
+            <Button default action="login" caption="Login"/>
         </GridX>
         {{/if}}
     </CardForm>
