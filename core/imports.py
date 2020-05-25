@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 
 from core.common import *
+from core.components.htmlnode import *
 from core.components.controllers import *
 from core.components.context import *
 

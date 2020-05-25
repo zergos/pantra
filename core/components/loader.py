@@ -222,7 +222,7 @@ class StyleVisitor(BCDParserVisitor):
         if self.global_mode:
             self.styles.append(text)
         else:
-            base_class = f'.ctx-{self.class_name}'
+            base_class = f'.{self.class_name}'
 
             def go(l):
                 res = []
@@ -239,7 +239,7 @@ class StyleVisitor(BCDParserVisitor):
             res = go(lst)
 
             # chunks = re.split(r'(?<=})', text)
-            # res = '\n'.join(f'.ctx-{self.class_name} {chunk.strip()}' for chunk in chunks if chunk.strip())
+            # res = '\n'.join(f'.{self.class_name} {chunk.strip()}' for chunk in chunks if chunk.strip())
             self.styles.append(res)
 
     def visitRawName(self, ctx: BCDParser.RawNameContext):

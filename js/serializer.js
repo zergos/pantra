@@ -84,7 +84,7 @@ const ContextSerializer = {
             }
             element = document.createElement(v.n);
             OID.set(element, v.i);
-            element.className = 'default ctx-'+v.n;
+            element.className = 'd '+v.n;
             parent.appendChild(element);
         }
         return element;

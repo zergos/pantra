@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import re
 
-from pony.orm.core import Query, EntityMeta
+from pony.orm.core import Query, Entity
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -21,7 +21,7 @@ def query_columns(q: Query) -> Optional[List[Tuple(str, type)]]:
     res = []
     trans = q._translator
 
-    if isinstance(trans.expr_type, EntityMeta):
+    if isinstance(trans.expr_type, Entity):
         res = [(attr.title, attr.py_type) for name in trans.col_names for attr in [getattr(trans.expr_type, name)]]
         return res
 

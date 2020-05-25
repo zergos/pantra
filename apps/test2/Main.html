@@ -1,0 +1,45 @@
+<DataTable data="{data}" col_id="id" not:movable width="auto">
+    <thead>
+        <tr>
+            <th colspan="2">Left</th>
+            <th>Right</th>
+        </tr>
+    </thead>
+    <columns>
+        <group>
+            <group>
+                <col name="a"/>
+                <col name="e"/>
+            </group>
+            <col name="c"/>
+        </group>
+        <col name="b">
+        <col name="d"/>
+    </columns>
+</DataTable>
+
+<python>
+import random
+import string
+from datetime import datetime, timedelta
+from core.imports import *
+
+data: List[Dict[str, Any]]
+col_names: List[str]
+
+def init():
+    global data, col_names
+    data = []
+    now = datetime.now()
+    for r in range(100):
+        data.append(ADict(
+            id=r,
+            a=random.randint(1, 1000),
+            b=''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 15))),
+            c=now + timedelta(minutes=r),
+            d=''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 15))),
+            e=random.randint(1, 1000),
+        ))
+    col_names = data[0].keys()
+
+</python>

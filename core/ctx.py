@@ -11,3 +11,7 @@ if typing.TYPE_CHECKING:
     refs: ADict
     ctx: Context
     session: Session
+
+
+def defined(name):
+    return name in globals()

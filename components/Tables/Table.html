@@ -1,11 +1,13 @@
+"""
 <div class="table-container">
     <table ref:table>
         <colgroup ref:colgroup>
             {{#for size in col_sizes}}
-            <col style="width: {size}%">
+            <col width="{size}">
             {{/for}}
         </colgroup>
         <thead ref:thead>
+            <slot name="thead"/>
             <tr ref:head_row>
                 {{#for column in columns}}
                 <th>
@@ -20,6 +22,7 @@
         <tbody ref:tbody>
         {{#for row in get_rows()}}
             <tr>
+                <scope id="{row['id']}"/>
                 {{#for col in columns}}
                 <td>{{fmt(row[col.name])}}</td>
                 {{/for}}
@@ -60,32 +63,48 @@
 </style>
 
 <python>
+# """
 from datetime import datetime
-from pony.orm import *
 from core.imports import *
 from core.ctx import *
-import db.models
+from components.Tables.common import *
+
+data: List[Dict[str, Any]]
+maps: Optional[MapsRows] = None
+
+if not defined('col_id'):
+    col_id: Optional[str] = None
 
 src: str
 columns: Optional[List] = None
 col_sizes: Optional[List] = None
 
 def init():
-    global columns, col_sizes
-    entity = getattr(db.models, src)
-    columns = entity._attrs_with_columns_
-    col_sizes = [100/len(columns)] * len(columns)
+    global maps, col_id
+    if not data:
+        return False
+    # detect types
+    col_types: Dict[str, type] = {k: type(v) for k, v in data[0].items()}
+    col_titles: Dict[str, str] = {k: k for k in data[0].keys()}
+    cols = ctx.slot['columns']
+    if not cols:
+        row = []
+        for k in data[0].keys():
+            if k != col_id:
+                row.append(ColMap(name=k, title=col_titles[k], align=align_by_type(col_types['k'])))
+        maps.append(row)
+    else:
+        maps = build_maps(cols)
+        for row in maps:
+            for col in row:
+                t = col.template
+                name = t.attributes.name
+                col.name = name
+                col.title = t.attributes.get('title', col_titles[name])
+                col.align = t.attributes.get('align', align_by_type(col_types[name]))
+                col.width = t.attributes.get('width')
+                col.editable = t.attributes.get('editable', True)
 
-@db_session
-def get_rows():
-    entity = getattr(db.models, src)
-    query = entity.select()
-    if order_by > 0:
-        query = query.order_by(columns[order_by-1])
-    elif order_by < 0:
-        query = query.order_by(desc(columns[order_by+1]))
-    for row in query:
-        yield row.to_dict()
 
 def fmt(value):
     if type(value) == datetime:
@@ -123,8 +142,7 @@ class DragReorder(DragController):
 
     def start(self, node):
         self.source_index = node.parent.index()
-        self.drag_node = HTMLElement('div', refs.thead)
-        self.drag_node.classes = 'moving'
+        self.drag_node = ctx.div('moving')
         self.drag_node.text = node.children[0].text
         self.drag_node.set_metrics(node.parent.metrics, grow=2)
         return True
@@ -164,8 +182,7 @@ class DragResize(DragController):
     def start(self, node: HTMLElement):
         self.source_index = node.parent.parent.index()
         self.source_node = node.parent.parent
-        self.drag_node = HTMLElement('div', ctx)
-        self.drag_node.classes = 'resizing'
+        self.drag_node = ctx.div('resizing', node)
         self.drag_node.set_metrics([self.x, node.metrics.top, 3, '100vh'])
         return True
 
@@ -193,4 +210,4 @@ def exit_cell(node: HTMLElement):
     node.parent.update()
     node.remove()
 
-</python>
+#</python>

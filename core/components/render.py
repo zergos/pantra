@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 
 from compiler import compile_context_code
-from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename
+from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.htmlnode import HTMLTemplate
 from core.components.loader import collect_template
 from core.session import Session, run_safe
@@ -17,12 +17,13 @@ __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session', 'render_this']
+    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope']
 
     def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
         self.shot: 'ContextShot' = shot or parent.shot
         self.session: Session = session or parent.session
+        self.scope: ADict[str, Any] = ADict() if not parent else parent.scope
         self.render_this: bool = render_this
         if render_this:
             self.shot(self)
@@ -30,6 +31,7 @@ class RenderNode(UniqueNode):
             self.context = self
         else:
             self.context = parent.context
+        self.name = ''
 
     def _cleanup_node(self, node):
         if node in self.context.react_nodes:
@@ -140,6 +142,7 @@ class DefaultRenderer:
         if attr.startswith('ref:'):
             name = attr.split(':')[1].strip()
             self.ctx.refs[name] = node
+            node.name = name
             return True
         elif attr.startswith('local:'):
             name = attr.split(':')[1].strip()
@@ -183,6 +186,14 @@ class DefaultRenderer:
             ctx = self.ctx
             node.attributes[attr] = value
             node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
+            return True
+        elif attr.startswith('not:'):
+            attr = attr.split(':')[1].strip()
+            node.locals[attr] = False
+            return True
+        elif attr.startswith('data:'):
+            attr = attr.split(':')[1].strip()
+            node.data[attr] = self.eval_string(value, node)
             return True
         elif attr == 'style':
             if node.style:
@@ -264,10 +275,7 @@ class DefaultRenderer:
                 name = template.attributes.get('name')
                 if name:
                     name = self.build_string(name, parent)
-                    for child in slot.template.children:
-                        if child.tag_name == name:
-                            slot_template = child
-                            break
+                    slot_template = slot[name]
                 else:
                     slot_template = slot.template
 
@@ -302,10 +310,16 @@ class DefaultRenderer:
             node = c.EventNode(parent)
             for k, v in template.attributes.items():
                 if k == 'selector':
-                    node.attributes[k] = ','.join(f'.ctx-{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
+                    node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
             self.ctx.render_base = True
+
+        elif template.tag_name == 'scope':
+            scope = parent.scope.copy()
+            for k, v in template.attributes.items():
+                scope[k] = self.eval_string(v, parent)
+            parent.scope = scope
 
         elif template.tag_name == '@text':
             node = c.TextNode(parent, self.strip_quotes(template.text))

@@ -41,6 +41,11 @@ class Slot(typing.NamedTuple):
     ctx: 'Context'
     template: HTMLTemplate
 
+    def __getitem__(self, name):
+        for child in self.template.children:
+            if child.tag_name == name:
+                return child
+
 
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type', 'react_vars', 'react_nodes']
@@ -77,7 +82,7 @@ class Context(RenderNode):
 
     @property
     def tag_name(self):
-        return self.template.name
+        return self.template.name + f':{self.name}' if self.name else ''
 
     @contextmanager
     def record_reactions(self, node: AnyNode):
@@ -143,7 +148,7 @@ class ConditionalClasses(list):
 
 
 class HTMLElement(RenderNode):
-    __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style',
+    __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style', 'data',
                  '_set_focus', '_metrics', '_metrics_ev', '_value', '_value_ev'
                  ]
 
@@ -164,11 +169,12 @@ class HTMLElement(RenderNode):
     def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
         super().__init__(parent, True)
         self.tag_name: str = tag_name
-        self.attributes: ADict = attributes and ADict(attributes) or ADict()
+        self.attributes: ADict[str, Any] = attributes and ADict(attributes) or ADict()
         self.classes: Union[DynamicClasses, DynamicString, str] = DynamicClasses()
         self.con_classes: ConditionalClasses = ConditionalClasses()
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
         self.text: Union[DynamicString, str] = text
+        self.data: ADict[str, Any] = ADict()
         self._set_focus = False
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
@@ -264,14 +270,14 @@ class HTMLElement(RenderNode):
             return getattr(self.context, item)
 
     def __str__(self):
-        return self.tag_name
+        return self.tag_name + f':{self.name}' if self.name else ''
 
 
 class NSElement(HTMLElement):
     __slots__ = ['ns_type']
 
     def __str__(self):
-        return f'{NSType(self.ns_type).name}:{self.tag_name}'
+        return f'{NSType(self.ns_type).name}:{self.tag_name}' + f':{self.name}' if self.name else ''
 
 
 @dataclass

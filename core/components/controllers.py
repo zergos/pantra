@@ -8,7 +8,7 @@ from core.session import trace_errors, Session
 from core.workers import thread_worker
 
 if TYPE_CHECKING:
-    from core.components.context import Context, RenderNode, HTMLElement
+    from core.components.context import Context, RenderNode, HTMLElement, AnyNode
 
 __all__ = ['DragOptions', 'DragController']
 
@@ -77,13 +77,21 @@ class DragController(ABC):
 
 
 @thread_worker
-@trace_errors
 def process_drag_start(session: Session, method: str, oid: int, x: int, y: int, button: int):
-    node: RenderNode = get_node(oid)
+    node: AnyNode = get_node(oid)
     if node is None: return
-    session.state.drag: DragController = node.context.locals[method](node)
-    if session.state.drag._mousedown(node, x, y, button):
-        session.send_message({'m': 'dm'})
+    process_drag_referred(session, node, method, x, y, button)
+
+
+@trace_errors
+def process_drag_referred(session: Session, node: AnyNode, method: str, x: int, y: int, button: int):
+    func = node[method]
+    if type(func) == str:
+        process_click_referred.call(session, node.context.parent, method, x, y, button)
+    else:
+        session.state.drag: DragController = func(node)
+        if session.state.drag._mousedown(node, x, y, button):
+            session.send_message({'m': 'dm'})
 
 
 @thread_worker

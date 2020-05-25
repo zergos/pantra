@@ -91,6 +91,9 @@ class UniNode:
     def __getitem__(self, item):
         return self.children[item]
 
+    def __iter__(self):
+        yield from self.children
+
     def path(self):
         if not self.parent:
             return str(self)
