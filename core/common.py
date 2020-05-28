@@ -31,14 +31,14 @@ class ADict(dict):
         return res
 
     def __sub__(self, other):
-        res = self.__class__(other)
+        res = self.__class__(self)
         for k in other:
             if k in res:
                 del res[k]
         return res
 
     def __truediv__(self, other):
-        res = self.__class__(other)
+        res = self.__class__(self)
         res2 = self.__class__()
         for k in other:
             if k in res:
@@ -188,13 +188,16 @@ class DynamicClasses(str):
 
 
 class DynamicStyles(ADict):
-    def __init__(self, style: Optional[str] = None):
+    def __init__(self, style: Optional[Union[dict, str]] = None):
         if style:
-            data = {
-                expr.split('=')[0].strip(): expr.split('=')[1].strip()
-                for expr in style.split(';') if expr.strip()
-            }
-            super().__init__(data)
+            if isinstance(style, dict):
+                super().__init__(style)
+            else:
+                data = {
+                    expr.split('=')[0].strip(): expr.split('=')[1].strip()
+                    for expr in style.split(';') if expr.strip()
+                }
+                super().__init__(data)
         else:
             super().__init__()
 

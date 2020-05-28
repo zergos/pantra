@@ -120,14 +120,16 @@ def collect_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], str):
         for y, row in enumerate(maps):
             idx = 0
             for x, c in enumerate(row):
-                if c.node.style:
+                if c.node.style and idx <= i < idx + c.hspan:
                     td_style, col_style = c.node.style / ['width', 'background', 'border', 'visibility']
                     if td_style:
-                        css.append(f'#{ctx.oid} > tbody > tr:nth-child({row_amount}n+{y}) > td:nth-child({x}) {{ {td_style} }}')
-                    if col_style and idx <= i < idx + c.hspan:
-                        style |= col_style
+                        css.append(
+                            f'#t{ctx.oid} > tbody > tr:nth-child({row_amount}n+{y + 1}) > td:nth-child({x + 1}) {{ {td_style} }}')
+                    style |= col_style
                 idx += c.hspan
         col_styles.append(style)
+    for r in range(row_amount):
+        css.append(f'#t{ctx.oid} > tbody > tr:nth-child({row_amount*2}n+{row_amount+r+1}) {{ background: rgba(128, 128, 128, 0.2) }}')
     return col_styles, '\n'.join(css)
 
 

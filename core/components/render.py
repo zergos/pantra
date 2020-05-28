@@ -176,7 +176,7 @@ class DefaultRenderer:
                 node.style[attr] = DynamicString(self.build_func('f'+value, node))
             else:
                 value = self.strip_quotes(value)
-                node.style[attr] = DynamicString(lambda: ctx.locals.get(value))
+                node.style[attr] = value #DynamicString(lambda: ctx.locals.get(value))
             return True
         elif attr == 'on:render':
             return True
