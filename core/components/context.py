@@ -42,9 +42,13 @@ class Slot(typing.NamedTuple):
     template: HTMLTemplate
 
     def __getitem__(self, name):
-        for child in self.template.children:
-            if child.tag_name == name:
-                return child
+        if type(name) == str:
+            for child in self.template.children:
+                if child.tag_name == name:
+                    return child
+        else:
+            return super().__getitem__(name)
+
 
 
 class Context(RenderNode):
@@ -61,7 +65,7 @@ class Context(RenderNode):
         if type(template) == HTMLTemplate:
             self.template: HTMLTemplate = template
         else:
-            self.template = collect_template(self.session, template)
+            self.template: HTMLTemplate = collect_template(self.session, template)
 
         self.render: DefaultRenderer = DefaultRenderer(self)
         self.render_base = False
@@ -121,7 +125,7 @@ class Context(RenderNode):
         self.locals[key] = value
 
     def __str__(self):
-        return f'${self.template.name}'
+        return f'${self.template.name}' + (f':{self.name}' if self.name else '')
 
 
 class ConditionalClass(typing.NamedTuple):
@@ -270,14 +274,14 @@ class HTMLElement(RenderNode):
             return getattr(self.context, item)
 
     def __str__(self):
-        return self.tag_name + f':{self.name}' if self.name else ''
+        return self.tag_name + (f':{self.name}' if self.name else '')
 
 
 class NSElement(HTMLElement):
     __slots__ = ['ns_type']
 
     def __str__(self):
-        return f'{NSType(self.ns_type).name}:{self.tag_name}' + f':{self.name}' if self.name else ''
+        return f'{NSType(self.ns_type).name}:{self.tag_name}' + (f':{self.name}' if self.name else '')
 
 
 @dataclass
@@ -307,7 +311,7 @@ class ConditionNode(RenderNode):
 
 
 class LoopNode(RenderNode):
-    __slots__ = ['template', 'else_template', 'var_name', 'iterator']
+    __slots__ = ['template', 'else_template', 'var_name', 'iterator', 'index_func', 'index_map']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
         super().__init__(parent, False)
@@ -316,6 +320,8 @@ class LoopNode(RenderNode):
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
         self.else_template: Optional[HTMLElement] = None
+        self.index_func: Optional[Callable[[], Any]] = None
+        self.index_map: Dict[Any, List[AnyNode]] = {}
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('loop', new_parent)

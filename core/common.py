@@ -6,7 +6,7 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'WebUnits']
+__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
 
 from core.oid import gen_id
 
@@ -24,6 +24,27 @@ class ADict(dict):
             return self[item]
         except KeyError:
             raise AttributeError
+
+    def __ior__(self, other):
+        res = self.__class__(self)
+        res.update(other)
+        return res
+
+    def __sub__(self, other):
+        res = self.__class__(other)
+        for k in other:
+            if k in res:
+                del res[k]
+        return res
+
+    def __truediv__(self, other):
+        res = self.__class__(other)
+        res2 = self.__class__()
+        for k in other:
+            if k in res:
+                res2[k] = res[k]
+                del res[k]
+        return res, res2
 
 
 class HookDict(ADict):
@@ -84,6 +105,11 @@ class UniNode:
 
     def index(self):
         return self._parent.children.index(self)
+
+    def move(self, from_i: int, to_i: int):
+        if from_i == to_i:
+            return
+        self.children.insert(to_i, self.children.pop(from_i))
 
     def __contains__(self, item):
         return item in self.children
@@ -221,6 +247,15 @@ class WebUnits(str):
 
     def __sub__(self, other: Union[int, float]):
         return WebUnits(self.value - other, self.unit)
+
+    def __mul__(self, other):
+        return WebUnits(self.value * other, self.unit)
+
+    def __truediv__(self, other):
+        return WebUnits(self.value / other, self.unit)
+
+    def __floordiv__(self, other):
+        return WebUnits(self.value // other, self.unit)
 
 
 class EmptyCaller(str):

@@ -1,64 +1,60 @@
 """
 <div class="table-container">
-    <table ref:table>
+    <table id="{ctx.oid}">
         <colgroup ref:colgroup>
-            {{#for size in col_sizes}}
-            <col width="{size}">
+            {{#for style in col_styles}}
+            <col style="{style}">
             {{/for}}
         </colgroup>
-        <thead ref:thead>
+        <thead>
             <slot name="thead"/>
-            <tr ref:head_row>
-                {{#for column in columns}}
-                <th>
-                    <div on:drag="DragReorder" class="movable">{{column.title}}
-                        <span on:drag="DragResize" class="resizable"></span>
-                        <span on:click="do_sort" class="sortable{get_order_class(this)}"></span>
+            {{#for row in maps}}
+            <tr>
+                {{#for col in row}}
+                <th colspan="{col.hspan}" rowspan="{col.vspan}">
+                    {{#if col.resizable or col.sortable}}
+                    <div>{{col.title}}
+                        {{#if col.resizable}}
+                        <span class="resizable" on:drag="DragResize"/>
+                        {{/if}}
+                        {{#if col.sortable}}
+                        <span class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col.name}"/>
+                        {{/if}}
                     </div>
+                    {{#else}}
+                    {{col.title}}
+                    {{/if}}
                 </th>
                 {{/for}}
             </tr>
+            {{/for}}
         </thead>
         <tbody ref:tbody>
-        {{#for row in get_rows()}}
+        {{#for datarow in get_rows() #datarow[col_id] if col_id else None}}
+            {{#for row in maps}}
             <tr>
-                <scope id="{row['id']}"/>
-                {{#for col in columns}}
-                <td>{{fmt(row[col.name])}}</td>
+                {{#if col_id}}
+                <scope row_id="{datarow[col_id]}"/>
+                {{/if}}
+                {{#for col in row}}
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col}">{{fmt(datarow[col.name], col.t)}}</td>
                 {{/for}}
             </tr>
+            {{/for}}
         {{/for}}
         </tbody>
     </table>
 </div>
 
-<event selector="td" on:click="enter_cell"></event>
-<event selector="input" on:focusout="exit_cell"></event>
+<event selector="td" on:click="enter_cell"/>
+<event selector="input" on:focusout="exit_cell"/>
 
 <style type="text/scss">
     @import "defaults";
 
-    .moving {
-        text-align: center;
-        font-weight: bold;
-        background-color: $color-passive;
-        margin: 0;
-        padding: 3px;
-        border: 1px solid $color-decoration;
-        box-shadow: 0 0 0 0.2rem rgba($color-decoration, .5);
-    }
-
     .resizing {
         background-color: $color-active;
         background: linear-gradient(180deg, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
-    }
-
-    input {
-        width: 100%;
-        background-color: $form-bg;
-        border: none;
-        padding-left: 3px;
-        padding-right: 3px;
     }
 </style>
 
@@ -66,21 +62,18 @@
 # """
 from datetime import datetime
 from core.imports import *
-from core.ctx import *
 from components.Tables.common import *
+from core.ctx import *
 
 data: List[Dict[str, Any]]
 maps: Optional[MapsRows] = None
+col_styles: Optional[List[Dict[str, Any]]] = None
 
 if not defined('col_id'):
     col_id: Optional[str] = None
 
-src: str
-columns: Optional[List] = None
-col_sizes: Optional[List] = None
-
 def init():
-    global maps, col_id
+    global maps, col_id, col_styles
     if not data:
         return False
     # detect types
@@ -88,86 +81,69 @@ def init():
     col_titles: Dict[str, str] = {k: k for k in data[0].keys()}
     cols = ctx.slot['columns']
     if not cols:
+        # default layout
         row = []
         for k in data[0].keys():
             if k != col_id:
-                row.append(ColMap(name=k, title=col_titles[k], align=align_by_type(col_types['k'])))
+                row.append(ColMap(name=k, title=col_titles[k], t=col_types[k]))
         maps.append(row)
+        col_styles = [DynamicStyles(f'width={100 / len(row)}%') for _ in range(len(row))]
     else:
-        maps = build_maps(cols)
+        # predefined layout
+        maps = build_maps(ctx, cols)
         for row in maps:
             for col in row:
-                t = col.template
+                t = col.node
                 name = t.attributes.name
                 col.name = name
                 col.title = t.attributes.get('title', col_titles[name])
-                col.align = t.attributes.get('align', align_by_type(col_types[name]))
-                col.width = t.attributes.get('width')
-                col.editable = t.attributes.get('editable', True)
+                col.t = col_types[name]
+                col.editable = t.attributes.get('editable', ctx.locals.get('editable', True))
+                col.resizable = t.attributes.get('resizable', ctx.locals.get('resizable', True))
+                col.sortable = t.attributes.get('sortable', True)
+                col.widget = collect_template(ctx.session, get_widget(col_types[name]))
+        col_styles, css = collect_styles(ctx, maps)
+        if css:
+            HTMLElement('style', ctx, text=css)
+        remove_spans(maps)
 
 
-def fmt(value):
-    if type(value) == datetime:
+def fmt(value, t):
+    if t == datetime:
         return f'{value:%x %X}'
     return value
 
-order_by = 0
+
+def get_rows():
+    if order_col:
+        yield from sorted(data, key=lambda r: r[order_col], reverse=order_dir<0)
+    else:
+        yield from data
+
+
+order_col = None
+order_dir = 0
 order_node = None
 
 def get_order_class(node):
-    if order_by == 0 or order_node != node:
+    if order_dir == 0 or order_node != node:
         return ''
-    return ' asc' if order_by > 0 else ' desc'
+    return ' asc' if order_dir > 0 else ' desc'
+
 
 def do_sort(node):
-    global order_by, order_node
+    global order_dir, order_col, order_node
     if order_node != node:
-        order_by = node.parent.parent.index() + 1
+        order_col = node.data.col
+        order_dir = 1
         prev_node = order_node
         order_node = node
         if prev_node:
             prev_node.update()
     else:
-        order_by = -order_by
+        order_dir = -order_dir
     node.update()
     refs.tbody.update_tree()
-
-class DragReorder(DragController):
-    drag_node: HTMLElement = None
-    source_index: int = 0
-
-    def get_options(self, node):
-        ctx.session.drop_metrics()
-        return DragOptions(0, True, False, None, refs.thead.metrics.left, None, refs.thead.metrics.right)
-
-    def start(self, node):
-        self.source_index = node.parent.index()
-        self.drag_node = ctx.div('moving')
-        self.drag_node.text = node.children[0].text
-        self.drag_node.set_metrics(node.parent.metrics, grow=2)
-        return True
-
-    def move(self):
-        self.drag_node.move(self.delta_x, 0)
-
-    def stop(self):
-        global order_by
-        index = 0
-        children = refs.head_row.children[0].children
-        for i in range(len(children)):
-            if i == len(children)-1 or children[i].metrics.left <= self.x <= children[i+1].metrics.left:
-                index = i
-                break
-        self.drag_node.remove()
-        if index == self.source_index:
-            return
-        if abs(order_by) == self.source_index + 1:
-            order_by = (index + 1) * (1 - 2 * (order_by<0))
-        columns.insert(index, columns.pop(self.source_index))
-        col_sizes.insert(index, col_sizes.pop(self.source_index))
-        refs.colgroup.update_tree()
-        refs.thead.update_tree()
-        refs.tbody.update_tree()
 
 
 class DragResize(DragController):
@@ -177,7 +153,7 @@ class DragResize(DragController):
 
     def get_options(self, node: HTMLElement):
         ctx.session.drop_metrics()
-        return DragOptions(0, True, False, None, node.metrics.left+20, None, None)
+        return DragOptions(0, True, False, None, node.metrics.left + 20, None, None)
 
     def start(self, node: HTMLElement):
         self.source_index = node.parent.parent.index()
@@ -190,24 +166,41 @@ class DragResize(DragController):
         self.drag_node.move(self.delta_x, 0)
 
     def stop(self):
-        global col_sizes
+        global col_styles
         self.drag_node.remove()
         source_width = self.source_node.metrics.width
         new_width = self.x - self.source_node.metrics.left
-        col_sizes[self.source_index] = col_sizes[self.source_index] * new_width // source_width
+        col_style = col_styles[self.source_index]
+        if 'width' not in col_styles[self.source_index]:
+            col_style.width = WebUnits(new_width)
+        else:
+            if type(col_style.width) != WebUnits:
+                col_style.width = WebUnits(col_style.width)
+            col_style.width = col_style.width * new_width // source_width
         refs.colgroup.update_tree()
 
+def get_widget(t):
+    return get_widget_default(t)
+
 def enter_cell(node: HTMLElement):
-    field = HTMLElement('input', node, {'type': 'text', 'value': str(node.text)})
-    field.focus()
+    field = Context(node.data.col.widget, node)
+    field.locals.column = node.data.col
+    field.locals.value = str(node.text)
+    field.locals.save_value = save_value
+    field.render.build()
     node.text = ''
     node.style.padding = 0
     node.update()
 
-def exit_cell(node: HTMLElement):
-    node.parent.text = node.value
-    node.parent.style -= 'padding'
-    node.parent.update()
-    node.remove()
+
+def save_value(field: Context, value):
+    col = field.column
+
+    data[col.name] = value
+
+    field.parent.text = value
+    field.parent.style -= 'padding'
+    field.parent.update()
+    field.remove()
 
 #</python>

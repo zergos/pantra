@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from contextlib import contextmanager
 
 from compiler import compile_context_code
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
@@ -17,7 +18,7 @@ __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope']
+    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
 
     def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
@@ -32,6 +33,7 @@ class RenderNode(UniqueNode):
         else:
             self.context = parent.context
         self.name = ''
+        self._rebind = False
 
     def _cleanup_node(self, node):
         if node in self.context.react_nodes:
@@ -134,7 +136,7 @@ class DefaultRenderer:
             return None
 
         if '{' in source:
-            return self.build_func(self.strip_quotes(source), node)()
+            return self.build_func(self.strip_quotes(source).strip('{}'), node)()
         else:
             return self.strip_quotes(source)
 
@@ -193,7 +195,7 @@ class DefaultRenderer:
             return True
         elif attr.startswith('data:'):
             attr = attr.split(':')[1].strip()
-            node.data[attr] = self.eval_string(value, node)
+            node.data[attr] = self.eval_string(self.strip_quotes(value), node)
             return True
         elif attr == 'style':
             if node.style:
@@ -206,7 +208,7 @@ class DefaultRenderer:
             return True
         return False
 
-    def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode]) -> Optional[AnyNode]:
+    def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
         import core.components.context as c
         node: Optional[AnyNode] = None
         if template.tag_name[0] == '#':
@@ -222,9 +224,12 @@ class DefaultRenderer:
 
             elif template.tag_name == '#for':
                 node: c.LoopNode = c.LoopNode(parent, template.children[0])
-                chunks = template.macro.split(' in ')
+                sides = template.macro.split('#')
+                chunks = sides[0].split(' in ')
                 node.var_name = chunks[0].strip()
                 node.iterator = self.build_func(chunks[1], node)
+                if len(sides) > 1:
+                    node.index_func = self.build_func(sides[1], node)
 
                 if len(template.children) > 1:
                     node.else_template = template.children[1]
@@ -243,7 +248,8 @@ class DefaultRenderer:
             with self.ctx.record_reactions(node):
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        node.locals[attr] = self.build_string(value, node) if value else True
+                        data = self.eval_string(value, node) if value else True
+                        node.locals[attr] = data
 
             node.render.build()
 
@@ -264,7 +270,8 @@ class DefaultRenderer:
                     if attr == 'template':
                         continue
                     if not self.process_special_attribute(attr, value, node):
-                        node.locals[attr] = self.build_string(value, node)
+                        data = self.eval_string(value, node) if value else True
+                        node.locals[attr] = data
 
             node.render.build()
 
@@ -316,7 +323,7 @@ class DefaultRenderer:
             self.ctx.render_base = True
 
         elif template.tag_name == 'scope':
-            scope = parent.scope.copy()
+            scope = ADict(parent.scope)
             for k, v in template.attributes.items():
                 scope[k] = self.eval_string(v, parent)
             parent.scope = scope
@@ -372,6 +379,13 @@ class DefaultRenderer:
                 run_safe(self.ctx.session, lambda: self.ctx[value](node))
 
         return node
+
+    def rebind(self, node):
+        if node.render_this or typename(node) == 'Context' and node.render_base:
+            self.ctx.shot(node)
+        else:
+            for child in node.children:
+                self.rebind(child)
 
     def update_children(self, node: AnyNode):
         for child in node.children:  # type: AnyNode
@@ -447,15 +461,49 @@ class DefaultRenderer:
                 return  # prevent repeated updates
 
         elif typename(node) == 'LoopNode':
-            node.empty()
-            empty = True
-            iter = node.iterator()
-            if iter:
-                for value in iter:
-                    empty = False
-                    self.ctx.locals[node.var_name] = value
-                    for temp_child in node.template.children:
-                        self.build_node(temp_child, node)
+            if not node.index_func:
+                node.empty()
+                empty = True
+                iter = node.iterator()
+                if iter:
+                    for value in iter:
+                        empty = False
+                        self.ctx.locals[node.var_name] = value
+                        for temp_child in node.template.children:
+                            self.build_node(temp_child, node)
+                    del self.ctx.locals[node.var_name]
+            else:
+                empty = not node.index_map
+                if empty:
+                    node.empty()
+                iter = node.iterator()
+                if iter:
+                    oldmap = node.index_map
+                    node.index_map = newmap = {}
+                    with self.ctx.shot.rebind():
+                        pos = 0
+                        for value in iter:
+                            self.ctx.locals[node.var_name] = value
+                            index = node.index_func()
+                            if index in oldmap:
+                                for sub in oldmap[index]:
+                                    node.move(sub.index(), pos)
+                                    self.rebind(sub)
+                                    pos += 1
+                                newmap[index] = oldmap[index]
+                                del oldmap[index]
+                                continue
+                            newmap[index] = []
+                            for temp_child in node.template.children:
+                                sub = self.build_node(temp_child, node)
+                                node.move(len(node.children)-1, pos)
+                                newmap[index].append(sub)
+                                pos += 1
+                        del self.ctx.locals[node.var_name]
+                        for sub in oldmap.values():
+                            sub.remove()
+                        empty = not node.index_map
+
             if empty and node.else_template:
                 for temp_child in node.else_template.children:
                     self.build_node(temp_child, node)
@@ -475,21 +523,45 @@ class DefaultRenderer:
 
 
 class ContextShot:
-    __slots__ = ['updated', 'deleted']
+    __slots__ = ['updated', 'deleted', '_frozen', '_freeze_list', '_rebind']
 
     def __init__(self):
         self.updated: List[AnyNode] = list()
         self.deleted: Set[int] = set()
+        self._frozen = False
+        self._rebind = False
+        self._freeze_list = None
 
     def reset(self):
         self.updated.clear()
         self.deleted.clear()
 
+    @contextmanager
+    def freeze(self):
+        self._frozen = True
+        self._freeze_list = []
+        yield
+        for node in self._freeze_list:
+            node.parent.remove(node)
+        self._freeze_list = None
+        self._frozen = False
+
+    @contextmanager
+    def rebind(self):
+        self._rebind = True
+        yield
+        self._rebind = False
+
     def __call__(self, node):
-        self.updated.append(node)
+        if not self._frozen:
+            if self._rebind:
+                node._rebind = True
+            self.updated.append(node)
+        else:
+            self._freeze_list.append(node)
 
     def __add__(self, other):
-        self.updated.append(other)
+        self.__call__(other)
         return self
 
     def __sub__(self, other):

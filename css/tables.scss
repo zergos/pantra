@@ -59,7 +59,7 @@ thead th {
 
     .resizable:after {
       @include arrows-font();
-      content: '↔';
+      content: '∥';
       float: right;
       cursor: col-resize;
     }

@@ -1,11 +1,11 @@
 import bsdf
 import typing
 
-from core.oid import gen_id
 from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode, EventNode, NSElement, \
     AnyNode
 
 __all__ = ['serializer']
+
 
 def get_parent_oid(node: AnyNode) -> typing.Optional[int]:
     parent = node.parent
@@ -24,6 +24,8 @@ class HTMLElementSerializer(bsdf.Extension):
         res = {'n': v.tag_name, 'i': v.oid, 'p': get_parent_oid(v), 'a': v.attributes, 'C': v.classes + v.con_classes.cache, 't': v.text, 's': str(v.style), 'f': v._set_focus}
         if type(v) == NSElement:
             res['x'] = v.ns_type.value
+        if v._rebind:
+            res['#'] = True
         return res
 
 
@@ -34,7 +36,10 @@ class ContextSerializer(bsdf.Extension):
         return type(v) == Context
 
     def encode(self, s, v: Context):
-        return {'n': v.template.name, 'i': v.oid, 'p': get_parent_oid(v)}
+        res = {'n': v.template.name, 'i': v.oid, 'p': get_parent_oid(v)}
+        if v._rebind:
+            res['#'] = True
+        return res
 
 
 class ConditionSerializer(bsdf.Extension):
@@ -64,7 +69,10 @@ class TextSerializer(bsdf.Extension):
         return type(v) == TextNode
 
     def encode(self, s, v: TextNode):
-        return {'i': v.oid, 'p': get_parent_oid(v), 't': v.text}
+        res = {'i': v.oid, 'p': get_parent_oid(v), 't': v.text}
+        if v._rebind:
+            res['#'] = True
+        return res
 
 
 class EventSerializer(bsdf.Extension):

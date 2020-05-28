@@ -1,0 +1,22 @@
+<input type="text" bind:value on:focusout="exit_cell">
+
+<style type="text/scss">
+    @import "defaults";
+
+    input {
+        width: 100%;
+        background-color: $form-bg;
+        border: none;
+        padding-left: 3px;
+        padding-right: 3px;
+    }
+</style>
+
+<python>
+from core.ctx import *
+
+value: str
+
+def exit_cell(node):
+    ctx.parent.locals.exit_cell(ctx, value)
+</python>

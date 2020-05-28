@@ -18,6 +18,13 @@ function root_node() {
     return document.getElementById('display');
 }
 
+function rebind_node(v, element) {
+    if (v['#'] === undefined) return;
+    let parent = element.parentNode;
+    parent.removeChild(element);
+    parent.appendChild(element);
+}
+
 const HTMLElementSerializer = {
     name: 'h',
     decode: function(s, v) {
@@ -39,7 +46,8 @@ const HTMLElementSerializer = {
             se_log(`element ${v.i} ${v.n} created`);
             parent.appendChild(element);
             is_new = true;
-        }
+        } else
+            rebind_node(v, element);
         for (let at in v.a) {
             if (!process_special_attribute(at, v.a[at], element, v.i, is_new))
                 if (v.a[at])
@@ -82,11 +90,12 @@ const ContextSerializer = {
                     content_filled = true;
                 }
             }
-            element = document.createElement(v.n);
+            element = document.createElement('c-'+v.n);
             OID.set(element, v.i);
             element.className = 'd '+v.n;
             parent.appendChild(element);
-        }
+        } else
+            rebind_node(v, element);
         return element;
     }
 };
@@ -137,8 +146,9 @@ const TextSerializer = {
             element = document.createElement('text');
             OID.set(element, v.i);
             parent.appendChild(element);
-        }
-        element.innerText = v.t;
+        } else
+            rebind_node(v, element);
+        element.textContent = v.t;
         return element;
     }
 };

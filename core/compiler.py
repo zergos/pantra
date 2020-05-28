@@ -44,7 +44,7 @@ def trace_exec(func):
                 ctx.session.error_later(
                     f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
             else:
-                ctx.session.error_later(f'{template.filename}:\nUnexpected error: {e}')
+                ctx.session.error_later(f'{template.filename}:\nUnexpected error: {traceback.format_exc()}')
     return try_exec
 
 
