@@ -32,7 +32,7 @@
         <tbody ref:tbody>
         {{#for datarow in get_rows() #datarow[col_id] if col_id else None}}
             {{#for row in maps}}
-            <tr>
+            <tr scope>
                 {{#if col_id}}
                 <scope row_id="{datarow[col_id]}"/>
                 {{/if}}
@@ -66,6 +66,10 @@ from components.Tables.common import *
 from core.ctx import *
 
 data: List[Dict[str, Any]]
+editable: bool = True
+resizable: bool = True
+sortable: bool = True
+
 maps: Optional[MapsRows] = None
 col_styles: Optional[List[Dict[str, Any]]] = None
 
@@ -98,9 +102,9 @@ def init():
                 col.name = name
                 col.title = t.attributes.get('title', col_titles[name])
                 col.t = col_types[name]
-                col.editable = t.attributes.get('editable', ctx.locals.get('editable', True))
-                col.resizable = t.attributes.get('resizable', ctx.locals.get('resizable', True))
-                col.sortable = t.attributes.get('sortable', True)
+                col.editable = t.attributes.get('editable', editable)
+                col.resizable = t.attributes.get('resizable', resizable)
+                col.sortable = t.attributes.get('sortable', sortable)
                 col.widget = collect_template(ctx.session, get_widget(col_types[name]))
         col_styles, css = collect_styles(ctx, maps)
         if css:
@@ -183,6 +187,9 @@ def get_widget(t):
     return get_widget_default(t)
 
 def enter_cell(node: HTMLElement):
+    if not editable or not node.data.col.editable:
+        return
+
     field = Context(node.data.col.widget, node)
     field.locals.column = node.data.col
     field.locals.value = str(node.text)
@@ -190,17 +197,18 @@ def enter_cell(node: HTMLElement):
     field.render.build()
     node.text = ''
     node.style.padding = 0
-    node.update()
+    ctx.shot(node)
 
 
 def save_value(field: Context, value):
     col = field.column
 
-    data[col.name] = value
+    idx = next(i for i, row in enumerate(data) if row[col_id] == field.scope.row_id)
+    data[idx][col.name] = value
 
     field.parent.text = value
     field.parent.style -= 'padding'
-    field.parent.update()
+    ctx.shot(field.parent)
     field.remove()
 
 #</python>

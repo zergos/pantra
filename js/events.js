@@ -39,6 +39,18 @@ class ValueListener extends EventListener {
     }
 }
 
+class KeyListener extends EventListener {
+    constructor(method, key, oid=null) {
+        super(method, oid);
+        this.key = key;
+    }
+    handleEvent(event) {
+        super.handleEvent(event);
+        if (!this.key || event.key === this.key)
+            process_key(this.method, this.get_oid(event), event.key);
+    }
+}
+
 let drag_mode_active = false;
 let drag_events_attached = false;
 class DragListener extends EventListener {
@@ -54,19 +66,26 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
             node.addEventListener('change', new SelectListener(value, oid));
         }
         return true;
-    } else if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
-        if (is_new) {
-            node.addEventListener(attr.slice(3), new SimpleListener(value, oid));
-            if (attr === 'on:click')
-                node.addEventListener('mousedown', do_nothing);
-        }
-        return true;
     } else if (attr === 'on:drag') {
         if (is_new) {
             node.addEventListener('dragstart', do_nothing);
             node.addEventListener('selectstart', do_nothing);
             node.addEventListener('mousedown', new DragListener(value, oid));
             attach_drag_events();
+        }
+        return true;
+    } else if (attr.startsWith('on:keyup') || attr.startsWith('on:keydown')) {
+        if (is_new) {
+            let chunks = attr.split(':');
+            let key = chunks.length > 2 ? chunks[2]:null;
+            node.addEventListener(chunks[1], new KeyListener(value, key, oid));
+        }
+        return true;
+    } else if (attr.startsWith('on:')) {
+        if (is_new) {
+            node.addEventListener(attr.slice(3), new SimpleListener(value, oid));
+            if (attr === 'on:click')
+                node.addEventListener('mousedown', do_nothing);
         }
         return true;
     } else if (attr === 'bind:value') {
@@ -116,15 +135,19 @@ function process_event_attribute(ctx, selector, attr, value) {
 
     if (attr === 'on:change' && node.tagName === 'select') {
         addEventHandler('change', selector, new SelectListener(value));
-    } else if (attr.slice(0, 3) === 'on:' && attr !== 'on:drag') {
-        addEventHandler(attr.slice(3), selector, new SimpleListener(value));
-        if (attr === 'on:click')
-            addEventHandler('mousedown', selector, do_nothing);
     } else if (attr === 'on:drag') {
         addEventHandler('dragstart', selector, do_nothing);
         addEventHandler('selectstart', selector, do_nothing);
         addEventHandler('mousedown', selector, new DragListener(value));
         attach_drag_events();
+    } else if (attr.startsWith('on:keyup') || attr.startsWith('on:keydown')) {
+        let chunks = attr.split(':');
+        let key = chunks.length > 2 ? chunks[2]:null;
+        addEventHandler(chunks[1], selector, new KeyListener(value, key));
+    } else if (attr.startsWith('on:')) {
+        addEventHandler(attr.slice(3), selector, new SimpleListener(value));
+        if (attr === 'on:click')
+            addEventHandler('mousedown', selector, do_nothing);
     }
 }
 

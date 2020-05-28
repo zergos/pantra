@@ -15,41 +15,41 @@ def serializedATN():
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\3\2\7\2.\n\2\f\2\16\2\61")
         buf.write("\13\2\3\3\3\3\3\3\3\3\3\3\5\38\n\3\3\4\3\4\5\4<\n\4\3")
         buf.write("\5\3\5\3\5\7\5A\n\5\f\5\16\5D\13\5\3\5\3\5\3\6\3\6\3\6")
-        buf.write("\3\6\3\7\3\7\3\7\5\7O\n\7\3\b\3\b\3\b\3\b\5\bU\n\b\5\b")
-        buf.write("W\n\b\3\t\3\t\3\n\3\n\5\n]\n\n\3\13\3\13\3\13\3\13\3\f")
-        buf.write("\3\f\3\f\3\f\3\r\3\r\3\16\3\16\3\16\3\16\3\17\3\17\3\20")
-        buf.write("\3\20\7\20q\n\20\f\20\16\20t\13\20\3\20\3\20\3\20\3\20")
-        buf.write("\3\21\3\21\3\22\3\22\3\22\5\22\177\n\22\3\23\3\23\3\24")
-        buf.write("\3\24\3\25\3\25\3\26\3\26\3\26\2\2\27\2\4\6\b\n\f\16\20")
-        buf.write("\22\24\26\30\32\34\36 \"$&(*\2\3\3\2\r\16\2\u0080\2/\3")
-        buf.write("\2\2\2\4\67\3\2\2\2\6;\3\2\2\2\b=\3\2\2\2\nG\3\2\2\2\f")
-        buf.write("K\3\2\2\2\16V\3\2\2\2\20X\3\2\2\2\22\\\3\2\2\2\24^\3\2")
-        buf.write("\2\2\26b\3\2\2\2\30f\3\2\2\2\32h\3\2\2\2\34l\3\2\2\2\36")
-        buf.write("n\3\2\2\2 y\3\2\2\2\"{\3\2\2\2$\u0080\3\2\2\2&\u0082\3")
-        buf.write("\2\2\2(\u0084\3\2\2\2*\u0086\3\2\2\2,.\5\4\3\2-,\3\2\2")
-        buf.write("\2.\61\3\2\2\2/-\3\2\2\2/\60\3\2\2\2\60\3\3\2\2\2\61/")
-        buf.write("\3\2\2\2\628\5\6\4\2\638\5\22\n\2\648\5\32\16\2\658\5")
-        buf.write("\34\17\2\668\5\36\20\2\67\62\3\2\2\2\67\63\3\2\2\2\67")
-        buf.write("\64\3\2\2\2\67\65\3\2\2\2\67\66\3\2\2\28\5\3\2\2\29<\5")
-        buf.write("\b\5\2:<\5\n\6\2;9\3\2\2\2;:\3\2\2\2<\7\3\2\2\2=>\7\7")
-        buf.write("\2\2>B\7\22\2\2?A\5\f\7\2@?\3\2\2\2AD\3\2\2\2B@\3\2\2")
-        buf.write("\2BC\3\2\2\2CE\3\2\2\2DB\3\2\2\2EF\t\2\2\2F\t\3\2\2\2")
-        buf.write("GH\7\b\2\2HI\7\22\2\2IJ\7\r\2\2J\13\3\2\2\2KN\5\16\b\2")
-        buf.write("LM\7\17\2\2MO\5\20\t\2NL\3\2\2\2NO\3\2\2\2O\r\3\2\2\2")
-        buf.write("PW\7\22\2\2QT\7\22\2\2RS\7\20\2\2SU\7\22\2\2TR\3\2\2\2")
-        buf.write("TU\3\2\2\2UW\3\2\2\2VP\3\2\2\2VQ\3\2\2\2W\17\3\2\2\2X")
-        buf.write("Y\7\21\2\2Y\21\3\2\2\2Z]\5\24\13\2[]\5\26\f\2\\Z\3\2\2")
-        buf.write("\2\\[\3\2\2\2]\23\3\2\2\2^_\7\t\2\2_`\5\30\r\2`a\7\24")
-        buf.write("\2\2a\25\3\2\2\2bc\7\n\2\2cd\7\25\2\2de\7\24\2\2e\27\3")
-        buf.write("\2\2\2fg\7\25\2\2g\31\3\2\2\2hi\7\13\2\2ij\7\25\2\2jk")
-        buf.write("\7\24\2\2k\33\3\2\2\2lm\7\f\2\2m\35\3\2\2\2nr\5 \21\2")
-        buf.write("oq\5\"\22\2po\3\2\2\2qt\3\2\2\2rp\3\2\2\2rs\3\2\2\2su")
-        buf.write("\3\2\2\2tr\3\2\2\2uv\7\26\2\2vw\5(\25\2wx\5*\26\2x\37")
-        buf.write("\3\2\2\2yz\7\6\2\2z!\3\2\2\2{~\5$\23\2|}\7\27\2\2}\177")
-        buf.write("\5&\24\2~|\3\2\2\2~\177\3\2\2\2\177#\3\2\2\2\u0080\u0081")
+        buf.write("\3\6\3\7\3\7\3\7\5\7O\n\7\3\b\3\b\3\b\7\bT\n\b\f\b\16")
+        buf.write("\bW\13\b\3\t\3\t\3\n\3\n\5\n]\n\n\3\13\3\13\3\13\3\13")
+        buf.write("\3\f\3\f\3\f\3\f\3\r\3\r\3\16\3\16\3\16\3\16\3\17\3\17")
+        buf.write("\3\20\3\20\7\20q\n\20\f\20\16\20t\13\20\3\20\3\20\3\20")
+        buf.write("\3\20\3\21\3\21\3\22\3\22\3\22\5\22\177\n\22\3\23\3\23")
+        buf.write("\3\24\3\24\3\25\3\25\3\26\3\26\3\26\2\2\27\2\4\6\b\n\f")
+        buf.write("\16\20\22\24\26\30\32\34\36 \"$&(*\2\3\3\2\r\16\2\177")
+        buf.write("\2/\3\2\2\2\4\67\3\2\2\2\6;\3\2\2\2\b=\3\2\2\2\nG\3\2")
+        buf.write("\2\2\fK\3\2\2\2\16P\3\2\2\2\20X\3\2\2\2\22\\\3\2\2\2\24")
+        buf.write("^\3\2\2\2\26b\3\2\2\2\30f\3\2\2\2\32h\3\2\2\2\34l\3\2")
+        buf.write("\2\2\36n\3\2\2\2 y\3\2\2\2\"{\3\2\2\2$\u0080\3\2\2\2&")
+        buf.write("\u0082\3\2\2\2(\u0084\3\2\2\2*\u0086\3\2\2\2,.\5\4\3\2")
+        buf.write("-,\3\2\2\2.\61\3\2\2\2/-\3\2\2\2/\60\3\2\2\2\60\3\3\2")
+        buf.write("\2\2\61/\3\2\2\2\628\5\6\4\2\638\5\22\n\2\648\5\32\16")
+        buf.write("\2\658\5\34\17\2\668\5\36\20\2\67\62\3\2\2\2\67\63\3\2")
+        buf.write("\2\2\67\64\3\2\2\2\67\65\3\2\2\2\67\66\3\2\2\28\5\3\2")
+        buf.write("\2\29<\5\b\5\2:<\5\n\6\2;9\3\2\2\2;:\3\2\2\2<\7\3\2\2")
+        buf.write("\2=>\7\7\2\2>B\7\22\2\2?A\5\f\7\2@?\3\2\2\2AD\3\2\2\2")
+        buf.write("B@\3\2\2\2BC\3\2\2\2CE\3\2\2\2DB\3\2\2\2EF\t\2\2\2F\t")
+        buf.write("\3\2\2\2GH\7\b\2\2HI\7\22\2\2IJ\7\r\2\2J\13\3\2\2\2KN")
+        buf.write("\5\16\b\2LM\7\17\2\2MO\5\20\t\2NL\3\2\2\2NO\3\2\2\2O\r")
+        buf.write("\3\2\2\2PU\7\22\2\2QR\7\20\2\2RT\7\22\2\2SQ\3\2\2\2TW")
+        buf.write("\3\2\2\2US\3\2\2\2UV\3\2\2\2V\17\3\2\2\2WU\3\2\2\2XY\7")
+        buf.write("\21\2\2Y\21\3\2\2\2Z]\5\24\13\2[]\5\26\f\2\\Z\3\2\2\2")
+        buf.write("\\[\3\2\2\2]\23\3\2\2\2^_\7\t\2\2_`\5\30\r\2`a\7\24\2")
+        buf.write("\2a\25\3\2\2\2bc\7\n\2\2cd\7\25\2\2de\7\24\2\2e\27\3\2")
+        buf.write("\2\2fg\7\25\2\2g\31\3\2\2\2hi\7\13\2\2ij\7\25\2\2jk\7")
+        buf.write("\24\2\2k\33\3\2\2\2lm\7\f\2\2m\35\3\2\2\2nr\5 \21\2oq")
+        buf.write("\5\"\22\2po\3\2\2\2qt\3\2\2\2rp\3\2\2\2rs\3\2\2\2su\3")
+        buf.write("\2\2\2tr\3\2\2\2uv\7\26\2\2vw\5(\25\2wx\5*\26\2x\37\3")
+        buf.write("\2\2\2yz\7\6\2\2z!\3\2\2\2{~\5$\23\2|}\7\27\2\2}\177\5")
+        buf.write("&\24\2~|\3\2\2\2~\177\3\2\2\2\177#\3\2\2\2\u0080\u0081")
         buf.write("\7\31\2\2\u0081%\3\2\2\2\u0082\u0083\7\30\2\2\u0083\'")
         buf.write("\3\2\2\2\u0084\u0085\7\34\2\2\u0085)\3\2\2\2\u0086\u0087")
-        buf.write("\7\33\2\2\u0087+\3\2\2\2\f/\67;BNTV\\r~")
+        buf.write("\7\33\2\2\u0087+\3\2\2\2\13/\67;BNU\\r~")
         return buf.getvalue()
 
 
@@ -568,8 +568,11 @@ class BCDParser ( Parser ):
             else:
                 return self.getToken(BCDParser.NAME, i)
 
-        def COLON(self):
-            return self.getToken(BCDParser.COLON, 0)
+        def COLON(self, i:int=None):
+            if i is None:
+                return self.getTokens(BCDParser.COLON)
+            else:
+                return self.getToken(BCDParser.COLON, i)
 
         def getRuleIndex(self):
             return BCDParser.RULE_attrName
@@ -597,31 +600,20 @@ class BCDParser ( Parser ):
         self.enterRule(localctx, 12, self.RULE_attrName)
         self._la = 0 # Token type
         try:
-            self.state = 84
+            self.enterOuterAlt(localctx, 1)
+            self.state = 78
+            self.match(BCDParser.NAME)
+            self.state = 83
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,6,self._ctx)
-            if la_ == 1:
-                self.enterOuterAlt(localctx, 1)
-                self.state = 78
-                self.match(BCDParser.NAME)
-                pass
-
-            elif la_ == 2:
-                self.enterOuterAlt(localctx, 2)
+            _la = self._input.LA(1)
+            while _la==BCDParser.COLON:
                 self.state = 79
+                self.match(BCDParser.COLON)
+                self.state = 80
                 self.match(BCDParser.NAME)
-                self.state = 82
+                self.state = 85
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==BCDParser.COLON:
-                    self.state = 80
-                    self.match(BCDParser.COLON)
-                    self.state = 81
-                    self.match(BCDParser.NAME)
-
-
-                pass
-
 
         except RecognitionException as re:
             localctx.exception = re

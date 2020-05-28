@@ -20,8 +20,7 @@ tagBegin    : OPEN_BEGIN NAME attr* (CLOSE | SLASH_CLOSE) ;
 tagEnd      : OPEN_END NAME CLOSE ;
 
 attr        : attrName (EQ attrValue)? ;
-attrName    : NAME
-            | NAME (COLON NAME)? ;
+attrName    : NAME (COLON NAME)* ;
 attrValue   : STRING ;
 
 macro       : macroBegin

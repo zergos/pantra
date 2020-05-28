@@ -1,22 +1,7 @@
-<input type="number" bind:value on:focusout="exit_cell">
-
-<style type="text/scss">
-    @import "defaults";
-
-    input {
-        width: 100%;
-        background-color: $form-bg;
-        border: none;
-        padding-left: 3px;
-        padding-right: 3px;
-    }
-</style>
+<reuse template="CellString" type="number"/>
 
 <python>
-from core.ctx import *
-
-value: str
-
-def exit_cell(node):
-    ctx.locals.save_value(ctx, value)
+def exit_cell(node, key=None):
+    if ctx.parent:
+        ctx.parent.save_value(ctx, int(value))
 </python>

@@ -87,7 +87,7 @@ def process_drag_start(session: Session, method: str, oid: int, x: int, y: int, 
 def process_drag_referred(session: Session, node: AnyNode, method: str, x: int, y: int, button: int):
     func = node[method]
     if type(func) == str:
-        process_click_referred.call(session, node.context.parent, method, x, y, button)
+        process_drag_referred.call(session, node.context.parent, method, x, y, button)
     else:
         session.state.drag: DragController = func(node)
         if session.state.drag._mousedown(node, x, y, button):
@@ -120,6 +120,7 @@ def process_click_referred(session: Session, context: Context, method: str, node
     if ' ' in method:
         for m in method.split(' '):
             process_click_referred.call(session, context, m, node)
+        return
     func = context[method]
     if not func: return
     if callable(func):
@@ -143,3 +144,24 @@ def process_bind_value(oid: int, var_name: str, value: str):
     if not node: return
     node.context.locals[var_name] = value
     node.attributes.value = value
+
+
+@thread_worker
+def process_key(method: str, oid: int, key: str):
+    node = get_node(oid)
+    if not node or not method: return
+    process_key_referred(node.context.session, node.context, node, method, key)
+
+
+@trace_errors
+def process_key_referred(session: Session, context: Context, node: AnyNode, method: str, key: str):
+    if ' ' in method:
+        for m in method.split(' '):
+            process_key_referred(session, context, node, m, key)
+        return
+    func = context[method]
+    if not func: return
+    if callable(func):
+        func(node, key)
+    elif context.parent:
+        process_key_referred.call(session, context.parent.context, node, func, key)

@@ -89,7 +89,7 @@ class UniNode:
     @parent.setter
     def parent(self, parent):
         if self._parent:
-            self._parent.remove(self)
+            self._parent.children.remove(self)
         if parent:
             parent.append(self)
         self._parent = parent
@@ -98,7 +98,7 @@ class UniNode:
         self.children.append(node)
 
     def remove(self, node):
-        self.children.remove(node)
+        node.parent = None
 
     def clear(self):
         self.children.clear()

@@ -109,4 +109,8 @@ function process_bind_value(variable, oid, value) {
     send_message({C: 'B', v: variable, oid: oid, x: value})
 }
 
+function process_key(method, oid, key) {
+    send_message({C: 'KEY', method: method, oid: oid, key: key});
+}
+
 send_message({C: 'REFRESH'});

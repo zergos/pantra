@@ -10,7 +10,7 @@ from aiohttp_session import setup, SimpleCookieStorage, get_session
 
 from core.components.context import HTMLElement
 from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
-    process_select, process_bind_value
+    process_select, process_bind_value, process_key
 import core.database as db
 from core.components.loader import collect_styles, templates
 from core.serializer import serializer
@@ -75,6 +75,9 @@ async def get_ws(request: Request):
 
                 elif command == 'SELECT':
                     process_select(data['method'], data['oid'], data['opts'])
+
+                elif command == 'KEY':
+                    process_key(data['method'], data['oid'], data['key'])
 
                 elif command == 'B':
                     process_bind_value(data['oid'], data['v'], data['x'])

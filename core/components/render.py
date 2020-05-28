@@ -151,6 +151,22 @@ class DefaultRenderer:
             #node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
             node.context.locals[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
             return True
+        elif attr == 'scope':
+            node.scope = ADict(node.scope)
+            return True
+        elif attr.startswith('scope:'):
+            name = attr.split(':')[1].strip()
+            node.scope[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
+            return True
+        elif attr == 'style':
+            if node.style:
+                self.ctx.session.error(f'Style already set before {attr}={value}')
+                return True
+            if '{' in value:
+                node.style = self.build_string(value, node)
+            else:
+                node.style = DynamicStyles(self.strip_quotes(value))
+            return True
         elif attr.startswith('class:'):
             cls = attr.split(':')[1].strip()
             ctx = self.ctx
@@ -193,18 +209,12 @@ class DefaultRenderer:
             attr = attr.split(':')[1].strip()
             node.locals[attr] = False
             return True
+        elif attr == 'set:focus':
+            node._set_focus = True
+            return True
         elif attr.startswith('data:'):
             attr = attr.split(':')[1].strip()
             node.data[attr] = self.eval_string(self.strip_quotes(value), node)
-            return True
-        elif attr == 'style':
-            if node.style:
-                self.ctx.session.error(f'Style already set before {attr}={value}')
-                return True
-            if '{' in value:
-                node.style = self.build_string(value, node)
-            else:
-                node.style = DynamicStyles(self.strip_quotes(value))
             return True
         return False
 
@@ -323,10 +333,9 @@ class DefaultRenderer:
             self.ctx.render_base = True
 
         elif template.tag_name == 'scope':
-            scope = ADict(parent.scope)
+            scope = parent.scope
             for k, v in template.attributes.items():
                 scope[k] = self.eval_string(v, parent)
-            parent.scope = scope
 
         elif template.tag_name == '@text':
             node = c.TextNode(parent, self.strip_quotes(template.text))

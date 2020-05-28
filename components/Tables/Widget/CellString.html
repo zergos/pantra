@@ -1,4 +1,4 @@
-<input type="text" bind:value on:focusout="exit_cell">
+<input type="{type}" set:focus bind:value on:focusout="exit_cell" on:keyup:Enter="exit_cell">
 
 <style type="text/scss">
     @import "defaults";
@@ -16,7 +16,9 @@
 from core.ctx import *
 
 value: str
+type: str = 'text'
 
-def exit_cell(node):
-    ctx.parent.locals.exit_cell(ctx, value)
+def exit_cell(node, key=None):
+    if ctx.parent: # prevent double event
+        ctx.parent.save_value(ctx, value)
 </python>

@@ -141,7 +141,7 @@ def remove_spans(l: MapsRows):
 
 
 def get_widget_default(t) -> str:
-    if isinstance(t, numbers.Number):
+    if issubclass(t, numbers.Number):
         return 'CellNumber'
     else:
         return 'CellString'
