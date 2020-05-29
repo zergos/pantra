@@ -5,8 +5,8 @@ import random
 import string
 import functools
 import traceback
+import typing
 from queue import Queue
-from typing import *
 from aiohttp import web
 
 from core.defaults import APPS_PATH
@@ -14,8 +14,9 @@ from core.common import ADict, UniNode, typename
 from core.compiler import exec_restart
 from core.workers import async_worker
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from core.components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
+    from typing import *
 
 
 class Session:
