@@ -4,10 +4,10 @@ import typing
 import traceback
 from contextlib import contextmanager
 
-from compiler import compile_context_code, ContextInitFailed
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.htmlnode import HTMLTemplate
 from core.components.loader import collect_template
+from core.compiler import compile_context_code, ContextInitFailed
 from core.session import Session, run_safe
 
 if typing.TYPE_CHECKING:

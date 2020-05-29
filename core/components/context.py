@@ -8,7 +8,6 @@ from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
 
-from common import UniNode
 from core.common import ADict, HookDict
 
 from .loader import collect_template

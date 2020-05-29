@@ -9,10 +9,10 @@ from queue import Queue
 from typing import *
 from aiohttp import web
 
+from core.defaults import APPS_PATH
 from core.common import ADict, UniNode, typename
 from core.compiler import exec_restart
 from core.workers import async_worker
-from defaults import APPS_PATH
 
 if TYPE_CHECKING:
     from core.components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode

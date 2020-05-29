@@ -175,6 +175,7 @@ async def main():
     site = web.TCPSite(runner, port=8005)
     await site.start()
     # wait for finish signal
+    print('Running wild at 8005')
     try:
         while True:
             await asyncio.sleep(3600)
@@ -182,7 +183,8 @@ async def main():
         await runner.cleanup()
 
 
-if __name__ == '__main__':
+def run():
+    global bootstrap
     if not os.path.exists(os.path.join(COMPONENTS_PATH, 'bootstrap.html')):
         print('File <bootstrap.html> not found')
         sys.exit(1)
@@ -191,3 +193,7 @@ if __name__ == '__main__':
         bootstrap = f.read()
 
     asyncio.run(main())
+
+
+if __name__ == '__main__':
+    run()

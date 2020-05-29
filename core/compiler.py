@@ -5,7 +5,7 @@ import typing
 from functools import lru_cache, wraps
 import traceback
 
-from common import ADict
+from core.common import ADict
 
 if typing.TYPE_CHECKING:
     from types import CodeType
