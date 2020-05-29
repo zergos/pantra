@@ -131,6 +131,18 @@ class UniNode:
                 yield child
             yield from child.select(predicate)
 
+    def upto(self, predicate: Union[str, Callable[['UniNode'], bool]]) -> Optional['UniNode']:
+        node = self.parent
+        while node:
+            if isinstance(predicate, str):
+                if str(node) == predicate:
+                    return node
+            else:
+                if predicate(node):
+                    return node
+            node = node.parent
+        return None
+
 
 class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']
@@ -169,6 +181,7 @@ class DynamicClasses(str):
 
     def __add__(self, other):
         if not other: return self
+        if not self: return DynamicClasses(other)
         return DynamicClasses(super().__add__(f' {other}'))
 
     def __sub__(self, other):

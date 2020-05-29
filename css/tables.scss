@@ -79,6 +79,14 @@ td:hover {
   box-shadow: 0 0 0 3px rgba($table-cell-active-color, 0.5);
 }
 
+tr.selected {
+    background-color: rgba($table-cell-selected-color, 0.2) !important;
+    font-weight: bold;
+    td.selected {
+        background-color: rgba($table-cell-selected-color, 0.3) !important;
+    }
+}
+
 /*
 tr:nth-child(even) {
   background-color: $color-even-gray;

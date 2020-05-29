@@ -1,1 +1,36 @@
 <reuse template="Table"/>
+
+<python>
+from core.ctx import *
+
+data: List[Dict[str, Any]]
+col_id: Optional[str] = None
+
+col_names: List[str]
+col_types: Dict[str, type]
+col_titles: Dict[str, str]
+
+def init():
+    global col_names, col_types, col_titles
+    # detect types
+    if not data:
+        return False
+
+    col_names = list(data[0].keys())
+    col_types = {k: type(v) for k, v in data[0].items()}
+    col_titles = {k: k for k in data[0].keys()}
+
+def get_rows(order_col, order_dir):
+    if order_col:
+        yield from sorted(data, key=lambda r: r[order_col], reverse=order_dir<0)
+    else:
+        yield from data
+
+
+def save_value(field: Context, value):
+    col = field.column
+
+    idx = next(i for i, row in enumerate(data) if row[col_id] == field.scope.row_id)
+    data[idx][col.name] = value
+
+</python>

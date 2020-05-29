@@ -1,0 +1,46 @@
+<reuse template="Table"/>
+
+<python>
+from pony.orm.core import Query, Entity, db_session, desc
+from core.dbtools import *
+from core.ctx import *
+
+query: Query
+entity: Entity
+col_id: str = "id"
+
+col_names: List[str] = []
+col_types: Dict[str, type] = {}
+col_titles: Dict[str, str] = {}
+
+def init():
+    global col_names, col_types, col_titles
+    # detect types
+    specs = query_columns(query)
+    if not specs:
+        return
+
+    for spec in specs:
+        col_names.append(spec[0])
+        col_titles[spec[0]] = spec[1]
+        col_types[spec[0]] = spec[2]
+
+@db_session
+def get_rows(order_col, order_dir):
+    if order_col:
+        col = getattr(entity, order_col)
+        if order_dir<0:
+            col = desc(col)
+        q = query.order_by(col)
+    else:
+        q = query
+    for row in q:
+        yield row.to_dict()
+
+@db_session
+def save_value(field: Context, value):
+    col = field.column
+
+    entity[field.scope.row_id].set(**{col.name: value})
+
+</python>

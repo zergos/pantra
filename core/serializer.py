@@ -26,6 +26,7 @@ class HTMLElementSerializer(bsdf.Extension):
             res['x'] = v.ns_type.value
         if v._rebind:
             res['#'] = True
+            v._rebind = False
         return res
 
 
@@ -39,6 +40,7 @@ class ContextSerializer(bsdf.Extension):
         res = {'n': v.template.name, 'i': v.oid, 'p': get_parent_oid(v)}
         if v._rebind:
             res['#'] = True
+            v._rebind = False
         return res
 
 
@@ -72,6 +74,7 @@ class TextSerializer(bsdf.Extension):
         res = {'i': v.oid, 'p': get_parent_oid(v), 't': v.text}
         if v._rebind:
             res['#'] = True
+            v._rebind = False
         return res
 
 

@@ -1,4 +1,4 @@
-<input type="{type}" set:focus bind:value on:focusout="exit_cell" on:keyup:Enter="exit_cell">
+<input type="{type}" set:focus bind:value on:focusout="exit_cell" on:keyup:Enter="exit_cell" on:keyup:Escape="undo_edit">
 
 <style type="text/scss">
     @import "defaults";
@@ -18,7 +18,19 @@ from core.ctx import *
 value: str
 type: str = 'text'
 
+original: str
+
+def init():
+    global original
+    original = value
+
 def exit_cell(node, key=None):
     if ctx.parent: # prevent double event
         ctx.parent.save_value(ctx, value)
+        ctx.parent.remove_field(ctx, value)
+
+def undo_edit(node, key):
+    if ctx.parent:
+        ctx.parent.remove_field(ctx, original)
+
 </python>

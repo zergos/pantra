@@ -5,6 +5,8 @@ import typing
 from functools import lru_cache, wraps
 import traceback
 
+from common import ADict
+
 if typing.TYPE_CHECKING:
     from types import CodeType
     from components.context import Context
@@ -18,6 +20,10 @@ def common_globals():
     globals = {}
     exec('from core.imports import *', globals)
     return globals
+
+
+class ContextInitFailed(Exception):
+    pass
 
 
 def exec_includes(lst: str, rel_name: str, ctx_locals: typing.Dict[str, typing.Any]):
@@ -37,6 +43,8 @@ def trace_exec(func):
     def try_exec(ctx: Context, template: HTMLTemplate):
         try:
             func(ctx, template)
+        except ContextInitFailed:
+            raise
         except (ImportError, OSError) as e:
             ctx.session.error_later(f'{template.filename}:\n{e}')
         except Exception as e:
@@ -50,7 +58,7 @@ def trace_exec(func):
 
 @trace_exec
 def compile_context_code(ctx: Context, template: HTMLTemplate):
-    initial_locals = dict(ctx.locals)
+    initial_locals = ADict(ctx.locals) - ['init', 'on_restart']
     ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session})
     if 'namespace' in template.attributes:
         exec_includes(template.attributes.namespace.strip('" '''), template.filename, ctx.locals)
@@ -61,7 +69,8 @@ def compile_context_code(ctx: Context, template: HTMLTemplate):
         exec(template.code, ctx.locals)
     ctx.locals.update(initial_locals)
     if 'init' in ctx.locals:
-        ctx.locals.init()
+        if ctx.locals.init() == False:
+            raise ContextInitFailed()
     if 'on_restart' in ctx.locals:
         ctx.locals.on_restart()
     if 'ns_type' in ctx.locals:

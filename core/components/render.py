@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import typing
+import traceback
 from contextlib import contextmanager
 
-from compiler import compile_context_code
+from compiler import compile_context_code, ContextInitFailed
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.htmlnode import HTMLTemplate
 from core.components.loader import collect_template
@@ -110,7 +111,7 @@ class DefaultRenderer:
         try:
             return eval(text, {'ctx': ctx, 'this': node}, ctx.locals)
         except Exception as e:
-            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {e}')
+            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {traceback.format_exc(1)}')
             return None
 
     def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
@@ -261,7 +262,11 @@ class DefaultRenderer:
                         data = self.eval_string(value, node) if value else True
                         node.locals[attr] = data
 
-            node.render.build()
+            try:
+                node.render.build()
+            except ContextInitFailed:
+                node.remove()
+                return None
 
             if 'on:render' in template.attributes:
                 value = self.strip_quotes(template.attributes['on:render'])
@@ -283,7 +288,12 @@ class DefaultRenderer:
                         data = self.eval_string(value, node) if value else True
                         node.locals[attr] = data
 
-            node.render.build()
+            try:
+                self.ctx._executed = False
+                node.render.build()
+            except ContextInitFailed:
+                node.remove()
+                return None
 
         elif template.tag_name == 'slot':
             slot: Slot = parent.context.slot
@@ -475,12 +485,20 @@ class DefaultRenderer:
                 empty = True
                 iter = node.iterator()
                 if iter:
-                    for value in iter:
+                    parentloop = self.ctx.locals.get('forloop')
+                    self.ctx.locals.forloop = ADict(parent=parentloop)
+                    for i, value in enumerate(iter):
                         empty = False
                         self.ctx.locals[node.var_name] = value
+                        self.ctx.locals.forloop.counter = i + 1
+                        self.ctx.locals.forloop.counter0 = i
                         for temp_child in node.template.children:
                             self.build_node(temp_child, node)
                     del self.ctx.locals[node.var_name]
+                    if parentloop:
+                        self.ctx.locals.forloop = parentloop
+                    else:
+                        del self.ctx.locals['forloop']
             else:
                 empty = not node.index_map
                 if empty:
@@ -491,9 +509,14 @@ class DefaultRenderer:
                     node.index_map = newmap = {}
                     with self.ctx.shot.rebind():
                         pos = 0
-                        for value in iter:
+                        parentloop = self.ctx.locals.get('forloop')
+                        self.ctx.locals.forloop = ADict(parentloop=parentloop)
+                        for i, value in enumerate(iter):
                             self.ctx.locals[node.var_name] = value
+                            self.ctx.locals.forloop.counter = i + 1
+                            self.ctx.locals.forloop.counter0 = i
                             index = node.index_func()
+                            self.ctx.locals.forloop.index = index
                             if index in oldmap:
                                 for sub in oldmap[index]:
                                     node.move(sub.index(), pos)
@@ -509,6 +532,10 @@ class DefaultRenderer:
                                 newmap[index].append(sub)
                                 pos += 1
                         del self.ctx.locals[node.var_name]
+                        if parentloop:
+                            self.ctx.locals.forloop = parentloop
+                        else:
+                            del self.ctx.locals['forloop']
                         for sub in oldmap.values():
                             sub.remove()
                         empty = not node.index_map

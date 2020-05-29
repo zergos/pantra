@@ -2,7 +2,7 @@
 <div class="table-container">
     <table id="t{ctx.oid}">
         <colgroup ref:colgroup>
-            {{#for style in col_styles}}
+            {{#for style in col_styles #forloop.counter}}
             <col style="{style}">
             {{/for}}
         </colgroup>
@@ -30,12 +30,10 @@
             {{/for}}
         </thead>
         <tbody ref:tbody>
-        {{#for datarow in get_rows() #datarow[col_id] if col_id else None}}
+        {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id else forloop.counter}}
             {{#for row in maps}}
             <tr scope>
-                {{#if col_id}}
-                <scope row_id="{datarow[col_id]}"/>
-                {{/if}}
+                <scope row_id="{forloop.parent.index}"/>
                 {{#for col in row}}
                 <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col}">{{fmt(datarow[col.name], col.t)}}</td>
                 {{/for}}
@@ -46,7 +44,7 @@
     </table>
 </div>
 
-<event selector="td" on:click="enter_cell"/>
+<event selector="td" on:click="select_cell" on:dblclick="enter_cell"/>
 <event selector="input" on:focusout="exit_cell"/>
 
 <style type="text/scss">
@@ -65,7 +63,6 @@ from core.imports import *
 from components.Tables.common import *
 from core.ctx import *
 
-data: List[Dict[str, Any]]
 editable: bool = True
 resizable: bool = True
 sortable: bool = True
@@ -73,21 +70,25 @@ sortable: bool = True
 maps: Optional[MapsRows] = None
 col_styles: Optional[List[Dict[str, Any]]] = None
 
+order_col: Optional[str] = None
+order_dir: int = 0
+order_node: Optional[AnyNode] = None
+
+active_row: Optional[int] = None
+active_row_node: Optional[LoopNode] = None
+active_col: Optional[str] = None
+active_col_cell: Optional[HTMLElement] = None
+
 if not defined('col_id'):
     col_id: Optional[str] = None
 
 def init():
-    global maps, col_id, col_styles
-    if not data:
-        return False
-    # detect types
-    col_types: Dict[str, type] = {k: type(v) for k, v in data[0].items()}
-    col_titles: Dict[str, str] = {k: k for k in data[0].keys()}
+    global maps, col_id, col_styles, col_names, col_types, col_titles
     cols = ctx.slot['columns']
     if not cols:
         # default layout
         row = []
-        for k in data[0].keys():
+        for k in col_names:
             if k != col_id:
                 row.append(ColMap(name=k, title=col_titles[k], t=col_types[k]))
         maps.append(row)
@@ -117,17 +118,6 @@ def fmt(value, t):
         return f'{value:%x %X}'
     return value
 
-
-def get_rows():
-    if order_col:
-        yield from sorted(data, key=lambda r: r[order_col], reverse=order_dir<0)
-    else:
-        yield from data
-
-
-order_col = None
-order_dir = 0
-order_node = None
 
 def get_order_class(node):
     if order_dir == 0 or order_node != node:
@@ -160,8 +150,9 @@ class DragResize(DragController):
         return DragOptions(0, True, False, None, node.metrics.left + 20, None, None)
 
     def start(self, node: HTMLElement):
-        self.source_index = node.parent.parent.index()
-        self.source_node = node.parent.parent
+        th = node.upto('th')
+        self.source_index = th.index()
+        self.source_node = th
         self.drag_node = ctx.div('resizing', node)
         self.drag_node.set_metrics([self.x, node.metrics.top, 3, '100vh'])
         return True
@@ -181,10 +172,34 @@ class DragResize(DragController):
             if type(col_style.width) != WebUnits:
                 col_style.width = WebUnits(col_style.width)
             col_style.width = col_style.width * new_width // source_width
+        refs.colgroup[0][self.source_index].style = col_style
         refs.colgroup.update_tree()
 
 def get_widget(t):
     return get_widget_default(t)
+
+def select_cell(node: HTMLElement):
+    global active_row, active_row_node, active_col, active_col_cell
+    if active_row is not None:
+        for n in active_row_node:
+            n.classes -= 'selected'
+            ctx.shot(n)
+    if active_col_cell is not None:
+        active_col_cell.classes -= 'selected'
+        ctx.shot(active_col_cell)
+
+    col = node.data.col
+    active_col = col.name
+    node.classes += 'selected'
+    active_col_cell = node
+    ctx.shot(node)
+
+    row = node.parent.upto('@')
+    active_row_node = row
+    for n in row:
+        n.classes += 'selected'
+        ctx.shot(n)
+        active_row = n.scope.row_id
 
 def enter_cell(node: HTMLElement):
     if not editable or not node.data.col.editable:
@@ -193,22 +208,17 @@ def enter_cell(node: HTMLElement):
     field = Context(node.data.col.widget, node)
     field.locals.column = node.data.col
     field.locals.value = str(node.text)
-    field.locals.save_value = save_value
     field.render.build()
     node.text = ''
     node.style.padding = 0
     ctx.shot(node)
 
-
-def save_value(field: Context, value):
-    col = field.column
-
-    idx = next(i for i, row in enumerate(data) if row[col_id] == field.scope.row_id)
-    data[idx][col.name] = value
-
+def remove_field(field: Context, value):
     field.parent.text = value
     field.parent.style -= 'padding'
     ctx.shot(field.parent)
     field.remove()
+    if order_col == field.column.name:
+        refs.tbody.update_tree()
 
 #</python>

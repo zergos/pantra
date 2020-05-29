@@ -4,4 +4,5 @@
 def exit_cell(node, key=None):
     if ctx.parent:
         ctx.parent.save_value(ctx, int(value))
+        ctx.parent.remove_field(ctx, value)
 </python>

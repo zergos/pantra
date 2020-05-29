@@ -1,0 +1,16 @@
+<EntityTable query="{query}" entity="{entity}">
+    <columns>
+        <col name="Column1"/>
+        <col name="Column2"/>
+        <col name="Column3"/>
+        <col name="Column4"/>
+        <col name="Column5"/>
+    </columns>
+</EntityTable>
+
+<python>
+from db.models import *
+
+query = TestTable.select()
+entity = TestTable
+</python>

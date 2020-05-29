@@ -129,7 +129,7 @@ def collect_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], str):
                 idx += c.hspan
         col_styles.append(style)
     for r in range(row_amount):
-        css.append(f'#t{ctx.oid} > tbody > tr:nth-child({row_amount*2}n+{row_amount+r+1}) {{ background: rgba(128, 128, 128, 0.2) }}')
+        css.append(f'#t{ctx.oid} > tbody > tr:nth-child({row_amount*2}n+{row_amount+r+1}) {{ background: rgba(160, 160, 90, 0.1) }}')
     return col_styles, '\n'.join(css)
 
 

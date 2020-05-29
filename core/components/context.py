@@ -331,7 +331,7 @@ class LoopNode(RenderNode):
         return 'loop'
 
     def __str__(self):
-        return '⟳'
+        return '@'
 
 
 class TextNode(RenderNode):
