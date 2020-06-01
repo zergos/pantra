@@ -84,9 +84,10 @@ if not defined('col_id'):
 
 def init():
     global maps, col_id, col_styles, col_names, col_types, col_titles
-    cols = ctx.slot['columns']
+    cols = ctx.slot and ctx.slot['columns']
     if not cols:
         # default layout
+        maps = []
         row = []
         for k in col_names:
             if k != col_id:
@@ -114,6 +115,8 @@ def init():
 
 
 def fmt(value, t):
+    if value is None:
+        return ''
     if t == datetime:
         return f'{value:%x %X}'
     return value
