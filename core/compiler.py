@@ -5,7 +5,9 @@ import typing
 from functools import lru_cache, wraps
 import traceback
 
+import sass
 from core.common import ADict
+from defaults import CSS_PATH
 
 if typing.TYPE_CHECKING:
     from types import CodeType
@@ -46,13 +48,13 @@ def trace_exec(func):
         except ContextInitFailed:
             raise
         except (ImportError, OSError) as e:
-            ctx.session.error_later(f'{template.filename}:\n{e}')
+            ctx.session.error(f'{template.filename}:\n{e}')
         except Exception as e:
             if len(e.args) >= 2 and len(e.args[1]) >= 4:
-                ctx.session.error_later(
+                ctx.session.error(
                     f'{template.filename}:\n[{e.args[1][1]}:{e.args[1][2]}] {e.args[0]}\n{e.args[1][3]}{" " * e.args[1][2]}^')
             else:
-                ctx.session.error_later(f'{template.filename}:\nUnexpected error: {traceback.format_exc()}')
+                ctx.session.error(f'{template.filename}:\nUnexpected error: {traceback.format_exc()}')
     return try_exec
 
 
@@ -80,3 +82,15 @@ def compile_context_code(ctx: Context, template: HTMLTemplate):
 @trace_exec
 def exec_restart(ctx: Context, template: HTMLTemplate):
     ctx.locals.on_restart()
+
+
+def compile_style(ctx: Context, template: HTMLTemplate) -> str:
+    if template.code:
+        return template.code
+    try:
+        css = sass.compile(string=template.text, output_style='compressed', include_paths=[CSS_PATH])
+    except Exception as e:
+        css = ''
+        ctx.session.error(f'{template.filename}.scss> {e}')
+    template.code = css
+    return css

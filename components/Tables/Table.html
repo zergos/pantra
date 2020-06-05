@@ -119,6 +119,8 @@ def fmt(value, t):
         return ''
     if t == datetime:
         return f'{value:%x %X}'
+    if t == bool:
+        return t and '☑' or '☐'
     return value
 
 

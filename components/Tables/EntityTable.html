@@ -5,7 +5,7 @@ from pony.orm.core import Query, Entity, db_session, desc
 from core.dbtools import *
 from core.ctx import *
 
-query: Query
+query: Optional[Query] = None
 entity: Entity
 col_id: str = "id"
 
@@ -14,7 +14,11 @@ col_types: Dict[str, type] = {}
 col_titles: Dict[str, str] = {}
 
 def init():
-    global col_names, col_types, col_titles
+    global query, col_names, col_types, col_titles
+    # default query
+    if not query:
+        query = entity.select()
+
     # detect types
     specs = query_columns(query)
     if not specs:

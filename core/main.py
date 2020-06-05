@@ -192,6 +192,11 @@ def run():
     with open(os.path.join(COMPONENTS_PATH, 'bootstrap.html'), 'rt') as f:
         bootstrap = f.read()
 
+    # patch incorrect default python mime-types
+    import mimetypes
+    mimetypes.init()
+    mimetypes.add_type('application/javascript', '.js')
+
     asyncio.run(main())
 
 

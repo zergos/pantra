@@ -10,9 +10,8 @@ from dataclasses import dataclass
 
 from core.common import ADict, HookDict
 
-from .loader import collect_template
+from .loader import collect_template, HTMLTemplate
 from core.common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
-from core.components.htmlnode import HTMLTemplate
 
 from core.components.render import RenderNode, DefaultRenderer
 from core.oid import get_node
@@ -51,7 +50,7 @@ class Slot(typing.NamedTuple):
 
 
 class Context(RenderNode):
-    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', 'render_base', 'ns_type', 'react_vars', 'react_nodes']
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars', 'react_nodes']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         self.locals: HookDict = HookDict()
@@ -59,7 +58,7 @@ class Context(RenderNode):
         self.refs: Dict[str, Union['Context', HTMLElement]] = ADict()
         self.slot: Optional[Slot] = None
 
-        super().__init__(parent=parent, render_this=True, shot=shot, session=session)
+        super().__init__(parent=parent, render_this=False, shot=shot, session=session)
 
         if type(template) == HTMLTemplate:
             self.template: HTMLTemplate = template
@@ -67,7 +66,7 @@ class Context(RenderNode):
             self.template: HTMLTemplate = collect_template(self.session, template)
 
         self.render: DefaultRenderer = DefaultRenderer(self)
-        self.render_base = False
+        self._restyle: bool = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
         self.react_vars: Dict[str, Set[AnyNode]] = defaultdict(set)
@@ -111,7 +110,7 @@ class Context(RenderNode):
             object.__getattribute__(self, 'locals')[key] = value
             if value != old_value and key in self.react_vars:
                 for node in frozenset(self.react_vars[key]):
-                    node.update()
+                    node.update(True)
 
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
@@ -260,6 +259,18 @@ class HTMLElement(RenderNode):
 
     def focus(self):
         self._set_focus = True
+
+    def add_class(self, class_name):
+        self.classes += class_name
+        self.shot(self)
+
+    def remove_class(self, class_name):
+        self.classes -= class_name
+        self.shot(self)
+
+    def toggle_class(self, class_name):
+        self.classes *= class_name
+        self.shot(self)
 
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:

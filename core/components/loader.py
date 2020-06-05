@@ -3,14 +3,14 @@ from __future__ import annotations
 import os
 import re
 import typing
+import traceback
 
 import cssutils
 import sass
 from antlr4 import FileStream, CommonTokenStream, IllegalStateException
 from antlr4.error.ErrorListener import ErrorListener
+from core.common import UniNode, ADict
 from cssutils.css import CSSMediaRule, CSSStyleRule
-
-from .htmlnode import HTMLTemplate
 
 from .grammar.BCDLexer import BCDLexer
 from .grammar.BCDParser import BCDParser
@@ -20,12 +20,29 @@ from core.defaults import CSS_PATH, COMPONENTS_PATH
 
 if typing.TYPE_CHECKING:
     from core.session import Session
+    from typing import *
+    from types import CodeType
 
-__all__ = ['collect_styles', 'collect_template']
+__all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
 
 templates: typing.Dict[str, HTMLTemplate] = {}
+
+
+class HTMLTemplate(UniNode):
+    code_base: Dict[str, CodeType] = {}
+    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code')
+
+    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
+        super().__init__(parent)
+        self.tag_name: str = tag_name
+        self.attributes: ADict = attributes and ADict(attributes) or ADict()
+        self.text: str = text
+        self.macro: str = ""
+        self.name: Optional[str] = None
+        self.filename: Optional[str] = None
+        self.code: Optional[Union[CodeType, str]] = None
 
 
 class MyVisitor(BCDParserVisitor):
@@ -75,10 +92,7 @@ class MyVisitor(BCDParserVisitor):
             self.current.attributes[self.cur_attr] = None
 
     def visitAttrValue(self, ctx: BCDParser.AttrValueContext):
-        if self.cur_attr == 'class':
-            self.current.classes = ctx.getText().strip()
-        else:
-            self.current.attributes[self.cur_attr] = ctx.getText()
+        self.current.attributes[self.cur_attr] = ctx.getText()
 
     def visitRawName(self, ctx:BCDParser.RawNameContext):
         self.cur_attr = ctx.getText()
@@ -225,22 +239,34 @@ class StyleVisitor(BCDParserVisitor):
             base_class = f'.{self.class_name}'
 
             def go(l):
-                res = []
                 for node in l:
                     if type(node) == CSSMediaRule:
-                        res.append(f'{node.atkeyword} {node.media.mediaText} {{\n{go(node.cssRules)}\n}}')
+                        go(node.cssRules)
                     elif type(node) == CSSStyleRule:
-                        s = f'{base_class} ' + f', {base_class} '.join(seq.selectorText for seq in node.selectorList.seq)
-                        css_text = node.style.cssText.replace("\n", " ")
-                        res.append(f'{s} {{ {css_text} }}')
-                return '\n'.join(res)
+                        for sel in node.selectorList:
+                            lst = sel.seq
+                            first = True
+                            i = 0
+                            while i < len(lst):
+                                if first:
+                                    if lst[i].type in ('type-selector', 'universal'):
+                                        lst.insert(i + 1, base_class, 'class')
+                                        i += 1
+                                        first = False
+                                    elif lst[i].type in ('class', 'id'):
+                                        lst.insert(i, base_class, 'class')
+                                        i += 1
+                                        first = False
+                                elif lst[i].type in ('descendant', 'child', 'adjacent-sibling', 'following-sibling'):
+                                    first = True
+                                i += 1
 
-            lst = self.parser.parseString(text)
-            res = go(lst)
+            sheet = self.parser.parseString(text)
+            go(sheet)
 
             # chunks = re.split(r'(?<=})', text)
             # res = '\n'.join(f'.{self.class_name} {chunk.strip()}' for chunk in chunks if chunk.strip())
-            self.styles.append(res)
+            self.styles.append(str(sheet.cssText, 'utf8'))
 
     def visitRawName(self, ctx: BCDParser.RawNameContext):
         name = ctx.getText()
@@ -281,7 +307,7 @@ def collect_styles(app_path, error_callback: typing.Callable[[str], None]) -> st
                 try:
                     res = load_styles(name, path)
                 except Exception as e:
-                    error_callback(f'{path}> {e}')
+                    error_callback(f'{path}> Style collector> {e}')
                 else:
                     if res:
                         styles.append(res)

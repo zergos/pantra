@@ -5,8 +5,7 @@ import traceback
 from contextlib import contextmanager
 
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
-from core.components.htmlnode import HTMLTemplate
-from core.components.loader import collect_template
+from core.components.loader import collect_template, HTMLTemplate
 from core.compiler import compile_context_code, ContextInitFailed
 from core.session import Session, run_safe
 
@@ -64,8 +63,11 @@ class RenderNode(UniqueNode):
             if self.parent:
                 self.parent.remove(self)
 
-    def update(self):
-        self.context.render.update(self)
+    def update(self, with_attrs: bool = False):
+        if with_attrs:
+            self.context.render.update(self)
+        else:
+            self.shot(self)
 
     def update_tree(self):
         self.context.render.update(self, True)
@@ -159,64 +161,71 @@ class DefaultRenderer:
             name = attr.split(':')[1].strip()
             node.scope[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
             return True
-        elif attr == 'style':
-            if node.style:
-                self.ctx.session.error(f'Style already set before {attr}={value}')
-                return True
-            if '{' in value:
-                node.style = self.build_string(value, node)
-            else:
-                node.style = DynamicStyles(self.strip_quotes(value))
-            return True
-        elif attr.startswith('class:'):
-            cls = attr.split(':')[1].strip()
-            ctx = self.ctx
-            if value is None:
-                func = lambda: ctx.locals[cls]
-            else:
-                value = self.strip_quotes(value)
-                if '{' in value:
-                    func = self.build_func(value.strip('{}'), node)
-                else:
-                    func = lambda: ctx.locals[value]
-            node.con_classes.append((func, cls))
-            return True
-        elif attr.startswith('css:'):
-            if type(node.style) != DynamicStyles:
-                self.ctx.session.error(f'Can not combine dynamic classes with expressions {attr}={value}')
-                return True
-            ctx = self.ctx
-            attr = attr.split(':')[1].strip()
-            if value is None:
-                node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
-            elif '{' in value:
-                node.style[attr] = DynamicString(self.build_func('f'+value, node))
-            else:
-                value = self.strip_quotes(value)
-                node.style[attr] = value #DynamicString(lambda: ctx.locals.get(value))
-            return True
         elif attr == 'on:render':
             return True
-        elif attr == 'bind:value':
-            if value is None:
-                value = 'value'
-            else:
-                value = self.strip_quotes(value)
-            ctx = self.ctx
-            node.attributes[attr] = value
-            node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
-            return True
+        elif typename(node) == 'HTMLElement':
+            if attr == 'style':
+                if node.style:
+                    self.ctx.session.error(f'Styles already set before {attr}={value}')
+                    return True
+                if '{' in value:
+                    node.style = self.build_string(value, node)
+                else:
+                    node.style = DynamicStyles(self.strip_quotes(value))
+                return True
+            elif attr == 'class':
+                if '{' in value:
+                    node.classes = self.build_string(value, node)
+                else:
+                    node.classes = DynamicClasses(self.strip_quotes(value))
+            elif attr.startswith('class:'):
+                cls = attr.split(':')[1].strip()
+                ctx = self.ctx
+                if value is None:
+                    func = lambda: ctx.locals[cls]
+                else:
+                    value = self.strip_quotes(value)
+                    if '{' in value:
+                        func = self.build_func(value.strip('{}'), node)
+                    else:
+                        func = lambda: ctx.locals[value]
+                node.con_classes.append((func, cls))
+                return True
+            elif attr.startswith('css:'):
+                if type(node.style) != DynamicStyles:
+                    self.ctx.session.error(f'Can not combine dynamic style with expressions {attr}={value}')
+                    return True
+                ctx = self.ctx
+                attr = attr.split(':')[1].strip()
+                if value is None:
+                    node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
+                elif '{' in value:
+                    node.style[attr] = DynamicString(self.build_func('f'+value, node))
+                else:
+                    value = self.strip_quotes(value)
+                    node.style[attr] = value #DynamicString(lambda: ctx.locals.get(value))
+                return True
+            elif attr == 'bind:value':
+                if value is None:
+                    value = 'value'
+                else:
+                    value = self.strip_quotes(value)
+                ctx = self.ctx
+                node.attributes[attr] = value
+                node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
+                return True
+            elif attr == 'set:focus':
+                node._set_focus = True
+                return True
+            elif attr.startswith('data:'):
+                attr = attr.split(':')[1].strip()
+                node.data[attr] = self.eval_string(self.strip_quotes(value), node)
+                return True
         elif attr.startswith('not:'):
             attr = attr.split(':')[1].strip()
             node.locals[attr] = False
             return True
-        elif attr == 'set:focus':
-            node._set_focus = True
-            return True
-        elif attr.startswith('data:'):
-            attr = attr.split(':')[1].strip()
-            node.data[attr] = self.eval_string(self.strip_quotes(value), node)
-            return True
+
         return False
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
@@ -331,7 +340,7 @@ class DefaultRenderer:
         elif template.tag_name == 'style':
             # styles collected elsewhere
             if 'global' not in template.attributes:
-                self.ctx.render_base = True
+                self.ctx._restyle = True
 
         elif template.tag_name == 'event':
             node = c.EventNode(parent)
@@ -340,7 +349,7 @@ class DefaultRenderer:
                     node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
-            self.ctx.render_base = True
+            self.ctx._restyle = True
 
         elif template.tag_name == 'scope':
             scope = parent.scope
@@ -371,11 +380,6 @@ class DefaultRenderer:
                     if not self.process_special_attribute(attr, value, node):
                         node.attributes[attr] = self.build_string(value, node)
 
-                node.classes = self.build_string(template.classes, node)
-                if node.classes is None:
-                    node.classes = DynamicClasses()
-                elif type(node.classes) == str:
-                    node.classes = DynamicClasses(node.classes)
                 node.con_classes()
 
                 # evaluate body
@@ -400,7 +404,7 @@ class DefaultRenderer:
         return node
 
     def rebind(self, node):
-        if node.render_this or typename(node) == 'Context' and node.render_base:
+        if node.render_this:
             self.ctx.shot(node)
         else:
             for child in node.children:
@@ -421,9 +425,6 @@ class DefaultRenderer:
                     node.attributes[k] = v()
             if type(node.classes) == DynamicString:
                 node.classes = node.classes()
-            else:
-                if type(node.classes) == str:
-                    node.classes = DynamicClasses(node.classes)
             node.con_classes()
 
             if type(node.style) == DynamicString:
@@ -603,8 +604,3 @@ class ContextShot:
     def __sub__(self, other):
         self.deleted.add(other.oid)
         return self
-
-    @property
-    def rendered(self) -> List[RenderNode]:
-        from core.components.context import Context
-        return [node for node in self.updated if type(node) != Context or node.render_base]

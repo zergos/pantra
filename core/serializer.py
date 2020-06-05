@@ -9,7 +9,7 @@ __all__ = ['serializer']
 
 def get_parent_oid(node: AnyNode) -> typing.Optional[int]:
     parent = node.parent
-    while parent and (type(parent) not in [HTMLElement, NSElement, TextNode, Context] or type(parent) == Context and not parent.render_base):
+    while parent and not parent.render_this:
         parent = parent.parent
     return parent and parent.oid
 
@@ -27,41 +27,9 @@ class HTMLElementSerializer(bsdf.Extension):
         if v._rebind:
             res['#'] = True
             v._rebind = False
+        if v.ctx._restyle:
+            res['$'] = v.ctx.template.name
         return res
-
-
-class ContextSerializer(bsdf.Extension):
-    name = 'c'
-
-    def match(self, s, v):
-        return type(v) == Context
-
-    def encode(self, s, v: Context):
-        res = {'n': v.template.name, 'i': v.oid, 'p': get_parent_oid(v)}
-        if v._rebind:
-            res['#'] = True
-            v._rebind = False
-        return res
-
-
-class ConditionSerializer(bsdf.Extension):
-    name = 'i'
-
-    def match(self, s, v):
-        return type(v) == ConditionNode
-
-    def encode(self, s, v: ConditionNode):
-        return {'i': v.oid, 'p': get_parent_oid(v)}
-
-
-class LoopSerializer(bsdf.Extension):
-    name = 'l'
-
-    def match(self, s, v):
-        return type(v) == LoopNode
-
-    def encode(self, s, v):
-        return {'i': v.oid, 'p': get_parent_oid(v)}
 
 
 class TextSerializer(bsdf.Extension):
@@ -88,7 +56,7 @@ class EventSerializer(bsdf.Extension):
         return {'ctx': v.context.template.name, 'a': v.attributes}
 
 
-serializer = bsdf.BsdfSerializer([HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer],
+serializer = bsdf.BsdfSerializer([HTMLElementSerializer, TextSerializer, EventSerializer],
                                  compression='bz2')
 
 

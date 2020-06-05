@@ -101,14 +101,14 @@ class Session:
         if shot.deleted:
             self.send_message({'m': 'd', 'l': list(shot.deleted)})
         if shot.updated:
-            self.send_message({'m': 'u', 'l': shot.rendered})
+            self.send_message({'m': 'u', 'l': list(shot.updated)})
         shot.reset()
 
     def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
         for child in children:  # type: AnyNode
             if not child:
                 continue
-            if not child.render_this or typename(child) == 'Context' and not child.render_base:
+            if not child.render_this:
                 pass
             else:
                 lst.append(child)

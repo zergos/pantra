@@ -1,0 +1,10 @@
+<EntityTable entity="{User}" not:editable>
+    <columns>
+        <col name="name,email,created_at"/>
+        <col name="is_admin" title="A" css:width="3em"/>
+    </columns>
+</EntityTable>
+
+<python>
+from db.models import User
+</python>

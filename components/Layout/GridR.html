@@ -4,13 +4,13 @@
             Header
         </slot>
     </div>
-    <div class="splitter v" on:drag="VDragSplitter"/>
+    <div class="splitter v" on:drag="VDragSplitter" css:cursor="{'auto' if fixed_header else ''}"/>
     <div ref:leftcol class="leftcol" css:width="{left_width}">
         <slot name="leftcol">
             Left column
         </slot>
     </div>
-    <div class="splitter h" on:drag="HDragSplitter"/>
+    <div class="splitter h" on:drag="HDragSplitter" css:cursor="{'auto' if fixed_leftcol else ''}"/>
     <div class="main">
         <slot name="main">
             Main content
@@ -26,7 +26,7 @@
         grid: "header header header" minmax($header-height, max-content)
               "splitter-v splitter-v splitter-v" 3px
               "leftcol splitter-h main" auto /
-              minmax($leftcol-width, max-content) 3px auto;
+              minmax($leftcol-width, min-content) 3px auto;
 
         &.fullscreen {
             height: 100vh;
@@ -79,6 +79,9 @@ from core.ctx import *
 top_height: str = ''
 left_width: str = ''
 
+fixed_header: bool = False
+fixed_leftcol: bool = False
+
 class HDragSplitter(DragController):
     drag_node: HTMLElement
     source_width: int
@@ -87,6 +90,8 @@ class HDragSplitter(DragController):
         return DragOptions(allow_y=False)
 
     def start(self, node) -> bool:
+        if fixed_leftcol:
+            return False
         self.source_width = refs.leftcol.metrics.width
         self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
         return True
@@ -109,6 +114,8 @@ class VDragSplitter(DragController):
         return DragOptions(allow_x=False)
 
     def start(self, node) -> bool:
+        if fixed_header:
+            return False
         self.source_height = refs.header.metrics.height
         self.drag_node = ctx.div('moving v', node, from_y=self.from_y)
         return True

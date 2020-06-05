@@ -1,0 +1,145 @@
+<div class="taskbar" ref:bars class:hidden="{len(windows)<2}"/>
+<div class="title" class:hidden="{not title}">
+    <div class="title-content">{{title}}</div><div class="close" on:click="close">🗙</div>
+</div>
+
+<style type="text/scss">
+    .taskbar {
+        display: flex;
+        flex-flow: row wrap;
+        //height: 20px;
+        border-top: solid black 2px;
+        border-bottom: solid black 2px;
+        width: 100%;
+
+        div {
+            flex-grow: 1;
+            max-width: 100%;
+            min-width: 10em;
+            border-right: solid black 2px;
+            border-top: solid black 1px;
+            transition: background-color ease 2s;
+            cursor: pointer;
+            padding-left: 0.33rem;
+
+            &:hover {
+                background: repeating-radial-gradient(circle at 50% 100%, rgba(200, 200, 200, 0.1), rgba(200, 200, 200, 0.1) 3px, rgba(30, 30, 30, 0.1) 3px, rgba(30, 30, 30, 0.1) 6px) !important;
+            }
+            &.active {
+                font-weight: bold;
+            }
+        }
+    }
+
+    .title {
+        display: flex;
+        border-bottom: solid black 2px;
+        border-top: solid black 1px;
+        font-weight: bold;
+
+        div {
+            border-right: solid black 2px;
+        }
+
+        .title-content {
+            width: 100%;
+            align-self: center;
+            background-color: #0042c1;
+            background: linear-gradient(to right, #0042c1 0%, #9ebf00 100%);
+            color: whitesmoke;
+            padding-left: 1em;
+        }
+        .close {
+            font-weight: normal;
+            text-align: center;
+            background-color: #4b4b4b;
+            color: #e7dc00;
+            //text-shadow: 2px 2px black;
+            -webkit-text-stroke: 1px black;
+            width: 20px;
+            cursor: pointer;
+            transition: all ease-in-out 0.35s;
+
+            &:hover {
+                color: #e75e00;
+            }
+        }
+    }
+
+    .content {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+</style>
+
+<python>
+import random
+from dataclasses import dataclass, field
+import hsluv
+from core.components.context import HTMLElement
+from core.ctx import *
+
+title: str = ''
+active: str = ''
+render_to: str = ''
+
+windows: Dict[str, 'Window'] = {}
+nodes: List[Context] = []
+
+@dataclass
+class Window:
+    title: str
+    bar: HTMLElement = field(default=None)
+    view: HTMLElement = field(default=None)
+
+def add_window(code: str, wintitle: str) -> HTMLElement:
+    if code not in windows:
+        bar = HTMLElement('div', refs.bars, {'on:click': 'click_bar'}, wintitle)
+        bar.data.code = code
+        color = random.randint(80, 300)
+        bar.style.background = hsluv.hsluv_to_hex([color, 80, 80])
+        bar.style.color = hsluv.hsluv_to_hex([color, 100, 20])
+        windows[code] = Window(wintitle, bar)
+        if render_to:
+            windows[code].view = HTMLElement('div', render_to)
+        refs.bars.update(True)
+    switch_to(code)
+    return windows[code].view
+
+def switch_to(code: str, before_close: bool = False):
+    global active, title
+    if active and not before_close:
+        windows[active].bar.remove_class('active')
+        if windows[active].view:
+            windows[active].view.add_class('hidden')
+    active = code
+    if code:
+        windows[code].bar.add_class('active')
+        if windows[code].view:
+            windows[code].view.remove_class('hidden')
+        ctx.title = windows[code].title
+    else:
+        ctx.title = ''
+
+def click_bar(node):
+    switch_to(node.data.code)
+
+def close(node):
+    current = active
+    keys = list(windows.keys())
+    idx = keys.index(active)
+    if idx == len(keys)-1:
+        if idx == 0:
+            switch_to('', True)
+        else:
+            switch_to(keys[idx-1], True)
+    else:
+        switch_to(keys[idx+1], True)
+    windows[current].bar.remove()
+    if windows[current].view:
+        windows[current].view.remove()
+    del windows[current]
+    refs.bars.update()
+
+</python>

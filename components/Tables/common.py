@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from core.common import DynamicStyles
 from core.components.context import HTMLElement
-from core.components.htmlnode import HTMLTemplate
+from core.components.loader import HTMLTemplate
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -38,10 +38,11 @@ def build_maps(ctx: Context, template: HTMLTemplate) -> MapsRows:
     H = W = 0
     maps: MapsRows = []
 
-    def set_cell(x, y, i):
+    def set_cell(x, y, i, name):
         nonlocal H, W
         item = ColMap(hspan=max(W - x, 1), vspan=max(H - y, 1))
         item.node = ctx.render.build_node(i, ctx)
+        item.node.attributes.name = name
         if y >= H:
             # span rows on left cells
             for kx in range(x):
@@ -76,8 +77,9 @@ def build_maps(ctx: Context, template: HTMLTemplate) -> MapsRows:
         w = h = 0
         for i in l:
             if i.tag_name == 'col':
-                set_cell(x + w, y, i)
-                w += 1
+                for name in i.attributes.name.strip('" ''').split(','):
+                    set_cell(x + w, y, i, name)
+                    w += 1
                 h = max(h, 1)
             else:
                 sw, sh = goy(i, x + w, y)
@@ -89,7 +91,8 @@ def build_maps(ctx: Context, template: HTMLTemplate) -> MapsRows:
         w = h = 0
         for i in l:
             if i.tag_name == 'col':
-                set_cell(x, y + h, i)
+                for name in i.attributes.name.strip('" ''').split(','):
+                    set_cell(x, y + h, i, name)
                 w = max(w, 1)
                 h += 1
             else:

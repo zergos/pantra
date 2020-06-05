@@ -1,5 +1,4 @@
 let _serializer_debug = false;
-//let _create_control_tags = false;
 let content_filled = false;
 
 let namespaces = {
@@ -33,8 +32,12 @@ const HTMLElementSerializer = {
         if (!element) {
             let parent = OID.node(v.p);
             if (!parent) {
-                se_log(`element became new root node:`);
+                se_log(`element ${v.n} became new root node:`);
                 parent = root_node();
+                if (!content_filled) {
+                    parent.innerText = '';
+                    content_filled = true;
+                }
             }
             if ('x' in v)
                 element = document.createElementNS(namespaces[v.x], v.n);
@@ -55,10 +58,13 @@ const HTMLElementSerializer = {
                 else
                     element.removeAttribute(at);
         }
-        if (v.C)
+        if (v.C || v['$']) {
             //element.className = v.C;
-            element.setAttribute('class', v.C);
-        else
+            let lst = [];
+            if (v['$']) lst.push(v['$']);
+            if (v.C) lst.push(v.C);
+            element.setAttribute('class', lst.join(' '));
+        } else
             element.removeAttribute('class');
         if (v.s)
             element.setAttribute('style', v.s);
@@ -73,66 +79,6 @@ const HTMLElementSerializer = {
             element.firstChild.nodeValue = v.t || '';
         if (v.f)
             element.focus();
-        return element;
-    }
-};
-
-const ContextSerializer = {
-    name: 'c',
-    decode: function(s, v) {
-        let element = OID.node(v.i);
-        if (!element) {
-            let parent = OID.node(v.p);
-            if (!parent) {
-                parent = root_node();
-                if (!content_filled) {
-                    parent.innerText = '';
-                    content_filled = true;
-                }
-            }
-            element = document.createElement('c-'+v.n);
-            OID.set(element, v.i);
-            element.className = 'd '+v.n;
-            parent.appendChild(element);
-        } else
-            rebind_node(v, element);
-        return element;
-    }
-};
-
-const ConditionSerializer = {
-    name: 'i',
-    decode: function(s, v) {
-        let element = OID.node(v.i);
-        if (!element) {
-            let parent = OID.node(v.p);
-            if (!parent) {
-                console.error(`parent ${v.p} not found for condition ${v.i}`);
-                return null;
-            }
-            element = document.createElement('condition');
-            OID.set(element, v.i);
-            parent.appendChild(element);
-        }
-        return element;
-    }
-};
-
-const LoopSerializer = {
-    name: 'l',
-    decode: function(s, v) {
-        let element = OID.node(v.i);
-        if (!element) {
-            let parent = OID.node(v.p);
-            if (!parent) {
-                console.error(`parent ${v.p} not found for loop ${v.i}`);
-                return null;
-            }
-            element = document.createElement('loop');
-            OID.set(element, v.i);
-            se_log(`element ${v.i} ${v.n} created`);
-            parent.appendChild(element);
-        }
         return element;
     }
 };
@@ -165,5 +111,5 @@ const EventSerializer = {
 };
 
 const serializer = new bsdf.BsdfSerializer(
-    [HTMLElementSerializer, ContextSerializer, ConditionSerializer, LoopSerializer, TextSerializer, EventSerializer]);
+    [HTMLElementSerializer, TextSerializer, EventSerializer]);
 

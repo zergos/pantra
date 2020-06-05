@@ -1,18 +1,26 @@
-<GridR fullscreen>
+<GridR fullscreen fixed_header>
     <header>
         <h1>System configuration</h1>
+        <Taskbar ref:taskbar/>
     </header>
     <leftcol>
         <SideMenu>
             <MenuItem caption="Users" action="edit_users"/>
             <MenuItem caption="Apps"/>
+            <MenuItem caption="Test" action="test"/>
         </SideMenu>
     </leftcol>
     <main>
-        <MDI/>
-        <div ref:main/>
+        <div class="main" ref:main on:render="bind_to_taskbar"/>
     </main>
 </GridR>
+
+<style>
+    .main {
+        height: 100%;
+        overflow: auto;
+    }
+</style>
 
 <python>
 from core.imports import *
@@ -22,10 +30,18 @@ from core.ctx import *
 def init():
     session.set_title('System configuration')
 
+def bind_to_taskbar(node):
+    refs.taskbar.render_to = node
+
 def edit_users(node):
-    c = Context('EntityTable', refs.main)
-    c.query = User.select()
-    c.entity = User
-    c.render.build()
+    window = refs.taskbar.add_window('Users', 'Users')
+    if not window.children:
+        c = Context('UserList', window)
+        c.render.build()
+
+def test(node):
+    for i in range(20):
+        view = refs.taskbar.add_window(f'Window{i}', f'Window {i}')
+        HTMLElement('h1', view, text=f'Hello {i}!')
 
 </python>

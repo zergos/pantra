@@ -19,7 +19,15 @@ body {
   }
 }
 
+.hidden {
+  display: none !important;
+}
+
 // ##### Managed tags ####
-loop, condition {
+c-, loop, condition {
     display: contents;
+}
+
+.d {
+  //all: unset;
 }
