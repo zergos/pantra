@@ -3,13 +3,14 @@
   box-sizing: border-box;
 }
 
-body {
+body, .d {
   font-family: $font-family-base;
   font-size: $font-size-base;
   color: $body-color;
   background: $body-bg;
   padding: $body-padding;
   margin: 0;
+  text-align: left;
 }
 
 @media all and (max-width: 800px){
@@ -21,13 +22,4 @@ body {
 
 .hidden {
   display: none !important;
-}
-
-// ##### Managed tags ####
-c-, loop, condition {
-    display: contents;
-}
-
-.d {
-  //all: unset;
 }

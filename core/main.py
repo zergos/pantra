@@ -65,6 +65,8 @@ async def get_ws(request: Request):
                         restart()
                     else:
                         if command == 'REFRESH':
+                            if hasattr(session.state, 'drag'):
+                                process_drag_stop(session, 0, 0)
                             await session.send_root()
                             if session.title:
                                 await session.send_title(session.title)

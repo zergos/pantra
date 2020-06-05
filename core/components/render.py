@@ -349,7 +349,7 @@ class DefaultRenderer:
                     node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
                 else:
                     node.attributes[k] = self.build_string(v, node)
-            self.ctx._restyle = True
+            #self.ctx._restyle = True
 
         elif template.tag_name == 'scope':
             scope = parent.scope

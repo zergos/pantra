@@ -1,5 +1,5 @@
 """
-<div class="table-container">
+<div class="Table table-container">
     <table id="t{ctx.oid}">
         <colgroup ref:colgroup>
             {{#for style in col_styles #forloop.counter}}
@@ -44,13 +44,13 @@
     </table>
 </div>
 
-<event selector="td" on:click="select_cell" on:dblclick="enter_cell"/>
-<event selector="input" on:focusout="exit_cell"/>
+<event selector=".Table td" on:click="select_cell" on:dblclick="enter_cell"/>
+<event selector=".Table td input" on:focusout="exit_cell"/>
 
-<style type="text/scss">
+<style type="text/scss" global>
     @import "defaults";
 
-    .resizing {
+    .Table.resizing {
         background-color: $color-active;
         background: linear-gradient(180deg, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
     }
@@ -158,7 +158,7 @@ class DragResize(DragController):
         th = node.upto('th')
         self.source_index = th.index()
         self.source_node = th
-        self.drag_node = ctx.div('resizing', node)
+        self.drag_node = ctx.div('Table resizing', node)
         self.drag_node.set_metrics([self.x, node.metrics.top, 3, '100vh'])
         return True
 

@@ -1,0 +1,17 @@
+<CardForm ref:form caption="{caption}">
+
+</CardForm>
+
+<python>
+from pony.orm.core import EntityMeta
+from core.ctx import *
+
+entity: Optional[EntityMeta] = None
+
+def init():
+    global entity
+    if not ctx.slot:
+        for attr in entity._attrs_with_columns_:
+
+
+</python>
