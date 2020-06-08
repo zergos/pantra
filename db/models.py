@@ -8,7 +8,7 @@ db = Database()
 
 
 class User(db.Entity):
-    name = Required(str)
+    name = Required(str, unique=True)
     password = Optional(str)
     salt = Optional(str)
     email = Optional(str, unique=True)

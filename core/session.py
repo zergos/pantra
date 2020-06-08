@@ -70,7 +70,12 @@ class Session:
         if self.ws is None or self.ws.closed:
             self.pending_messages.put(serializer.encode(message))
         else:
-            await self.ws.send_bytes(serializer.encode(message))
+            try:
+                code = serializer.encode(message)
+            except Exception as e:
+                print(traceback.format_exc())
+            else:
+                await self.ws.send_bytes(code)
 
     def error(self, error: str):
         self.send_message({'m': 'e', 'l': error})

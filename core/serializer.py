@@ -27,7 +27,7 @@ class HTMLElementSerializer(bsdf.Extension):
         if v._rebind:
             res['#'] = True
             v._rebind = False
-        if v.ctx._restyle:
+        if v.context._restyle:
             res['$'] = v.ctx.template.name
         return res
 
