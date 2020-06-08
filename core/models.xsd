@@ -4,6 +4,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="entity" type="Entity" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="python" type="xs:string" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -13,7 +14,9 @@
             <xs:element name="set" type="Set" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="array" type="Array" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="mixin" type="xs:string"/>
+        <xs:attribute name="base" type="xs:string"/>
     </xs:complexType>
     <xs:complexType name="Attr">
         <xs:attribute name="name" type="xs:string" use="required"/>
@@ -37,8 +40,8 @@
         <xs:union>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
-                    <xs:enumeration value="true"/>
-                    <xs:enumeration value="false"/>
+                    <xs:enumeration value="True"/>
+                    <xs:enumeration value="False"/>
                 </xs:restriction>
             </xs:simpleType>
             <xs:simpleType>
@@ -52,7 +55,7 @@
         <xs:union>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
-                    <xs:enumeration value="string"/>
+                    <xs:enumeration value="str"/>
                     <xs:enumeration value="int"/>
                     <xs:enumeration value="bool"/>
                     <xs:enumeration value="datetime"/>

@@ -1,5 +1,5 @@
 <models xmlns="app.models">
-    <entity name="User">
+    <entity name="User" mixin="UserMixin">
         <attr name="name" type="str" required=""/>
         <attr name="password" type="str" required=""/>
         <attr name="salt" type="str" required=""/>
@@ -10,8 +10,27 @@
         <set name="apps" type="App"/>
     </entity>
     <entity name="App">
-        <attr name="name" type="hello"/>
+        <attr name="name" type="string" required=""/>
         <attr name="title" type="string"/>
         <set name="users" type="User"/>
     </entity>
+
+    <python>
+import hashlib
+import uuid
+
+
+class UserMixin:
+    def set_password(self, password):
+        self.salt = uuid.uuid4().hex
+        self.password = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
+
+    def check_password(self, password):
+        check = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
+        return check == self.password
+
+    def __str__(self):
+        return self.name
+
+    </python>
 </models>
