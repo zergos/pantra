@@ -6,7 +6,7 @@ from pony.orm import Database, Required, Optional, Set
 
 db = Database()
 
-
+'''
 class User(db.Entity):
     name = Required(str, unique=True)
     password = Optional(str)
@@ -39,3 +39,4 @@ class TestTable(db.Entity):
     Column4 = Optional(float, title='Вещ. число')
     Column5 = Optional(datetime, title='Дата/время')
 
+'''

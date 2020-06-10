@@ -17,6 +17,8 @@ from core.defaults import APPS_PATH
 if typing.TYPE_CHECKING:
     from typing import *
 
+__all__ = ['expose_datebases', 'dbinfo']
+
 _type_map = {
     'bool': bool,
     'int': int,
@@ -55,10 +57,32 @@ _array_type_map = {
     'int': IntArray,
 }
 
-dbinfo: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]] = ADict()  # app / entity / column / attr: value
+
+class DatabaseInfo(typing.NamedTuple):
+    cls: Database
+    kwargs: Dict[str, Any]
 
 
-def model_to_python(app: str):
+dbinfo: Dict[str, Dict[str, Union[Dict[str, Dict[str, Any]], DatabaseInfo]]] = ADict()  # app / entity+db / column / attr: value
+
+
+def _parse_xml(p, src: Union[str, BinaryIO], file_name):
+    try:
+        if type(src) == str:
+            p.Parse(src, True)
+        else:
+            p.ParseFile(src)
+    except:
+        traceback.print_exc(limit=-1)
+        print(src.splitlines()[p.ErrorLineNumber-1])
+        print(f'{file_name}> {p.ErrorLineNumber}:{p.ErrorColumnNumber}')
+
+
+def models_to_python(app: str) -> Optional[str]:
+    file_name = os.path.join(APPS_PATH, app, 'data', 'models.xml')
+    if not os.path.exists(file_name):
+        return None
+
     res = []
     in_python = False
     python = ''
@@ -71,15 +95,15 @@ def model_to_python(app: str):
         elif name in ('attr', 'array'):
             attr_name = attrs['name']
             field = 'Optional' if attrs.get('required', 'False') == 'False' else 'Required'
-            type = ''
+            t = ''
             pars = []
             for a, v in attrs.items():
                 if a == 'type':
-                    type = v
+                    t = v
                     if name == 'attr':
-                        pars.append(type)
+                        pars.append(t)
                 elif a == 'default':
-                    if type in ('int', 'float', 'Decimal', 'Json', 'bool'):
+                    if t in ('int', 'float', 'Decimal', 'Json', 'bool'):
                         pars.append(f'{a}={v}')
                     else:
                         pars.append(f'{a}="{v}"')
@@ -88,11 +112,11 @@ def model_to_python(app: str):
             if name == 'attr':
                 res.append(f'    {attr_name} = {field}({", ".join(pars)})')
             else:
-                res.append(f'    {attr_name} = {type.capitalize()}Array({", ".join(pars)})')
+                res.append(f'    {attr_name} = {t.capitalize()}Array({", ".join(pars)})')
         elif name == 'set':
             attr_name = attrs['name']
-            type = attrs['type']
-            res.append(f'    {attr_name} = Set("{type}")')
+            t = attrs['type']
+            res.append(f'    {attr_name} = Set("{t}")')
         elif name == 'python':
             in_python = True
 
@@ -111,24 +135,28 @@ def model_to_python(app: str):
     p.EndElementHandler = end_element
     p.CharacterDataHandler = char_data
 
-    with open(os.path.join(APPS_PATH, app, 'data', 'models.xml'), 'rb') as f:
-        p.ParseFile(f)
+    with open(file_name, 'rb') as f:
+        _parse_xml(p, f, file_name)
 
     return f'''# ---- {app} models for type checker
-from __futures__ import annotations
 import typing
 if typing.TYPE_CHECKER:
+    from datetime import datetime, time, timedelta, date
+    from decimal import Decimal
+    from uuid import UUID
     from pony.core import *
+
     db = Database()
 ''' + \
-'\n'.join(f'    {line}' for line in python.splitlines()) + \
-'\n'.join(f'    {line}' for line in res)
+        '\n'.join(f'    {line}' for line in python.splitlines()) + \
+        '\n'.join(f'    {line}' for line in res)
 
 
-def expose_model(db: Database, app: str):
-    global dbinfo
-
+def expose_models(db: Database, schema: Optional[str], app: str):
     file_name = os.path.join(APPS_PATH, app, 'data', 'models.xml')
+    if not os.path.exists(file_name):
+        return
+
     locals = {}
 
     # load python module
@@ -164,7 +192,7 @@ def expose_model(db: Database, app: str):
     with open(file_name, 'rt') as f:
         src = f.read()
 
-    p.Parse(src, True)
+    _parse_xml(p, src, file_name)
 
     # expose entities
     entity_factory = None
@@ -181,13 +209,17 @@ def expose_model(db: Database, app: str):
         if name == 'entity':
             if 'base' in attrs:
                 bases = [locals[b.strip()] for b in attrs['base'].split(',')]
+            elif 'db' in attrs:
+                bases = [app_info[attrs['db']].cls.Entity]
             else:
                 bases = [db.Entity]
             if 'mixin' in attrs:
                 bases.append(locals[attrs['mixin']])
             entity_name = attrs['name']
             body = {}
-            entity_factory = lambda: type(entity_name, bases, body)
+            if schema and 'db' not in attrs:
+                body['_table_'] = (schema, entity_name.lower())
+            entity_factory = lambda: type(entity_name, tuple(bases), body)
 
             if entity_name not in app_info:
                 app_info[entity_name] = ADict()
@@ -198,14 +230,14 @@ def expose_model(db: Database, app: str):
             attr_info = ADict()
             entity_info[attr_name] = attr_info
             field = Optional if attrs.get('required', 'False') == 'False' else Required
-            type = None
+            t = None
             type_name = ''
             kwargs = {}
             for a, v in attrs.items():
                 if a == 'type':
                     type_name = v
                     if name == 'attr':
-                        type = _type_map[v]
+                        t = _type_map[v]
                     else:
                         field = _array_type_map[v]
                 elif a == 'default':
@@ -217,20 +249,67 @@ def expose_model(db: Database, app: str):
                 elif a not in ('name', 'required'):
                     kwargs[a] = v
             if name == 'attr':
-                body[attr_name] = field(type, **kwargs)
+                body[attr_name] = field(t, **kwargs)
             else:
                 body[attr_name] = field(**kwargs)
         elif name == 'set':
             attr_name = attrs['name']
-            type = _type_map['type']
-            body[attr_name] = Set(type)
+            body[attr_name] = Set(attrs['type'])
 
     def end_element(name: str):
         nonlocal entity_factory
         if name == 'entity':
             entity_factory()
 
+    p = expat.ParserCreate()
     p.StartElementHandler = start_element
     p.EndElementHandler = end_element
-    p.CharacterDataHandler = None
-    p.Parse(src, True)
+    _parse_xml(p, src, file_name)
+
+
+def expose_datebases(app: str, with_mapping: bool = True) -> Optional[Database]:
+    file_name = os.path.join(APPS_PATH, app, 'data', 'databases.xml')
+    if not os.path.exists(file_name):
+        return None
+
+    if app not in dbinfo:
+        dbinfo[app] = ADict()
+    app_info = dbinfo[app]
+
+    schema = None
+    all_db = []
+
+    def start_element(name: str, attrs: dict):
+        nonlocal schema, all_db
+        if name != 'databases':
+            kwargs = dict(attrs)
+            db_name = kwargs.pop('name')
+            if db_name == 'db':
+                schema = kwargs.pop('schema', None)
+            if name == 'reuse':
+                app = kwargs.pop('app')
+                if app not in dbinfo:
+                    expose_datebases(app)
+                db = Database(**dbinfo[app]['db'].kwargs)
+            else:
+                kwargs['provider'] = name
+                db = Database(**kwargs)
+            all_db.append(db)
+            app_info[db_name] = DatabaseInfo(cls=db, kwargs=kwargs)
+
+    p = expat.ParserCreate()
+    p.StartElementHandler = start_element
+
+    with open(file_name, "rb") as f:
+        _parse_xml(p, f, file_name)
+
+    if 'db' not in app_info:
+        return None
+
+    expose_models(app_info['db'].cls, schema, app)
+
+    if with_mapping:
+        for db in all_db:
+            db.generate_mapping(create_tables=False)
+
+    return app_info['db'].cls

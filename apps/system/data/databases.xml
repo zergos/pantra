@@ -1,0 +1,3 @@
+<databases xmlns="app.datebases">
+    <postgres name="db" database="bwf" user="bwf" password="bwf"/>
+</databases>
