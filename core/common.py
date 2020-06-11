@@ -25,19 +25,19 @@ class ADict(dict):
         except KeyError:
             raise AttributeError
 
-    def __ior__(self, other):
+    def __ior__(self, other: Dict):
         res = self.__class__(self)
         res.update(other)
         return res
 
-    def __sub__(self, other):
+    def __sub__(self, other: Iterable):
         res = self.__class__(self)
         for k in other:
             if k in res:
                 del res[k]
         return res
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Iterable):
         res = self.__class__(self)
         res2 = self.__class__()
         for k in other:
@@ -227,17 +227,6 @@ class DynamicStyles(ADict):
         if other in self:
             del self[other]
         return self
-
-
-@dataclass
-class MetricsData:
-    __slots__ = ['left', 'top', 'right', 'bottom', 'width', 'height']
-    left: int
-    top: int
-    right: int
-    bottom: int
-    width: int
-    height: int
 
 
 class WebUnits(str):

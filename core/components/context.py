@@ -11,18 +11,18 @@ from dataclasses import dataclass
 from core.common import ADict, HookDict
 
 from .loader import collect_template, HTMLTemplate
-from core.common import DynamicStyles, EmptyCaller, DynamicClasses, MetricsData, WebUnits
+from core.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
 
 from core.components.render import RenderNode, DefaultRenderer
 from core.oid import get_node
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from ..common import DynamicString
-    from .render import ContextShot
-    from ..session import Session
+    from core.common import DynamicString
+    from core.components.render import ContextShot
+    from core.session import Session
 
-__all__ = ['NSType', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'AnyNode']
+__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'AnyNode']
 
 AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
 
@@ -33,6 +33,17 @@ class NSType(Enum):
     SVG_EV = auto()     # http://www.w3.org/2001/xml-events
     SVG_XLINK = auto()  # http://www.w3.org/1999/xlink
     MATH = auto()       # http://www.w3.org/1998/Math/MathML
+
+
+@dataclass
+class MetricsData:
+    __slots__ = ['left', 'top', 'right', 'bottom', 'width', 'height']
+    left: int
+    top: int
+    right: int
+    bottom: int
+    width: int
+    height: int
 
 
 class Slot(typing.NamedTuple):

@@ -11,8 +11,7 @@ from defaults import CSS_PATH
 
 if typing.TYPE_CHECKING:
     from types import CodeType
-    from components.context import Context
-    from components.htmlnode import HTMLTemplate
+    from components.context import Context, HTMLTemplate
 
 code_base: typing.Dict[str, CodeType] = {}
 

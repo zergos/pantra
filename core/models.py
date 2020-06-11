@@ -139,6 +139,7 @@ def models_to_python(app: str) -> Optional[str]:
         _parse_xml(p, f, file_name)
 
     return f'''# ---- {app} models for type checker
+from __future__ import annotations
 import typing
 if typing.TYPE_CHECKER:
     from datetime import datetime, time, timedelta, date
