@@ -6,7 +6,9 @@
         <attr name="email" type="str"/>
         <attr name="created_at" type="datetime" required="" sql_default="now()" title="created"/>
         <attr name="is_admin" type="bool" default="False" title="A" width="3"/>
-        <!--attr name="enabled" type="bool" default="False" title="E" width="3"/-->
+        <attr name="enabled" type="bool" default="False" title="E" width="3"/>
+        <attr name="long" type="LongStr"/>
+        <attr name="temp" type="time"/>
         <set name="apps" type="App"/>
     </entity>
     <entity name="App">

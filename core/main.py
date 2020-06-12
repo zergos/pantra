@@ -20,6 +20,7 @@ from core.workers import start_task_workers, init_async_worker, stop_task_worker
 from core.tracker import start_observer, stop_observer
 from core.compiler import code_base
 
+__all__ = ['run']
 
 routes = web.RouteTableDef()
 
@@ -161,7 +162,7 @@ async def shutdown(app):
     stop_observer()
 
 
-async def main():
+async def main(host, port):
     app = web.Application()
     app.add_routes(routes)
 
@@ -174,7 +175,7 @@ async def main():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, port=8005)
+    site = web.TCPSite(runner, host=host, port=8005)
     await site.start()
     # wait for finish signal
     print('Running wild at 8005')
@@ -185,7 +186,7 @@ async def main():
         await runner.cleanup()
 
 
-def run():
+def run(host=None, port=8005):
     global bootstrap
     if not os.path.exists(os.path.join(COMPONENTS_PATH, 'bootstrap.html')):
         print('File <bootstrap.html> not found')
@@ -199,7 +200,7 @@ def run():
     mimetypes.init()
     mimetypes.add_type('application/javascript', '.js')
 
-    asyncio.run(main())
+    asyncio.run(main(host, port))
 
 
 if __name__ == '__main__':

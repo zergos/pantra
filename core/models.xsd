@@ -13,20 +13,32 @@
             <xs:element name="attr" type="Attr" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="set" type="Set" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="array" type="Array" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="choice" type="Choice" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="mixin" type="xs:string"/>
         <xs:attribute name="base" type="xs:string"/>
+        <xs:attribute name="cid" type="xs:integer"/>
     </xs:complexType>
     <xs:complexType name="Attr">
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="type" type="Type" use="required"/>
         <xs:attribute name="required" type="Bool"/>
+        <xs:attribute name="cid" type="Bool"/>
         <xs:attribute name="default" type="xs:string"/>
         <xs:attribute name="sql_default" type="xs:string"/>
         <xs:attribute name="title" type="xs:string"/>
         <xs:attribute name="width" type="xs:nonNegativeInteger"/>
         <xs:attribute name="precision" type="xs:nonNegativeInteger"/>
+        <xs:attribute name="unique" type="Bool"/>
+        <xs:attribute name="reverse" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Choice">
+        <xs:complexContent>
+            <xs:extension base="Attr">
+                <xs:attribute name="choices" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="Set">
         <xs:attribute name="name" type="xs:string" use="required"/>
@@ -65,7 +77,6 @@
                     <xs:enumeration value="time"/>
                     <xs:enumeration value="timdelta"/>
                     <xs:enumeration value="bytes"/>
-                    <xs:enumeration value="LongStr"/>
                     <xs:enumeration value="UUID"/>
                     <xs:enumeration value="Json"/>
                 </xs:restriction>
