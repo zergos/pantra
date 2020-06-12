@@ -81,7 +81,6 @@ _array_type_map = {
 class DatabaseInfo:
     cls: Database
     kwargs: Dict[str, Any]
-    parent: Database
 
 
 dbinfo: Dict[str, Dict[str, Union[Dict[str, Dict[str, Any]], DatabaseInfo]]] = ADict()  # app / entity+db / column / attr: value
@@ -277,6 +276,8 @@ def expose_models(db: Database, schema: Optional[str], app: str):
     entity_name = ''
     entity_info = None
 
+    set_later: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
+
     def start_element(name: str, attrs: dict):
         nonlocal entity_factory, body, entity_name, entity_info
 
@@ -323,12 +324,9 @@ def expose_models(db: Database, schema: Optional[str], app: str):
                         if v in _type_map:
                             t = _type_map[v]
                         else:
-                            if v not in app_info:
-                                raise TypeError('{v} type/entity not found')
+                            t = v
                             reverse_name = attrs.get('reverse', f'{entity_name.lower()}s')
-                            rev_entity = app_info[v]['_cls']
-                            if not hasattr(rev_entity, reverse_name):
-                                rev_entity.__dict__[reverse_name] = Set(entity_name)
+                            set_later[v].append((reverse_name, entity_name))
                     else:
                         field = _array_type_map[v]
                 elif a == 'default':
@@ -355,6 +353,15 @@ def expose_models(db: Database, schema: Optional[str], app: str):
             app_info['_cls'] = entity_factory()
 
     _parse_xml(file_name, start_element, end_element)
+
+    # recover all missed Set fields
+    for v, lst in set_later.items():
+        if v not in app_info:
+            raise TypeError(v)
+        rev_entity = app_info[v]['_cls']
+        for reverse_name, entity_name in lst:
+            if not hasattr(rev_entity, reverse_name):
+                setattr(rev_entity, reverse_name, Set(entity_name))
 
 
 def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = True) -> Optional[Database]:
@@ -397,7 +404,7 @@ def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = T
                     db = Database()
                 parent = None
             all_db.append(db)
-            app_info[db_name] = DatabaseInfo(cls=db, kwargs=kwargs, parent=parent)
+            app_info[db_name] = DatabaseInfo(cls=db, kwargs=kwargs)
 
     _parse_xml(file_name, start_element)
 
