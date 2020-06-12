@@ -7,7 +7,7 @@ import traceback
 
 import sass
 from core.common import ADict
-from defaults import CSS_PATH
+from core.defaults import CSS_PATH
 
 if typing.TYPE_CHECKING:
     from types import CodeType
