@@ -26,12 +26,27 @@ def context_args(*ctx):
                     del kwargs[k]
             for c in ctx:
                 if not hasattr(self, c):
-                    raise NameError
+                    raise NameError(f"argument '{c}' not specified")
             f(self, *args, **kwargs)
         func.ctx = ctx
         return func
     return processor
 
+
+class Flag(str):
+    pass
+
+
+def parse_flags(f):
+    def func(*args, **kwargs):
+        new_args = []
+        for a in list(args):
+            if type(a) == Flag:
+                kwargs[str(a)] = True
+            else:
+                new_args.append(a)
+        f(*new_args, **kwargs)
+    return func
 
 class StringLocals(dict):
     def __getitem__(self, item):
@@ -51,9 +66,8 @@ class ExposeToArgs(dict):
             if l.startswith(':param'):
                 chunks = l[7:].split(':')
                 params[chunks[0].strip()] = chunks[1].strip()
-            else:
-                if l:
-                    info.append(l.strip())
+            elif l:
+                info.append(l.strip())
         return info, params
 
     def __init__(self, instance):
@@ -69,10 +83,12 @@ class ExposeToArgs(dict):
                 continue
             sign = []
             params = {}
+            flags = []
             if hasattr(attr, 'ctx'):
                 for name in attr.ctx:
                     sign.append(name)
                     val = ""
+                    type_name = ''
                     if name in cls.__annotations__:
                         t = cls.__annotations__[name]
                         type_name = t if type(t) == str else t.__name__
@@ -80,13 +96,19 @@ class ExposeToArgs(dict):
                     if name in self.params:
                         val += self.params[name]
                     if hasattr(cls, name):
-                        val += f' ({getattr(cls, name)!r})'
+                        sign[-1] = '?' + sign[-1]
+                        if type_name == 'bool':
+                            val += ' (option)'
+                            flags.append(name)
+                        else:
+                            val += f' ({getattr(cls, name)!r})'
                     params[name] = val
 
             info, func_params = self._split_doc(attr.__doc__)
             params.update(func_params)
             for i, (p, a) in enumerate(signature(attr).parameters.items()):
                 if not i: continue
+                sign.append(p)
                 t = a.annotation
                 type_name = t if type(t) == str else t.__name__
                 if p in params:
@@ -94,14 +116,23 @@ class ExposeToArgs(dict):
                 else:
                     params[p] = type_name
                 if a.default is None:
+                    sign[-1] = '?' + sign[-1]
                     params[p] += ' (optional)'
                 elif a.default != _empty:
-                    params[p] += f' ({repr(a.default)})'
-                sign.append(p)
+                    sign[-1] = '?' + sign[-1]
+                    if type_name == 'bool':
+                        params[p] += f' (option)'
+                        flags.append(p)
+                    else:
+                        params[p] += f' ({repr(a.default)})'
             attr.doc = info
             attr.params = params
             attr.args = ', '.join(sign)
+            attr.flags = flags
             self[attr_name] = attr
+
+    def add_commands(self, instance):
+        self[instance.__class__.__name__.lower()] = ExposeToArgs(instance)
 
     @staticmethod
     def _print_help(self, path=''):
@@ -140,17 +171,20 @@ class ExposeToArgs(dict):
             else:
                 ExposeToArgs._execute(self[command], self.instance, (path+'.' if path else '')+command, commands, args)
         else:
-            if args == '?':
+            if not callable(self) or args == '?':
                 ExposeToArgs._print_help(self, path)
                 return
             try:
-                code = f'_func(_instance{", "+args if args else ""})'
-                eval(code, {}, StringLocals({'_func': self, '_instance': instance}))
+                code = f'{self.__name__}(_{", "+args if args else ""})'
+                locals = StringLocals({self.__name__: parse_flags(self), '_': instance, 'y': True, 'n': False})
+                for f in self.flags:
+                    locals[f] = Flag(f)
+                eval(code, {}, locals)
             except SyntaxError as e:
                 print(f'{e.args[0]}\n{e.args[1][3]}\n{" " * e.args[1][2]}^')
                 ExposeToArgs._print_help(self, path)
-            except (TypeError, NameError):
-                ExposeToArgs._print_help(self, path)
+            #except (TypeError, NameError):
+            #    ExposeToArgs._print_help(self, path)
             except:
                 traceback.print_exc(-1)
 

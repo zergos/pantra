@@ -4,7 +4,7 @@ import typing
 import json
 import os
 import traceback
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta, date
 import xml.parsers.expat as expat
@@ -20,7 +20,7 @@ from core.defaults import APPS_PATH
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['expose_datebases', 'dbinfo']
+__all__ = ['dbinfo', 'expose_datebases', 'expose_to_pony', 'expose_to_django']
 
 _type_map = {
     'bool': bool,
@@ -39,18 +39,18 @@ _type_map = {
 }
 
 _django_type_map = {
-    'bool': 'BooleanField',
-    'int': 'IntegerField',
-    'float': 'FloatField',
-    'str': 'TextField',
-    'bytes': 'BinaryField',
-    'Decimal': 'DecimalField',
-    'datetime': 'DateTimeField',
-    'date': 'DateField',
-    'time': 'TimeField',
-    'timedelta': 'DurationField',
-    'UUID': 'UUIDField',
-    'LongStr': 'TextField',
+    'bool': 'models.BooleanField',
+    'int': 'models.IntegerField',
+    'float': 'models.FloatField',
+    'str': 'models.TextField',
+    'bytes': 'models.BinaryField',
+    'Decimal': 'models.DecimalField',
+    'datetime': 'models.DateTimeField',
+    'date': 'models.DateField',
+    'time': 'models.TimeField',
+    'timedelta': 'models.DurationField',
+    'UUID': 'models.UUIDField',
+    'LongStr': 'models.TextField',
     'Json': 'JSONField',
 }
 
@@ -95,7 +95,7 @@ def _parse_xml(file_name, start_handler, end_handler=None, content_handler=None,
         with open(file_name, 'rt') as f:
             src = f.read()
             p.Parse(src, True)
-    except:
+    except expat.ExpatError:
         traceback.print_exc(limit=-1)
         print(src.splitlines()[p.ErrorLineNumber-1])
         print(f'{file_name}> {p.ErrorLineNumber}:{p.ErrorColumnNumber}')
@@ -129,16 +129,17 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
 
     in_python = False
 
-    model_name = ''
+    entity_name = ''
     lines = []
 
     def start_element(name: str, attrs: dict):
-        nonlocal in_python, set_later, model_name, lines
+        nonlocal in_python, set_later, entity_name, lines
 
         if name == 'entity':
             lines = []
-            models[attrs['name']] = lines
-            lines.append('\n    class {}({}{}):'.format(attrs['name'], attrs.get('base', 'db.Entity'), ', '+attrs['mixin'] if 'mixin' in attrs else ''))
+            entity_name = attrs['name']
+            models[entity_name] = lines
+            lines.append('\n    class {}({}{}):'.format(entity_name, attrs.get('base', 'db.Entity'), ', '+attrs['mixin'] if 'mixin' in attrs else ''))
         elif name in ('attr', 'array', 'choice'):
             attr_name = attrs['name']
             if name == 'choice':
@@ -156,11 +157,11 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
                         pars.append(t)
                         if t not in _type_map:
                             if 'reverse' not in attrs:
-                                reverse_name = f'{attr_name}s'
+                                reverse_name = f'{entity_name.lower()}s'
                                 pars.append(f"reverse='{reverse_name}'")
                             else:
                                 reverse_name = attrs['reverse']
-                            set_later[t].append(reverse_name)
+                            set_later[t].append((reverse_name, entity_name))
                 elif a == 'default':
                     if t in ('int', 'float', 'Decimal', 'Json', 'bool'):
                         pars.append(f'{a}={v}')
@@ -191,17 +192,17 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
 
     _parse_xml(file_name, start_element, end_element, char_data)
 
-    return models, set_later, python
+    return models, set_later, python.strip()
 
 
-def models_to_python(app: str):
+def expose_to_pony(app: str):
 
     models, set_later, python = _pony_collect_models(app)
 
     # add attrs with refs
-    for model_name, attrs in set_later:
-        for attr in attrs:
-            attr_text = f'    {attr} = Set("{model_name}")'
+    for model_name, attrs in set_later.items():
+        for attr_name, entity_name in attrs:
+            attr_text = f'    {attr_name} = Set("{entity_name}")'
             found = False
             for line in reversed(models[model_name]):
                 if attr_text in line:
@@ -213,11 +214,11 @@ def models_to_python(app: str):
     body: List = f'''# ---- auto-generated {app} models for type checker
 from __future__ import annotations
 import typing
-if typing.TYPE_CHECKER:
+if typing.TYPE_CHECKING:
     from datetime import datetime, time, timedelta, date
     from decimal import Decimal
     from uuid import UUID
-    from pony.core import *
+    from pony.orm import *
     from core.dbtools import Choice
 
     db = Database()
@@ -225,13 +226,14 @@ if typing.TYPE_CHECKER:
 
     body.extend([f'    {line}' for line in python.splitlines()])
     for lines in models.values():
+        body.append('')
         body.extend([f'    {line}' for line in lines])
 
     with open(os.path.join(APPS_PATH, app, 'data', 'pony.py'), 'wt') as f:
         f.write('\n'.join(body))
 
 
-def expose_models(db: Database, schema: Optional[str], app: str):
+def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict = None):
     file_name = os.path.join(APPS_PATH, app, 'data', 'models.xml')
     if not os.path.exists(file_name):
         return
@@ -252,11 +254,8 @@ def expose_models(db: Database, schema: Optional[str], app: str):
         nonlocal in_python, python
         if name == 'python':
             in_python = False
-            try:
-                code = compile(python, file_name, 'exec')
-                exec(code, locals)
-            except:
-                traceback.print_exc()
+            code = compile(python, file_name, 'exec')
+            exec(code, locals)
 
     def python_data(data):
         nonlocal python
@@ -267,19 +266,19 @@ def expose_models(db: Database, schema: Optional[str], app: str):
     _parse_xml(file_name, start_python, end_python, python_data, parser=p)
 
     # expose entities
-    entity_factory = None
     body = {}
 
-    if app not in dbinfo:
-        dbinfo[app] = ADict()
-    app_info = dbinfo[app]
+    if not app_info:
+        if app not in dbinfo:
+            dbinfo[app] = ADict()
+        app_info = dbinfo[app]
     entity_name = ''
     entity_info = None
 
     set_later: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
 
     def start_element(name: str, attrs: dict):
-        nonlocal entity_factory, body, entity_name, entity_info
+        nonlocal body, entity_name, entity_info
 
         if name == 'entity':
             actual_db_info = app_info['db']
@@ -298,11 +297,11 @@ def expose_models(db: Database, schema: Optional[str], app: str):
                 body['_table_'] = (schema, entity_name.lower())
             if 'cid' in attrs:
                 body['_discriminator_'] = int(attrs['cid'])
-            entity_factory = lambda: type(entity_name, tuple(bases), body)
 
             if entity_name not in app_info:
                 app_info[entity_name] = ADict({'db': actual_db_info.cls})
             entity_info = app_info[entity_name]
+            entity_info['_bases'] = bases
 
         elif name in ('attr', 'array', 'choice'):
             attr_name = attrs['name']
@@ -348,23 +347,23 @@ def expose_models(db: Database, schema: Optional[str], app: str):
             body[attr_name] = Set(attrs['type'])
 
     def end_element(name: str):
-        nonlocal entity_factory
+        nonlocal body
         if name == 'entity':
-            app_info['_cls'] = entity_factory()
+            entity_info['_body'] = dict(body)
 
     _parse_xml(file_name, start_element, end_element)
 
     # recover all missed Set fields
     for v, lst in set_later.items():
         if v not in app_info:
-            raise TypeError(v)
-        rev_entity = app_info[v]['_cls']
+            raise TypeError(f'foreign model {v} not found')
+        body = app_info[v]['_body']
         for reverse_name, entity_name in lst:
-            if not hasattr(rev_entity, reverse_name):
-                setattr(rev_entity, reverse_name, Set(entity_name))
+            if reverse_name not in body:
+                body[reverse_name] = Set(entity_name)
 
 
-def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = True) -> Optional[Database]:
+def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = True, app_info: Dict = None) -> Optional[Database]:
     if not with_binding:
         with_mapping = False
 
@@ -372,50 +371,58 @@ def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = T
     if not os.path.exists(file_name):
         return None
 
-    if app not in dbinfo:
-        dbinfo[app] = ADict()
-    app_info = dbinfo[app]
+    if app_info is None:
+        if app not in dbinfo:
+            dbinfo[app] = ADict()
+        app_info = dbinfo[app]
+        for_reuse = False
+    else:
+        for_reuse = True
 
     schema = None
     all_db = []
 
     def start_element(name: str, attrs: dict):
-        nonlocal schema, all_db
+        nonlocal schema, all_db, app_info
         if name != 'databases':
             kwargs = dict(attrs)
             db_name = kwargs.pop('name')
             if db_name == 'db':
                 schema = kwargs.pop('schema', None)
+            elif for_reuse:
+                return
             if name == 'reuse':
                 app = kwargs.pop('app')
-                if app not in dbinfo:
-                    expose_datebases(app, with_binding, with_mapping)
-                if with_binding:
-                    db = Database(**dbinfo[app]['db'].kwargs)
-                else:
-                    db = Database()
-                kwargs.update(dbinfo[app]['db'].kwargs)
-                parent = dbinfo[app]['db'].cls
+                expose_datebases(app, app_info=app_info)
+                all_db.append(app_info['db'].cls)
             else:
                 kwargs['provider'] = name
                 if with_binding:
                     db = Database(**kwargs)
                 else:
                     db = Database()
-                parent = None
-            all_db.append(db)
-            app_info[db_name] = DatabaseInfo(cls=db, kwargs=kwargs)
+                app_info[db_name] = DatabaseInfo(cls=db, kwargs=kwargs)
+                all_db.append(db)
 
     _parse_xml(file_name, start_element)
 
-    if 'db' not in app_info:
-        return None
+    if not for_reuse:
+        expose_models(app_info['db'].cls, schema, app)
 
-    expose_models(app_info['db'].cls, schema, app)
+        # initialize entities
+        for ent_name, ent in app_info.items():
+            if isinstance(ent, ADict):
+                ent['_cls'] = type(ent_name, tuple(ent['_bases']), ent['_body'])
+
+        if 'db' not in app_info:
+            return None
+    else:
+        expose_models(app_info['db'].cls, schema, app, app_info)
+        return None
 
     if with_mapping:
         for db in all_db:
-            db.generate_mapping(create_tables=False)
+            db.generate_mapping(create_tables=False, check_tables=False)
 
     return app_info['db'].cls
 
@@ -427,9 +434,11 @@ class ModelInfo:
     fields: OrderedDict[str, 'FieldInfo']
     base: Optional['ModelInfo']
     has_cid: bool
+    managed: bool
 
 
-class FieldInfo(typing.NamedTuple):
+@dataclass
+class FieldInfo:
     cap: str
     ref: Optional[Callable[[],'ModelInfo']]
     attrs: Dict[str, Any]
@@ -446,7 +455,7 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
     models: Dict[str, ModelInfo] = {}
 
     def start_element(name: str, attrs: dict):
-        nonlocal db, schema
+        nonlocal db, schema, models
         if name != 'databases':
             if attrs['name'] != 'db':
                 return
@@ -498,9 +507,10 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
 
     actual_model: ModelInfo
     actual_fields: OrderedDict[str, FieldInfo]
+    first_entity = True
 
     def start_element(name: str, attrs: dict):
-        nonlocal models, actual_model, actual_fields
+        nonlocal models, actual_model, actual_fields, first_entity
 
         if name == 'entity':
             model_name = attrs['name']
@@ -517,13 +527,18 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                     db_table = model_name.lower()
                 else:
                     db_table = f'{schema}\".\"{model_name.lower()}'
-                cap = f'''class {model_name}(models.Model):
+                if first_entity:
+                    pre_cap = f'# ---- rendered from {app} ----\n'
+                    first_entity = False
+                else:
+                    pre_cap = ''
+                cap = f'''{pre_cap}class {model_name}(models.Model):
     class Meta:
-        db_table = {db_table}
+        db_table = '{db_table}'
         managed = {managed}
     '''
                 actual_fields = OrderedDict()
-                actual_model = ModelInfo(model_name, cap, actual_fields, None, False)
+                actual_model = ModelInfo(model_name, cap, actual_fields, None, False, managed)
                 models[model_name] = actual_model
 
         elif name in ('attr', 'array', 'choice'):
@@ -544,7 +559,7 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                     if v in _django_type_map:
                         field = _django_type_map[v]
                     else:
-                        field = 'ForeignKey'
+                        field = 'models.ForeignKey'
                         pars.insert(0, f"'{v}'")
                         if required:
                             pars.insert(1, 'on_delete=models.CASCADE')
@@ -561,19 +576,19 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                 elif a == 'precision':
                     pars.append(f'precision={v}')
             if name != 'array':
-                models[attr_name] = FieldInfo(f'{field}({", ".join(pars)})', None, attrs)
+                actual_fields[attr_name] = FieldInfo(f'{field}({", ".join(pars)})', None, attrs)
             else:
-                models[attr_name] = FieldInfo(f'ArrayField({field}({", ".join(pars)}))', None, attrs)
+                actual_fields[attr_name] = FieldInfo(f'ArrayField({field}({", ".join(pars)}))', None, attrs)
         elif name == 'set':
             attr_name = attrs['name']
             t = attrs['type']
             # check refs later
-            models[attr_name] = FieldInfo('', lambda: models[t], attrs)
+            actual_fields[attr_name] = FieldInfo('', lambda: models[t], attrs)
 
     _parse_xml(file_name, start_element)
 
     # collect refs
-    for model_name, model in models.items():
+    for model_name, model in list(models.items()):
         for field_name, field in list(model.fields.items()):
             if field.ref and not field.cap:
                 # check many to many
@@ -581,8 +596,22 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                 for ff_name, ff in field.ref().fields.items():
                     if ff.ref and ff.ref() == model:
                         has_back = True
-                        field.cap = f"ManyToManyField('{model_name}', db_table='{model_name.lower()}_{field_name}', through_fields=('{model_name.lower()}', '{field.ref().name.lower()}'))"
+                        tmodel_name = f'{model_name}_{field_name.capitalize()}'
+                        field.cap = f"models.ManyToManyField('{model_name}', " \
+                                    f"through='{tmodel_name}')"
+                                    #f"through_fields=('{field.ref().name.lower()}', '{model_name.lower()}'))"
                         del field.ref().fields[ff_name]
+                        tmanaged = model.managed or field.ref().managed
+                        cap = f'''class {tmodel_name}(models.Model):
+    class Meta:
+        db_table = '{tmodel_name.lower()}'
+        managed = {tmanaged}
+'''
+                        fields = {
+                            model_name.lower(): FieldInfo(f"models.ForeignKey('{model_name}', on_delete=models.CASCADE, db_column='{model_name.lower()}')", None, {}),
+                            field.ref().name.lower(): FieldInfo(f"models.ForeignKey('{field.ref().name}', on_delete=models.CASCADE, db_column='{field.ref().name.lower()}')", None, {})
+                        }
+                        models[tmodel_name] = ModelInfo(tmodel_name, cap, fields, None, False, managed)
                         break
                 if not has_back:
                     del model.fields[field_name]
@@ -590,13 +619,14 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
     return db, schema, models
 
 
-def expose_to_django(app: str):
+def expose_to_django(app: str, gen_settings_file: bool = False):
     base_path = os.path.join(APPS_PATH, app)
     data_path = os.path.join(base_path, 'data')
 
     db, schema, models = _django_collect_models(app, True)
 
-    settings = f'''# auto-generated for migration purposes
+    if gen_settings_file:
+        settings = f'''# auto-generated for migration purposes
 BASE_DIR = {base_path}
 SECRET_KEY = '09=ce-ql+9hoo0*xrn+dzksejsnn4qfq$e1fq%pwx8agrm_%z8'
 DEBUG = False
@@ -604,8 +634,18 @@ INSTALLED_APPS = ['data']
 USE_TZ = False
 DATABASES = {{'default': {db}}}\n'''
 
-    with open(os.path.join(data_path, 'settings.py'), "wt") as f:
-        f.write(settings)
+        with open(os.path.join(data_path, 'settings.py'), "wt") as f:
+            f.write(settings)
+
+    settings = dict(
+        BASE_DIR=base_path,
+        SECRET_KEY='09=ce-ql+9hoo0*xrn+dzksejsnn4qfq$e1fq%pwx8agrm_%z8',
+        DEBUG=False,
+        INSTALLED_APPS=['.'.join(['apps', app, 'data'])],
+        USE_TZ=False,
+        LOGGING_CONFIG=None,
+        DATABASES = {'default': db}
+    )
 
     body = '''# auto-generated for migration purposes
 from django.db import models
@@ -614,6 +654,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 '''.splitlines()
 
     for model in models.values():
+        body.append('')
         body.append(model.cap)
         for field_name, field in model.fields.items():
             body.append(f'    {field_name} = {field.cap}')
@@ -622,4 +663,4 @@ from django.contrib.postgres.fields import ArrayField, JSONField
     with open(os.path.join(data_path, 'models.py'), "wt") as f:
         f.write('\n'.join(body))
 
-
+    return settings

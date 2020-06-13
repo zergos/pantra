@@ -1,0 +1,16 @@
+<models xmlns="app.models">
+    <entity name="Test1">
+        <attr name="name" type="str"/>
+        <attr name="number" type="int"/>
+    </entity>
+    <entity name="Test2">
+        <attr name="name" type="str"/>
+        <attr name="some_fk" type="Test1"/>
+        <set name="some3" type="Test3"/>
+    </entity>
+    <entity name="Test3">
+        <attr name="name" type="str"/>
+        <set name="some2" type="Test2"/>
+        <attr name="user" type="User"/>
+    </entity>
+</models>
