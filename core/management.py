@@ -29,11 +29,21 @@ class Main:
 class Migrate:
     """
     Work with database migrations via Django
-    :param app: app name
+    :param app: app name (auto-detection by current directory)
     :param noinput: tells Django to NOT prompt the user for input of any kind
     """
-    app: str
+    app: str = lambda: Migrate._detect_app()
     noinput: bool = False
+
+    @staticmethod
+    def _detect_app():
+        path = os.getcwd()
+        if path.startswith(APPS_PATH):
+            path = os.path.relpath(path, APPS_PATH)
+            while os.path.dirname(path):
+                path = os.path.dirname(path)
+            return path
+        return Empty
 
     def _call_django(self, *args):
         data_settings = expose_to_django(self.app)
@@ -42,7 +52,7 @@ class Migrate:
         from django.conf import settings
         from django.core.management import execute_from_command_line
 
-        args = list(args)
+        args = list(*args)
         args.insert(0, 'manage.py')
         # os.environ.setdefault("DJANGO_SETTINGS_MODULE", '.'.join(['apps', self.app, 'data')
         settings.configure(**data_settings)
@@ -119,14 +129,14 @@ class Migrate:
         :param no_optimize: do not add a header comment to the new squashed
         :param name: name of the new squashed migration
         """
-        args = ['squashmigrations', 'data', '-v', '3', start_migration, end_migration]
+        args = ['squashmigrations', 'data', start_migration, end_migration, '-v', '3']
         if no_optimize: args.append('--no-optimize')
         if self.noinput: args.append('--noinput')
         if name: args.extend(['--squashed-name', name])
         self._call_django(args)
 
 
-if __name__ == '__main__':
+def execute_from_command_line(argv):
     main = ExposeToArgs(Main())
     main.add_commands(Migrate())
-    main.execute()
+    main.execute(argv)
