@@ -123,7 +123,7 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
     return models, set_later, python.strip()
 
 
-def expose_to_pony(app: str):
+def expose_to_pony(app: str, with_init: bool = True):
 
     models, set_later, python = _pony_collect_models(app)
 
@@ -141,7 +141,10 @@ def expose_to_pony(app: str):
 
     body: List = f'''# ---- auto-generated {app} models for type checker
 from __future__ import annotations
-import typing
+import typing'''.splitlines()
+    if with_init:
+        body.append('from core.models import dbinfo, expose_databases')
+    body.append('''
 if typing.TYPE_CHECKING:
     from datetime import datetime, time, timedelta, date
     from decimal import Decimal
@@ -149,8 +152,7 @@ if typing.TYPE_CHECKING:
     from pony.orm import *
     from pony.orm.core import EntityMeta
     from core.dbtools import Choice
-
-'''.splitlines()
+''')
 
     body.extend([f'    {line}' for line in python.splitlines()])
     for lines in models.values():
@@ -162,6 +164,12 @@ if typing.TYPE_CHECKING:
     for model_name in models.keys():
         body.append(f'        {model_name}: {model_name}')
     body.append('')
+
+    if with_init:
+        body.append(f"""if '{app}' not in dbinfo:
+    expose_databases('{app}')    
+db: DB = dbinfo['{app}']['db'].factory.cls
+""")
 
     with open(os.path.join(APPS_PATH, app, 'data', 'pony.py'), 'wt') as f:
         f.write('\n'.join(body))

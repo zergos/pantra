@@ -8,17 +8,16 @@ from aiohttp import web, WSMessage, WSMsgType
 from aiohttp.web_request import Request
 from aiohttp_session import setup, SimpleCookieStorage, get_session
 
-from core.components.context import HTMLElement
-from core.components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
+from .components.context import HTMLElement
+from .components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
     process_select, process_bind_value, process_key
-import core.database as db
-from core.components.loader import collect_styles, templates
-from core.serializer import serializer
-from core.defaults import *
-from core.session import Session
-from core.workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
-from core.tracker import start_observer, stop_observer
-from core.compiler import code_base
+from .components.loader import collect_styles, templates
+from .serializer import serializer
+from .defaults import *
+from .session import Session
+from .workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
+from .tracker import start_observer, stop_observer
+from .compiler import code_base
 
 __all__ = ['run']
 

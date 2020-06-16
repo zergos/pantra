@@ -304,7 +304,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 fields[reverse_name] = Set(entity_name)
 
 
-def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = True, app_info: Dict[str, DatabaseInfo] = None) -> Optional[Database]:
+def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = True, app_info: Dict[str, DatabaseInfo] = None) -> Optional[Database]:
     if not with_binding:
         with_mapping = False
 

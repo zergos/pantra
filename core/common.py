@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 
 __all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
 
-from core.oid import gen_id
+from .oid import gen_id
 
 
 def typename(t):

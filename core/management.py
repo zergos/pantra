@@ -46,13 +46,14 @@ class Main:
             print(f)
 
     @context_args('app')
-    def pony(self):
+    def pony(self, x: bool = False):
         '''
         generate pony code for type checker
+        :param x: exclude default db initial block
         '''
 
         from core.models import expose_to_pony
-        expose_to_pony(self.app)
+        expose_to_pony(self.app, not x)
         print('Done')
 
     @context_args('app')
@@ -71,8 +72,8 @@ class Main:
         load and check models definition runtime
         '''
 
-        from core.models import expose_datebases
-        expose_datebases(self.app)
+        from core.models import expose_databases
+        expose_databases(self.app)
         print('Check OK')
 
 
@@ -184,9 +185,9 @@ class Schema:
     app: str = lambda: _detect_app()
 
     def _check_postgres(self) -> Optional[Database]:
-        from core.models import expose_datebases, dbinfo
+        from core.models import expose_databases, dbinfo
 
-        db = expose_datebases(self.app)
+        db = expose_databases(self.app)
         if not db:
             print(f'default db does not configured for app {self.app}')
             return None

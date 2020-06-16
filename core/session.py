@@ -9,13 +9,13 @@ import typing
 from queue import Queue
 from aiohttp import web
 
-from core.defaults import APPS_PATH
-from core.common import ADict, UniNode, typename
-from core.compiler import exec_restart
-from core.workers import async_worker
+from .defaults import APPS_PATH
+from .common import ADict, UniNode, typename
+from .compiler import exec_restart
+from .workers import async_worker
 
 if typing.TYPE_CHECKING:
-    from core.components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
+    from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
     from typing import *
 
 
@@ -50,8 +50,8 @@ class Session:
         return ''.join(random.choice(string.ascii_uppercase+string.digits) for _ in range(8))
 
     def restart(self):
-        from core.components.render import ContextShot
-        from core.components.context import Context
+        from .components.render import ContextShot
+        from .components.context import Context
         self.send_message({'m': 'rst'})
         shot = ContextShot()
         try:
@@ -66,7 +66,7 @@ class Session:
 
     @async_worker
     async def send_message(self, message: Dict['str', Any]):
-        from core.serializer import serializer
+        from .serializer import serializer
         if self.ws is None or self.ws.closed:
             self.pending_messages.put(serializer.encode(message))
         else:

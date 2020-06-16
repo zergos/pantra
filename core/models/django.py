@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import typing
 import os
+from collections import OrderedDict
 from dataclasses import dataclass
 
 from core.defaults import *
+
 from .parser import parse_xml
 
 if typing.TYPE_CHECKING:
@@ -289,3 +291,26 @@ from django.contrib.postgres.fields import ArrayField, JSONField
         f.write('\n'.join(body))
 
     return settings
+
+
+# monkey patch: renaming table within schema
+from django.db.backends.base.schema import BaseDatabaseSchemaEditor
+from django.db.backends.ddl_references import Statement
+
+
+def alter_db_table(self, model, old_db_table, new_db_table):
+    """Rename the table a model points to."""
+    if (old_db_table == new_db_table or
+        (self.connection.features.ignores_table_name_case and
+            old_db_table.lower() == new_db_table.lower())):
+        return
+    if '"' in new_db_table: new_db_table = new_db_table.split('"')[-1]  # <-- here
+    self.execute(self.sql_rename_table % {
+        "old_table": self.quote_name(old_db_table),
+        "new_table": self.quote_name(new_db_table),
+    })
+    # Rename all references to the old table name.
+    for sql in self.deferred_sql:
+        if isinstance(sql, Statement):
+            sql.rename_table_references(old_db_table, new_db_table)
+BaseDatabaseSchemaEditor.alter_db_table = alter_db_table

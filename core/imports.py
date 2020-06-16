@@ -1,10 +1,10 @@
 from __future__ import annotations
 import typing
 
-from core.common import *
-from core.components.loader import *
-from core.components.controllers import *
-from core.components.context import *
+from .common import *
+from .components.loader import *
+from .components.controllers import *
+from .components.context import *
 
 if typing.TYPE_CHECKING:
     from typing import *

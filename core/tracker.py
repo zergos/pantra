@@ -5,7 +5,7 @@ from datetime import datetime
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from core.defaults import APPS_PATH, COMPONENTS_PATH
+from .defaults import APPS_PATH, COMPONENTS_PATH
 
 __all__ = ['start_observer', 'stop_observer']
 

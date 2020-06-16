@@ -4,7 +4,7 @@ import threading
 import queue
 import functools
 
-from core.defaults import TASK_THREADS
+from .defaults import TASK_THREADS
 
 # Thread tasks
 

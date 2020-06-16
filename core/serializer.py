@@ -1,8 +1,7 @@
 import bsdf
 import typing
 
-from core.components.context import Context, HTMLElement, ConditionNode, LoopNode, TextNode, EventNode, NSElement, \
-    AnyNode
+from .components.context import HTMLElement, TextNode, EventNode, NSElement, AnyNode
 
 __all__ = ['serializer']
 

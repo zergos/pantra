@@ -5,7 +5,7 @@ from itertools import count
 import weakref
 
 if typing.TYPE_CHECKING:
-    from core.common import AnyNode
+    from .common import AnyNode
 
 
 def gen_id(obj: AnyNode) -> int:

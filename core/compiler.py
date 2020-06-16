@@ -6,12 +6,12 @@ from functools import lru_cache, wraps
 import traceback
 
 import sass
-from core.common import ADict
-from core.defaults import CSS_PATH
+from .common import ADict
+from .defaults import CSS_PATH
 
 if typing.TYPE_CHECKING:
     from types import CodeType
-    from components.context import Context, HTMLTemplate
+    from .components.context import Context, HTMLTemplate
 
 code_base: typing.Dict[str, CodeType] = {}
 
