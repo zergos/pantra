@@ -21,7 +21,12 @@ def _detect_app():
 
 
 class Main:
-    """Manage fruits"""
+    """
+    Manage fruits
+    :param app: app name
+    """
+
+    app: str = lambda: _detect_app()
 
     def run(self, host: str = '127.0.0.1', port: int = 8005):
         """
@@ -40,26 +45,35 @@ class Main:
         for f in os.listdir(APPS_PATH):
             print(f)
 
-    def pony(self, app: str = None):
+    @context_args('app')
+    def pony(self):
         '''
         generate pony code for type checker
-        :param app: app name
         '''
-
-        app = app or _detect_app()
 
         from core.models import expose_to_pony
-        expose_to_pony(app)
+        expose_to_pony(self.app)
+        print('Done')
 
-    def django(self, app: str = None):
+    @context_args('app')
+    def django(self):
         '''
         generate django code for debugging
-        :param app: app name
         '''
 
-        app = app or _detect_app()
         from core.models import expose_to_django
-        expose_to_django(app)
+        expose_to_django(self.app)
+        print('Done')
+
+    @context_args('app')
+    def check(self):
+        '''
+        load and check models definition runtime
+        '''
+
+        from core.models import expose_datebases
+        expose_datebases(self.app)
+        print('Check OK')
 
 
 class Migrate:

@@ -1,5 +1,5 @@
 <models xmlns="app.models">
-    <entity name="User" mixin="UserMixin">
+    <entity name="User" mixin="UserMixin" display="{self.name}">
         <attr name="name" type="str" required=""/>
         <attr name="password" type="str" required=""/>
         <attr name="salt" type="str" required=""/>
@@ -14,12 +14,22 @@
         <attr name="title" type="str"/>
         <set name="users" type="User"/>
     </entity>
+
     <entity name="Document">
         <attr name="number" type="str" unique="True" required="True"/>
         <attr name="date" type="datetime" eval="datetime.now" required="True"/>
         <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>
-
+    <entity name="DocumentLine">
+        <attr name="document" type="Document" required="True"/>
+        <attr name="pos" type="int" required="True"/>
+        <attr name="data" type="Json" eval="dict" required="True" body="True"/>
+    </entity>
+    <entity name="Catalog">
+        <attr name="number" type="str" unique="True" required="True"/>
+        <attr name="name" type="str"/>
+        <attr name="body" type="Json" eval="dict" required="True" body="True"/>
+    </entity>
     <python>
 import hashlib
 import uuid
@@ -33,9 +43,6 @@ class UserMixin:
     def check_password(self, password):
         check = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
         return check == self.password
-
-    def __str__(self):
-        return self.name
 
     </python>
 </models>

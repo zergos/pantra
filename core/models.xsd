@@ -16,6 +16,7 @@
             <xs:element name="prop" type="Prop" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="db" type="xs:string"/>
         <xs:attribute name="mixin" type="xs:string"/>
         <xs:attribute name="base" type="xs:string"/>
         <xs:attribute name="cid" type="xs:integer"/>
