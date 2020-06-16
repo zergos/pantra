@@ -4,7 +4,7 @@
         <attr name="password" type="str" required=""/>
         <attr name="salt" type="str" required=""/>
         <attr name="email" type="str"/>
-        <attr name="created_at" type="datetime" required="" sql_default="now()" title="created"/>
+        <attr name="created_at" type="datetime" required="" eval="datetime.now" title="created"/>
         <attr name="is_admin" type="bool" default="False" title="A" width="3"/>
         <attr name="enabled" type="bool" default="False" title="E" width="3"/>
         <set name="apps" type="App"/>
@@ -13,6 +13,11 @@
         <attr name="name" type="str" required=""/>
         <attr name="title" type="str"/>
         <set name="users" type="User"/>
+    </entity>
+    <entity name="Document">
+        <attr name="number" type="str" unique="True" required="True"/>
+        <attr name="date" type="datetime" eval="datetime.now" required="True"/>
+        <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>
 
     <python>

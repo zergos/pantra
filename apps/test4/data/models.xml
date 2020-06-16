@@ -13,4 +13,10 @@
         <set name="some2" type="Test2"/>
         <attr name="user" type="User"/>
     </entity>
+
+    <entity name="Order" base="Document">
+        <attr name="org" type="str"/>
+        <attr name="qty" type="int"/>
+        <prop name="info" type="LongStr"/>
+    </entity>
 </models>

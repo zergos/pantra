@@ -6,22 +6,6 @@ PAGES_PATH = os.path.join(BASE_PATH, 'pages')
 CSS_PATH = os.path.join(BASE_PATH, 'css')
 APPS_PATH = os.path.join(BASE_PATH, 'apps')
 
-'''
-DB_PARAMS = dict(
-    provider='sqlite',
-    filename=os.path.join(BASE_PATH, 'local.sqlite'),
-    create_db=True
-)
-'''
-DB_PARAMS = dict(
-    provider='postgres',
-    database='bwf',
-    user='bwf',
-    password='bwf',
-    host='',
-)
-MIGRATION_PATH = os.path.join(BASE_PATH, 'migrations')
-
 TASK_THREADS = 2
 SOCKET_TIMEOUT = 300
 MAX_MESSAGE_SIZE = 4 * 1024 * 1024

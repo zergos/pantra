@@ -57,6 +57,9 @@ def parse_args(f):
                     kwargs[a] = args.pop(0)
                 elif a not in kwargs:
                     raise ArgsError(f'required positional argument: {a}')
+            elif default is None:
+                if args:
+                    kwargs[a] = args.pop(0)
             elif default is not False and a not in kwargs:
                 kwargs[a] = default
 

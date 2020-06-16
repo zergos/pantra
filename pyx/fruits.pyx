@@ -16,7 +16,6 @@ if os.name == 'nt':
 else:
     venv = os.path.join(venv, 'bin')
 activator = os.path.join(venv, 'activate_this.py')
-print(activator)
 exec(open(activator).read(), {'__file__': activator})
 
 # run management command
