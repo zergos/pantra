@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 import typing
 import json
 import os
@@ -192,6 +193,9 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
                     pars.append(f"default='{v}'")
                 elif a == 'choices':
                     pars.append(f"{a}=v")
+                elif a == 'index':
+                    if attrs['index'] != 'False':
+                        pars.append('index=True')
                 elif a in ('precision', 'sql_default', 'unique', 'reverse'):
                     pars.append(f"{a}='{v}'")
             if name == 'attr':
@@ -261,6 +265,12 @@ if typing.TYPE_CHECKING:
         body.append('')
         body.extend([f'    {line}' for line in lines])
 
+    body.append('')
+    body.append('    class DB:')
+    for model_name in models.keys():
+        body.append(f'        {model_name}: {model_name}')
+    body.append('')
+
     with open(os.path.join(APPS_PATH, app, 'data', 'pony.py'), 'wt') as f:
         f.write('\n'.join(body))
 
@@ -309,6 +319,15 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
 
     set_later: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
 
+    def collect_roots(base, roots: typing.Set[str] = None):
+        has_base = False
+        for up in app_info[base]['_init'].bases:
+            if isinstance(up, types.FunctionType):
+                has_base = True
+                collect_roots(up, roots)
+        if not has_base:
+            roots.add(base)
+
     def start_element(name: str, attrs: dict):
         nonlocal fields, entity_name, entity_info
 
@@ -317,11 +336,19 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
             body = None
             if 'base' in attrs:
                 bases = []
+                roots = set()
                 for b in attrs['base'].split(','):
-                    entity_info = app_info[b.strip()]['_init']
-                    if entity_info.body:
-                        body = entity_info.body
-                    bases.append(lambda: entity_info.cls)
+                    init_info = app_info[b.strip()]['_init']
+                    if init_info.body:
+                        if body:
+                            raise TypeError(f'can not use several bases with own bodies {attrs["name"]}')
+                        body = init_info.body
+                    if schema and 'db' not in attrs:
+                        collect_roots(b, roots)
+                        if len(roots) > 1:
+                            raise TypeError(f'can not use several roots in entity inheritance {attrs["name"]}')
+                        app_info[roots.copy().pop()]['_init'].fields['_table_'] = (schema, b.lower())
+                    bases.append(lambda: init_info.cls)
             elif 'db' in attrs:
                 actual_db_info = app_info[attrs['db']]
                 bases = [actual_db_info.cls.Entity]
@@ -331,7 +358,7 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
                 bases.append(locals[attrs['mixin']])
             entity_name = attrs['name']
             fields = {}
-            if schema and 'db' not in attrs:
+            if schema and 'db' not in attrs and 'base' not in attrs:
                 fields['_table_'] = (schema, entity_name.lower())
             if 'cid' in attrs:
                 fields['_discriminator_'] = int(attrs['cid'])
@@ -339,6 +366,9 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
                 display = attrs['display']
                 code = compile(display, '<string>', 'eval')
                 fields['__str__'] = lambda self: eval(code)
+            for event in ('before_insert', 'before_update', 'before_delete', 'after_insert', 'after_update', 'after_delete'):
+                if event in attrs:
+                    fields[event] = locals[attrs[event]]
 
             if entity_name not in app_info:
                 app_info[entity_name] = ADict({'db': actual_db_info.cls})
@@ -391,8 +421,12 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
                     attr_info.blank = v == 'True'
                 elif a == 'body':
                     entity_info['_init'].body = attr_info
-                elif a not in ('name', 'required', 'cid'):
+                elif a == 'precision':
+                    kwargs[a] = int(v)
+                elif a in ('sql_default', 'reverse'):
                     kwargs[a] = v
+                elif a in ('unique', 'index'):
+                    kwargs[a] = v != 'False'
             if name == 'array':
                 fields[attr_name] = field(**kwargs)
             elif name == 'attr':
@@ -413,7 +447,7 @@ def expose_models(db: Database, schema: Optional[str], app: str, app_info: Dict 
     for v, lst in set_later.items():
         if v not in app_info:
             raise TypeError(f'foreign model {v} not found')
-        fields = app_info[v]['_info'].fields
+        fields = app_info[v]['_init'].fields
         for reverse_name, entity_name in lst:
             if reverse_name not in fields:
                 fields[reverse_name] = Set(entity_name)
@@ -468,15 +502,22 @@ def expose_datebases(app: str, with_binding: bool = True, with_mapping: bool = T
         # initialize entities
         for ent_name, ent in app_info.items():
             if isinstance(ent, ADict):
-                ent_info = ent['_info']
-                ent_info.cls = type(ent_name, tuple(ent_info.bases), ent_info.fields)
+                ent_info = ent['_init']
+                bases = []
+                for base in ent_info.bases:
+                    if isinstance(base, types.FunctionType):
+                        bases.append(base())
+                    else:
+                        bases.append(base)
+                ent_info.cls = type(ent_name, tuple(bases), ent_info.fields)
 
         # fill prop types
         for ent in app_info.values():
-            for attr_info in ent.values():
-                if isinstance(attr_info, AttrInfo):
-                    if isinstance(attr_info.type, str):
-                        attr_info.type = app_info[attr_info.type]['_init'].cls
+            if isinstance(ent, dict):
+                for attr_info in ent.values():
+                    if isinstance(attr_info, AttrInfo):
+                        if isinstance(attr_info.type, str):
+                            attr_info.type = app_info[attr_info.type]['_init'].cls
 
         if 'db' not in app_info:
             return None
@@ -662,7 +703,7 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                 for ff_name, ff in field.ref().fields.items():
                     if ff.ref and ff.ref() == model:
                         has_back = True
-                        tmodel_name = f'{model_name}_{field_name.capitalize()}'
+                        tmodel_name = f'{model_name}_{field.ref().name}'
                         field.cap = f"models.ManyToManyField('{model_name}', " \
                                     f"through='{tmodel_name}')"
                                     #f"through_fields=('{field.ref().name.lower()}', '{model_name.lower()}'))"

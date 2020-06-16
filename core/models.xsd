@@ -20,14 +20,18 @@
         <xs:attribute name="base" type="xs:string"/>
         <xs:attribute name="cid" type="xs:integer"/>
         <xs:attribute name="display" type="xs:string"/>
+        <xs:attribute name="before_insert" type="xs:string"/>
+        <xs:attribute name="before_update" type="xs:string"/>
+        <xs:attribute name="before_delete" type="xs:string"/>
+        <xs:attribute name="after_insert" type="xs:string"/>
+        <xs:attribute name="after_update" type="xs:string"/>
+        <xs:attribute name="after_delete" type="xs:string"/>
     </xs:complexType>
     <xs:complexType name="Prop">
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="type" type="Type" use="required"/>
-        <xs:attribute name="default" type="xs:string"/>
-        <xs:attribute name="eval" type="xs:string"/>
         <xs:attribute name="title" type="xs:string"/>
-        <xs:attribute name="width" type="xs:nonNegativeInteger"/>
+        <xs:attribute name="width" type="xs:float"/>
         <xs:attribute name="precision" type="xs:nonNegativeInteger"/>
         <xs:attribute name="choices" type="xs:string"/>
         <xs:attribute name="blank" type="Bool"/>
@@ -35,10 +39,13 @@
     <xs:complexType name="Attr">
         <xs:complexContent>
             <xs:extension base="Prop">
+                <xs:attribute name="default" type="xs:string"/>
+                <xs:attribute name="eval" type="xs:string"/>
                 <xs:attribute name="required" type="Bool"/>
                 <xs:attribute name="cid" type="Bool"/>
                 <xs:attribute name="sql_default" type="xs:string"/>
                 <xs:attribute name="unique" type="Bool"/>
+                <xs:attribute name="index" type="Bool"/>
                 <xs:attribute name="reverse" type="xs:string"/>
                 <xs:attribute name="body" type="Bool"/>
             </xs:extension>

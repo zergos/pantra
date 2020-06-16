@@ -19,4 +19,6 @@
         <attr name="qty" type="int"/>
         <prop name="info" type="LongStr"/>
     </entity>
+<python>
+</python>
 </models>

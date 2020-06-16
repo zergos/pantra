@@ -51,6 +51,16 @@ class Main:
         from core.models import expose_to_pony
         expose_to_pony(app)
 
+    def django(self, app: str = None):
+        '''
+        generate django code for debugging
+        :param app: app name
+        '''
+
+        app = app or _detect_app()
+        from core.models import expose_to_django
+        expose_to_django(app)
+
 
 class Migrate:
     """
