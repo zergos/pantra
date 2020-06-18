@@ -1,17 +1,42 @@
-<CardForm ref:form caption="{caption}">
+<CardForm on:render="render" caption="{caption}">
 
 </CardForm>
 
 <python>
-from pony.orm.core import EntityMeta
+from pony.orm.core import EntityMeta, db_session
+from core.models import find_entity_info
+from core.components.context import Context, Slot
 from core.ctx import *
 
 entity: Optional[EntityMeta] = None
+caption: str = ''
 
 def init():
-    global entity
+    global entity, caption
+    if not caption:
+        caption = entity._entity_.__name__
+
+@db_session
+def render(node):
+    group = None
     if not ctx.slot:
-        for attr in entity._attrs_with_columns_:
+        ent_info = find_entity_info(entity)
+        max_len = round(max(len(title) for _, attr in ent_info() for title in [attr.title]) * 7)/10
+        i = 0
+        for attr_name, attr in ent_info():
+            if i%2 == 0:
+                group = ctx.render('InlineGroup', node.refs.content)
+                group.render.build()
+            i += 1
+            c = ctx.render('InputText', group[0])
+            c.locals.update(dict(
+                caption=attr.title,
+                required=not attr.blank,
+                inline=True,
+                value=getattr(entity, attr_name),
+                caption_width=f'{max_len}rem',
+            ))
+            c.render.build()
 
 
 </python>

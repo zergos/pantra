@@ -2,11 +2,11 @@
 <form class:with-header="caption">
     {{#if caption}}
     <div class="header">{{caption}}</div>
-    <div class="content">
-        <slot></slot>
+    <div ref:content class="content">
+        <slot/>
     </div>
     {{#else}}
-    <slot></slot>
+    <slot/>
     {{/if}}
 </form>
 

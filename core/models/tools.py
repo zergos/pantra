@@ -30,7 +30,7 @@ def query_info(q: Query) -> Optional[Dict[str, AttrInfo]]:
 
     if isinstance(trans.expr_type, EntityMeta):
         ent_info = find_entity_info(trans.expr_type)
-        res = {name: ent_info[name] for name in trans.col_names if not ent_info[name].is_body and not ent_info[name].is_cid}
+        res = {name: ent_info[name] for name in trans.col_names if name != 'id' and not ent_info[name].is_body and not ent_info[name].is_cid}
         return res
 
     for expr, col_name, col_type in zip(trans.expr_columns, trans.col_names, trans.expr_type):

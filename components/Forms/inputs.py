@@ -4,6 +4,7 @@ caption: str = ''
 required: bool = False
 value: str = ''
 error: str = ''
+readonly: bool = False
 
 validators = []
 

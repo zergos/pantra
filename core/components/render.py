@@ -102,8 +102,8 @@ class DefaultRenderer:
     def __init__(self, ctx: Context):
         self.ctx: Context = ctx
 
-    def __call__(self, node: AnyNode, content: Union[str, AnyNode]):
-        self.render(node, content)
+    def __call__(self, template: Union[str, HTMLTemplate], parent: AnyNode = None):
+        return self.render(template, parent)
 
     def build(self):
         self.build_node(self.ctx.template, self.ctx)
@@ -123,7 +123,7 @@ class DefaultRenderer:
 
     @staticmethod
     def strip_quotes(s):
-        return s.strip('" ''')
+        return s.strip('" \'')
 
     def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
@@ -162,6 +162,10 @@ class DefaultRenderer:
             node.scope[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
             return True
         elif attr == 'on:render':
+            return True
+        elif attr == 'on:init':
+            value = self.strip_quotes(value)
+            run_safe(self.ctx.session, lambda: self.ctx[value](node))
             return True
         elif typename(node) == 'HTMLElement':
             if attr == 'style':
@@ -456,7 +460,6 @@ class DefaultRenderer:
             return  # prevent repeated updates
             # but now it only updates via update_tree
             '''
-            node.shot(node)
 
         elif typename(node) == 'TextNode':
             if type(node.text) == DynamicString:
@@ -570,13 +573,13 @@ class DefaultRenderer:
         if recursive:
             self.update_children(node)
 
-    def render(self, node: AnyNode, content: Union[str, AnyNode]):
-        if type(content) == str:
-            node.text = content
-            self.ctx.shot(node)
-        else:
-            content.parent = node
-            self.update_children(node)
+    def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None):
+        from core.components.context import Context
+        if type(template) == str:
+            template = collect_template(self.ctx.session, template)
+        if not parent:
+            parent = self.ctx
+        return Context(template, parent)
 
 
 class ContextShot:

@@ -14,7 +14,7 @@
                 <th colspan="{col.hspan}" rowspan="{col.vspan}">
                     {{#set col_info := col.info}}
                         {{#if col_info.resizable or col_info.sortable}}
-                        <div>{{col_info.title or col_info.name}}
+                        <div>{{col_info.title}}
                             {{#if col_info.resizable}}
                             <span class="resizable" on:drag="DragResize"/>
                             {{/if}}
@@ -23,7 +23,7 @@
                             {{/if}}
                         </div>
                         {{#else}}
-                        {{col_info.title or col_info.name}}
+                        {{col_info.title}}
                         {{/if}}
                     {{/set}}
                 </th>

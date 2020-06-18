@@ -26,7 +26,7 @@ def init():
         return
 
     for name, attr in info.items():
-        col = ColumnInfo(name=name, type=attr.type, title=attr.title or name, editable=not attr.readonly)
+        col = ColumnInfo(name=name, type=attr.type, title=attr.title, editable=not attr.readonly)
         if attr.width:
             col.style.width = WebUnits(attr.width, 'em')
         columns[name] = col

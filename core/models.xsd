@@ -20,6 +20,7 @@
         <xs:attribute name="mixin" type="xs:string"/>
         <xs:attribute name="base" type="xs:string"/>
         <xs:attribute name="cid" type="xs:integer"/>
+        <xs:attribute name="title" type="xs:string"/>
         <xs:attribute name="display" type="xs:string"/>
         <xs:attribute name="before_insert" type="xs:string"/>
         <xs:attribute name="before_update" type="xs:string"/>

@@ -59,7 +59,6 @@ class Slot(typing.NamedTuple):
             return super().__getitem__(name)
 
 
-
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars', 'react_nodes']
 
@@ -283,6 +282,10 @@ class HTMLElement(RenderNode):
         self.classes *= class_name
         self.shot(self)
 
+    def set_text(self, text: str):
+        self.text = text
+        self.shot(self)
+
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
             return self.children[item]
@@ -390,4 +393,5 @@ class SetNode(RenderNode):
         self.var_name = ''
         self.expr = ''
 
-
+    def __str__(self):
+        return ':='

@@ -172,6 +172,6 @@ def trace_errors(func):
 
 
 @trace_errors
-def run_safe(ctx: Context, func: Callable, *args, **kwargs):
+def run_safe(session: Session, func: Callable, *args, **kwargs):
     func(*args, **kwargs)
 

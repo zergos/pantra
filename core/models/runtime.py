@@ -19,7 +19,7 @@ from core.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pony.orm.core import EntityMeta
+    from pony.orm.core import EntityMeta, EntityProxy
 
 type_map = {
     'bool': bool,
@@ -84,11 +84,17 @@ class EntityFactory:
         return f'EntityFactory({self.cls.__name__})'
 
 
+class AttrDict(ADict):
+    def __call__(self):
+        yield from ((k, v) for k, v in self.items() if v.name != 'id' and not v.is_body)
+
+
 @dataclass
 class EntityInfo:
     factory: EntityFactory = dc_field(default=None)
-    attrs: Dict[str, AttrInfo] = dc_field(default_factory=ADict)
+    attrs: AttrDict[str, AttrInfo] = dc_field(default_factory=AttrDict)
     schema: str = dc_field(default_factory=str)
+    title: str = dc_field(default_factory=str)
 
 
 @dataclass
@@ -180,7 +186,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             db_info = app_info[db_name]
             entity_name = attrs['name']
             if entity_name not in db_info.entities:
-                db_info.entities[entity_name] = EntityInfo()
+                db_info.entities[entity_name] = EntityInfo(title=attrs.get('title', f'{entity_name}s'))
             entity_info = db_info.entities[entity_name]
             entity_info.attrs['id'] = AttrInfo(name='id', type=int, title='#', readonly=True, width=4)
 
@@ -228,7 +234,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
 
         elif name in ('attr', 'array', 'prop'):
             attr_name = attrs['name']
-            attr_info = AttrInfo(name=attr_name)
+            attr_info = AttrInfo(name=attr_name, title=attr_name)
             entity_info.attrs[attr_name] = attr_info
             if name == 'prop':
                 if not entity_info.factory.body:
@@ -385,7 +391,7 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
 
 
 @lru_cache(maxsize=None)
-def find_entity_info(entity: EntityMeta) -> Optional[Dict[str, AttrInfo]]:
+def _find_entity_info_cached(entity: EntityMeta) -> Optional[AttrDict[str, AttrInfo]]:
     if not dbinfo:
         raise NameError('databases not exposed')
 
@@ -396,3 +402,8 @@ def find_entity_info(entity: EntityMeta) -> Optional[Dict[str, AttrInfo]]:
                     return ent.attrs
 
     raise NameError(f'entity is unknown ({entity.__class__.__name__})')
+
+
+def find_entity_info(entity: Union[EntityMeta, EntityProxy]) -> Optional[AttrDict[str, AttrInfo]]:
+    return _find_entity_info_cached(entity if type(entity) == EntityMeta else entity._entity_)
+

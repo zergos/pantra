@@ -1,3 +1,4 @@
+<EntityForm entity="{entity1}"/>
 <EntityTable query="{query}" entity="{entity}">
     <!--columns>
         <col name="Column1"/>
@@ -9,8 +10,12 @@
 </EntityTable>
 
 <python>
+from pony.orm import db_session, make_proxy
 from apps.test3.data.pony import *
 
 query = db.TestTable.select()
 entity = db.TestTable
+
+with db_session():
+    entity1 = make_proxy(db.TestTable[4])
 </python>

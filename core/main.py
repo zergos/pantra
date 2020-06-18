@@ -16,7 +16,7 @@ from .serializer import serializer
 from .defaults import *
 from .session import Session
 from .workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
-from .tracker import start_observer, stop_observer
+from .watchers import start_observer, stop_observer
 from .compiler import code_base
 
 __all__ = ['run']

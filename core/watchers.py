@@ -31,7 +31,6 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
                 # self.sessions.error_later(f'namespace {os.path.basename(filename)} has updated')
                 del self.code_base[filename]
 
-
     def on_modified(self, event):
         print(f'{datetime.now():%x %X}> file {event.src_path} changed, refreshing')
         self.refresh_template(event.src_path)
