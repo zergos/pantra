@@ -101,6 +101,7 @@ class AttrInfo:
     blank: bool = dc_field(default=False)
     is_body: bool = dc_field(default=False)
     body: 'AttrInfo' = dc_field(init=False)
+    is_cid: bool = dc_field(default=False)
     readonly: bool = dc_field(default=False)
 
     def __str__(self):
@@ -142,7 +143,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
         if in_python:
             python += data + '\n'
 
-    p = expat.ParserCreate()
+    p = expat.ParserCreate('UTF-8')
     parse_xml(file_name, start_python, end_python, python_data, parser=p)
 
     # expose entities
@@ -181,7 +182,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             if entity_name not in db_info.entities:
                 db_info.entities[entity_name] = EntityInfo()
             entity_info = db_info.entities[entity_name]
-            entity_info.attrs['id'] = AttrInfo(name='id', type=int, title='#')
+            entity_info.attrs['id'] = AttrInfo(name='id', type=int, title='#', readonly=True, width=4)
 
             body = None
             if 'base' in attrs:
@@ -204,7 +205,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                         db_info.entities[root].schema = db_info.schema
                         db_info.entities[root].factory.fields['_table_'] = (db_info.schema, base.lower())
                     if not db_info.entities[root].factory.has_cid and 'classtype' not in entity_info.attrs:
-                        entity_info.attrs['classtype'] = AttrInfo(name='classtype', type=str)
+                        entity_info.attrs['classtype'] = AttrInfo(name='classtype', type=str, is_cid=True, readonly=True)
                     bases.append(lambda: base_factory.cls)
             else:
                 db_info = app_info[db_name]
@@ -238,6 +239,8 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             elif attrs.get('cid', 'False') != 'False':
                 field = Discriminator
                 entity_info.factory.has_cid = True
+                attr_info.is_cid = True
+                attr_info.readonly = True
             else:
                 field = Optional if attrs.get('required', 'False') == 'False' else Required
             t = None
@@ -272,6 +275,8 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                     attr_info.blank = v == 'True'
                 elif a == 'body':
                     entity_info.factory.body = attr_info
+                    attr_info.is_body = True
+                    attr_info.readonly = True
                 elif a == 'precision':
                     kwargs[a] = int(v)
                 elif a in ('sql_default', 'reverse'):
@@ -330,7 +335,7 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
             schema = kwargs.pop('schema', '')
             if name == 'reuse':
                 parent_app = kwargs.pop('app')
-                expose_datebases(parent_app, app_info=app_info)
+                expose_databases(parent_app, app_info=app_info)
                 app_info[db_name].schema = schema  # override schema
                 all_db.append(app_info[db_name].factory.cls)
             else:

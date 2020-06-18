@@ -25,7 +25,7 @@ class ADict(dict):
         except KeyError:
             raise AttributeError
 
-    def __ior__(self, other: Dict):
+    def __or__(self, other: Dict):
         res = self.__class__(self)
         res.update(other)
         return res

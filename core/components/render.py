@@ -255,6 +255,14 @@ class DefaultRenderer:
                     node.else_template = template.children[1]
                 self.update(node)
 
+            elif template.tag_name == '#set':
+                node: c.SetNode = c.SetNode(parent, template)
+                chunks = template.macro.split(':=')
+                if len(chunks) == 2:
+                    node.var_name = chunks[0].strip()
+                    node.expr = self.build_func(chunks[1], node)
+                    self.update(node)
+
         elif template.tag_name[0].isupper():
             node_template = collect_template(self.ctx.session, template.tag_name)
             if not node_template: return None
@@ -346,10 +354,13 @@ class DefaultRenderer:
             node = c.EventNode(parent)
             for k, v in template.attributes.items():
                 if k == 'selector':
-                    node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
+                    if 'global' in template.attributes:
+                        node.attributes[k] = v
+                    else:
+                        node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
+                        self.ctx._restyle = True
                 else:
                     node.attributes[k] = self.build_string(v, node)
-            #self.ctx._restyle = True
 
         elif template.tag_name == 'scope':
             scope = parent.scope
@@ -443,6 +454,7 @@ class DefaultRenderer:
                 node.empty()
             self.build_node(node.template, node)
             return  # prevent repeated updates
+            # but now it only updates via update_tree
             '''
             node.shot(node)
 
@@ -532,7 +544,8 @@ class DefaultRenderer:
                                 node.move(len(node.children)-1, pos)
                                 newmap[index].append(sub)
                                 pos += 1
-                        del self.ctx.locals[node.var_name]
+                        if node.var_name in self.ctx.locals:
+                            del self.ctx.locals[node.var_name]
                         if parentloop:
                             self.ctx.locals.forloop = parentloop
                         else:
@@ -546,6 +559,13 @@ class DefaultRenderer:
                     self.build_node(temp_child, node)
 
             return  # prevent repeated updates
+
+        elif typename(node) == 'SetNode':
+            node.empty()
+            self.ctx.locals[node.var_name] = node.expr()
+            for child in node.template.children:
+                self.build_node(child, node)
+            del self.ctx.locals[node.var_name]
 
         if recursive:
             self.update_children(node)

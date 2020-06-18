@@ -12,18 +12,20 @@
             <tr>
                 {{#for col in row}}
                 <th colspan="{col.hspan}" rowspan="{col.vspan}">
-                    {{#if col.resizable or col.sortable}}
-                    <div>{{col.title}}
-                        {{#if col.resizable}}
-                        <span class="resizable" on:drag="DragResize"/>
+                    {{#set col_info := col.info}}
+                        {{#if col_info.resizable or col_info.sortable}}
+                        <div>{{col_info.title or col_info.name}}
+                            {{#if col_info.resizable}}
+                            <span class="resizable" on:drag="DragResize"/>
+                            {{/if}}
+                            {{#if col_info.sortable}}
+                            <span class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
+                            {{/if}}
+                        </div>
+                        {{#else}}
+                        {{col_info.title or col_info.name}}
                         {{/if}}
-                        {{#if col.sortable}}
-                        <span class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col.name}"/>
-                        {{/if}}
-                    </div>
-                    {{#else}}
-                    {{col.title}}
-                    {{/if}}
+                    {{/set}}
                 </th>
                 {{/for}}
             </tr>
@@ -35,7 +37,7 @@
             <tr scope>
                 <scope row_id="{forloop.parent.index}"/>
                 {{#for col in row}}
-                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col}">{{fmt(datarow[col.name], col.t)}}</td>
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
                 {{/for}}
             </tr>
             {{/for}}
@@ -60,15 +62,17 @@
 # """
 from datetime import datetime
 from core.imports import *
-from components.Tables.common import *
+from components.Tables import *
 from core.ctx import *
 
 editable: bool = True
 resizable: bool = True
 sortable: bool = True
 
+columns: Columns
+
 maps: Optional[MapsRows] = None
-col_styles: Optional[List[Dict[str, Any]]] = None
+col_styles: Optional[List[Dict[str, Any]]] = []
 
 order_col: Optional[str] = None
 order_dir: int = 0
@@ -83,44 +87,49 @@ if not defined('col_id'):
     col_id: Optional[str] = None
 
 def init():
-    global maps, col_id, col_styles, col_names, col_types, col_titles
-    cols = ctx.slot and ctx.slot['columns']
-    if not cols:
+    global maps, col_id, col_styles, columns
+    cols_slot = ctx.slot['columns'] if ctx.slot else None
+    if not cols_slot:
         # default layout
         maps = []
         row = []
-        for k in col_names:
-            if k != col_id:
-                row.append(ColMap(name=k, title=col_titles[k], t=col_types[k]))
+        for col_name, col in columns.items():
+            if col_name != col_id:
+                row.append(ColumnMap(info=col))
+                col.widget = collect_template(ctx.session, get_widget(col))
+        common_width = DynamicStyles(f'width={100 / (len(row)-1)}%')
+        for col_name, col in columns.items():
+            if col_name != col_id:
+                col_styles.append(common_width | col.style)
+
         maps.append(row)
-        col_styles = [DynamicStyles(f'width={100 / len(row)}%') for _ in range(len(row))]
     else:
         # predefined layout
-        maps = build_maps(ctx, cols)
+        maps = build_maps(ctx, cols_slot, columns)
         for row in maps:
             for col in row:
-                t = col.node
-                name = t.attributes.name
-                col.name = name
-                col.title = t.attributes.get('title', col_titles[name])
-                col.t = col_types[name]
-                col.editable = t.attributes.get('editable', editable)
-                col.resizable = t.attributes.get('resizable', resizable)
-                col.sortable = t.attributes.get('sortable', sortable)
-                col.widget = collect_template(ctx.session, get_widget(col_types[name]))
-        col_styles, css = collect_styles(ctx, maps)
+                attrs = col.node.attributes
+                attrs.name = col.info.name
+                col.node.style = col.info.style | col.node.style
+                col.info.title = attrs.get('title', col.info.title)
+                for opt in ('editable', 'resizable', 'sortable'):
+                    if not globals()[opt]:
+                        setattr(col.info, opt, False)
+                    elif opt in attrs:
+                        setattr(col.info, opt, attrs[opt])
+                col.widget = collect_template(ctx.session, get_widget(col.info))
+        col_styles, css = collect_col_styles(ctx, maps)
         if css:
             HTMLElement('style', ctx, text=css)
-        remove_spans(maps)
 
 
-def fmt(value, t):
+def fmt(value, info):
     if value is None:
         return ''
-    if t == datetime:
+    if info.type == datetime:
         return f'{value:%x %X}'
-    if t == bool:
-        return t and '☑' or '☐'
+    if info.type == bool:
+        return value and '☑' or '☐'
     return value
 
 
@@ -180,8 +189,8 @@ class DragResize(DragController):
         refs.colgroup[0][self.source_index].style = col_style
         refs.colgroup.update_tree()
 
-def get_widget(t):
-    return get_widget_default(t)
+def get_widget(col_info: ColumnInfo):
+    return get_widget_default(col_info)
 
 def select_cell(node: HTMLElement):
     global active_row, active_row_node, active_col, active_col_cell

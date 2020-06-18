@@ -118,26 +118,29 @@ class MyVisitor(BCDParserVisitor):
 
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
         if not macro_chunks:
-            tag_name = '#' + command.strip()
+            tag_name = command.strip()
             macro = ''
         else:
-            tag_name = '#' + macro_chunks.group(1).strip()
+            tag_name = macro_chunks.group(1).strip()
             macro = macro_chunks.group(2).strip()
 
         # gen 'if' subtree
-        if tag_name == '#if':
+        if tag_name == 'if':
             parent = HTMLTemplate('#if', self.current)
             self.current = HTMLTemplate('#choice', parent=parent)
             self.current.macro = macro or "True"
-        elif tag_name == '#for':
+        elif tag_name == 'for':
             parent = HTMLTemplate('#for', self.current)
             parent.macro = macro
             self.current = HTMLTemplate('#loop', parent=parent)
-        elif tag_name == '#elif':
+        elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', parent=self.current.parent)
             self.current.macro = macro or "True"
-        elif tag_name == '#else':
+        elif tag_name == 'else':
             self.current = HTMLTemplate('#else', parent=self.current.parent)
+        elif tag_name == 'set':
+            self.current = HTMLTemplate('#set', parent=self.current)
+            self.current.macro = macro
 
     def visitMacroEnd(self, ctx: BCDParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()

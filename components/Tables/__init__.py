@@ -11,21 +11,33 @@ from core.components.loader import HTMLTemplate
 if typing.TYPE_CHECKING:
     from typing import *
     from core.components.context import Context
-    MapsRows = List[List['ColMap']]
+    MapsRows = List[List['ColumnMap']]
+    Columns = Dict[str, 'ColumnInfo']
+else:
+    MapsRows = type
+    Columns = None
+
+__all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default', 'MapsRows', 'Columns', 'ColumnInfo']
 
 
 @dataclass
-class ColMap:
-    node: HTMLElement = field(default=None)
+class ColumnInfo:
     name: str = field(default_factory=str)
     title: str = field(default_factory=str)
-    t: type = field(default=None)
+    type: type = field(default=None)
     editable: bool = field(default=True)
     sortable: bool = field(default=True)
     resizable: bool = field(default=True)
-    hspan: int = field(default=1)
-    vspan: int = field(default=1)
+    style: DynamicStyles = field(default_factory=DynamicStyles)
     widget: HTMLTemplate = field(default=None)
+
+
+@dataclass
+class ColumnMap:
+    info: ColumnInfo
+    node: HTMLElement = field(default=None)
+    hspan: int = field(default=None)
+    vspan: int = field(default=None)
 
 
 def align_by_type(t) -> str:
@@ -34,15 +46,14 @@ def align_by_type(t) -> str:
     return ''
 
 
-def build_maps(ctx: Context, template: HTMLTemplate) -> MapsRows:
+def build_maps(ctx: Context, template: HTMLTemplate, columns: Columns) -> MapsRows:
     H = W = 0
     maps: MapsRows = []
 
     def set_cell(x, y, i, name):
         nonlocal H, W
-        item = ColMap(hspan=max(W - x, 1), vspan=max(H - y, 1))
+        item = ColumnMap(columns[name], hspan=max(W - x, 1), vspan=max(H - y, 1))
         item.node = ctx.render.build_node(i, ctx)
-        item.node.attributes.name = name
         if y >= H:
             # span rows on left cells
             for kx in range(x):
@@ -107,13 +118,20 @@ def build_maps(ctx: Context, template: HTMLTemplate) -> MapsRows:
                 if not r[c]:
                     del r[c]
 
+    def remove_spans(l: MapsRows):
+        for r in l:
+            for i in r:
+                if i.hspan == 1: i.hspan = None
+                if i.vspan == 1: i.vspan = None
+
     with ctx.shot.freeze():
         gox(template)
     clear(maps)
+    remove_spans(maps)
     return maps
 
 
-def collect_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], str):
+def collect_col_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], str):
     col_styles = []
     col_amount = max(len(row) for row in maps)
     row_amount = len(maps)
@@ -123,28 +141,21 @@ def collect_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], str):
         for y, row in enumerate(maps):
             idx = 0
             for x, c in enumerate(row):
-                if c.node.style and idx <= i < idx + c.hspan:
+                if c.node.style and idx <= i < idx + (c.hspan or 1):
                     td_style, col_style = c.node.style / ['width', 'background', 'border', 'visibility']
                     if td_style:
                         css.append(
                             f'#t{ctx.oid} > tbody > tr:nth-child({row_amount}n+{y + 1}) > td:nth-child({x + 1}) {{ {td_style} }}')
                     style |= col_style
-                idx += c.hspan
+                idx += c.hspan or 1
         col_styles.append(style)
     for r in range(row_amount):
         css.append(f'#t{ctx.oid} > tbody > tr:nth-child({row_amount*2}n+{row_amount+r+1}) {{ background: rgba(160, 160, 90, 0.1) }}')
     return col_styles, '\n'.join(css)
 
 
-def remove_spans(l: MapsRows):
-    for r in l:
-        for i in r:
-            if i.hspan == 1: i.hspan = ''
-            if i.vspan == 1: i.vspan = ''
-
-
-def get_widget_default(t) -> str:
-    if issubclass(t, numbers.Number):
+def get_widget_default(col_info: ColumnInfo) -> str:
+    if issubclass(col_info.type, numbers.Number):
         return 'CellNumber'
     else:
         return 'CellString'

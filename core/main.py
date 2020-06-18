@@ -150,7 +150,6 @@ routes.static('/css', os.path.join(BASE_PATH, 'css'), append_version=True)
 
 
 async def startup(app):
-    db.connect()
     start_task_workers()
     init_async_worker()
     start_observer(templates, Session, code_base)

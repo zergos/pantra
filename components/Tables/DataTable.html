@@ -1,24 +1,23 @@
 <reuse template="Table"/>
 
 <python>
+from components.Tables import Columns, ColumnInfo
 from core.ctx import *
 
 data: List[Dict[str, Any]]
 col_id: Optional[str] = None
 
-col_names: List[str]
-col_types: Dict[str, type]
-col_titles: Dict[str, str]
+columns: Columns = {}
 
 def init():
-    global col_names, col_types, col_titles
+    global columns
     # detect types
     if not data:
         return False
 
-    col_names = list(data[0].keys())
-    col_types = {k: type(v) for k, v in data[0].items()}
-    col_titles = {k: k for k in data[0].keys()}
+    for k, v in data[0].items():
+        columns[k] = ColumnInfo(name=k, type=type(v))
+
 
 def get_rows(order_col, order_dir):
     if order_col:

@@ -9,8 +9,8 @@
 </EntityTable>
 
 <python>
-from db.models import *
+from apps.test3.data.pony import *
 
-query = TestTable.select()
-entity = TestTable
+query = db.TestTable.select()
+entity = db.TestTable
 </python>

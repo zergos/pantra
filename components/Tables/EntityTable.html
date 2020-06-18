@@ -2,32 +2,34 @@
 
 <python>
 from pony.orm.core import Query, Entity, db_session, desc
-from core.dbtools import *
+from core.models import query_info
+from core.common import WebUnits
+from components.Tables import Columns, ColumnInfo
 from core.ctx import *
 
 query: Optional[Query] = None
 entity: Entity
 col_id: str = "id"
 
-col_names: List[str] = []
-col_types: Dict[str, type] = {}
-col_titles: Dict[str, str] = {}
+columns: Columns = {}
 
 def init():
-    global query, col_names, col_types, col_titles
+    global query, columns
     # default query
-    if not query:
-        query = entity.select()
+    if query is None:
+        with db_session():
+            query = entity.select()
 
     # detect types
-    specs = query_columns(query)
-    if not specs:
+    info = query_info(query)
+    if not info:
         return
 
-    for spec in specs:
-        col_names.append(spec[0])
-        col_titles[spec[0]] = spec[1]
-        col_types[spec[0]] = spec[2]
+    for name, attr in info.items():
+        col = ColumnInfo(name=name, type=attr.type, title=attr.title or name, editable=not attr.readonly)
+        if attr.width:
+            col.style.width = WebUnits(attr.width, 'em')
+        columns[name] = col
 
 @db_session
 def get_rows(order_col, order_dir):

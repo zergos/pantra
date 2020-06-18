@@ -22,9 +22,9 @@ if typing.TYPE_CHECKING:
     from core.components.render import ContextShot
     from core.session import Session
 
-__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'AnyNode']
+__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'AnyNode']
 
-AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode']
+AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', "SetNode"]
 
 
 class NSType(Enum):
@@ -379,4 +379,15 @@ class EventNode(RenderNode):
     def __init__(self, parent: RenderNode, attributes: Optional[ADict] = None):
         super().__init__(parent, True)
         self.attributes = attributes or ADict()
+
+
+class SetNode(RenderNode):
+    __slots__ = ['var_name', 'expr', 'template']
+
+    def __init__(self, parent: RenderNode, template: HTMLTemplate):
+        super().__init__(parent, False)
+        self.template = template
+        self.var_name = ''
+        self.expr = ''
+
 

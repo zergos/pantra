@@ -3,12 +3,12 @@ import xml.parsers.expat as expat
 
 
 def parse_xml(file_name, start_handler, end_handler=None, content_handler=None, parser=None):
-    p = parser or expat.ParserCreate()
+    p = parser or expat.ParserCreate('UTF-8')
     p.StartElementHandler = start_handler
     p.EndElementHandler = end_handler
     p.CharacterDataHandler = content_handler
     try:
-        with open(file_name, 'rt') as f:
+        with open(file_name, 'rb') as f:
             src = f.read()
             p.Parse(src, True)
     except expat.ExpatError:

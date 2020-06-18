@@ -191,7 +191,7 @@ class Schema:
         if not db:
             print(f'default db does not configured for app {self.app}')
             return None
-        if dbinfo[self.app]['db'].kwargs['provider'] != 'postgres':
+        if dbinfo[self.app]['db'].factory.kwargs['provider'] != 'postgres':
             print(f'schemas available for postgres only')
             return None
         return db

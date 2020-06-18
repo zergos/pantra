@@ -112,6 +112,13 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
         nonlocal in_python
         if name == 'python':
             in_python = False
+        elif name == 'entity':
+            lines.append(f'''
+        def __getitem__(self, item):
+            return {entity_name}()
+        def __iter__(self):
+            yield {entity_name}()
+''')
 
     def char_data(data):
         nonlocal python
@@ -151,7 +158,7 @@ if typing.TYPE_CHECKING:
     from uuid import UUID
     from pony.orm import *
     from pony.orm.core import EntityMeta
-    from core.dbtools import Choice
+    from core.models import Choice
 ''')
 
     body.extend([f'    {line}' for line in python.splitlines()])
