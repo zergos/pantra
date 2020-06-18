@@ -355,7 +355,7 @@ class DefaultRenderer:
             for k, v in template.attributes.items():
                 if k == 'selector':
                     if 'global' in template.attributes:
-                        node.attributes[k] = v
+                        node.attributes[k] = self.strip_quotes(v)
                     else:
                         node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
                         self.ctx._restyle = True

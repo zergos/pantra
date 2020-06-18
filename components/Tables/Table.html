@@ -46,8 +46,8 @@
     </table>
 </div>
 
-<event selector=".Table td" on:click="select_cell" on:dblclick="enter_cell"/>
-<event selector=".Table td input" on:focusout="exit_cell"/>
+<event selector=".Table td" global on:click="select_cell" on:dblclick="enter_cell"/>
+<event selector=".Table td input" global on:focusout="exit_cell"/>
 
 <style type="text/scss" global>
     @import "defaults";

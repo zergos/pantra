@@ -36,8 +36,8 @@ class ColumnInfo:
 class ColumnMap:
     info: ColumnInfo
     node: HTMLElement = field(default=None)
-    hspan: int = field(default=None)
-    vspan: int = field(default=None)
+    hspan: Union[int, str] = field(default='')
+    vspan: Union[int, str] = field(default='')
 
 
 def align_by_type(t) -> str:
@@ -121,8 +121,8 @@ def build_maps(ctx: Context, template: HTMLTemplate, columns: Columns) -> MapsRo
     def remove_spans(l: MapsRows):
         for r in l:
             for i in r:
-                if i.hspan == 1: i.hspan = None
-                if i.vspan == 1: i.vspan = None
+                if i.hspan == 1: i.hspan = ''
+                if i.vspan == 1: i.vspan = ''
 
     with ctx.shot.freeze():
         gox(template)
