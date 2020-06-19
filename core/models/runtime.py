@@ -12,6 +12,7 @@ from functools import lru_cache
 from uuid import UUID
 
 from pony.orm import Database, Optional, Required, Discriminator, Set, LongStr, Json, StrArray, FloatArray, IntArray
+from pony.orm.core import EntityMeta, EntityProxy
 from core.common import ADict
 from .parser import parse_xml, expat
 from .choicefield import Choice
@@ -19,7 +20,6 @@ from core.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pony.orm.core import EntityMeta, EntityProxy
 
 type_map = {
     'bool': bool,
