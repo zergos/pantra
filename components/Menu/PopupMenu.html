@@ -1,0 +1,32 @@
+<nav class:hidden>
+    <slot/>
+</nav>
+
+<event global on:click="hide"/>
+
+<style type="text/scss">
+    @import "defaults";
+
+    nav {
+        padding: 0;
+        background: #9f9f9f;
+        border: 1px solid $color-dark-gray;
+        overflow: auto;
+        box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+</style>
+
+<python>
+from core.ctx import *
+
+hidden: bool = True
+
+def show():
+    ctx.hidden = False
+
+def hide(node):
+    if not ctx.hidden:
+        ctx.hidden = True
+
+</python>

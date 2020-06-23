@@ -27,7 +27,7 @@ class HTMLElementSerializer(bsdf.Extension):
             res['#'] = True
             v._rebind = False
         if v.context._restyle:
-            res['$'] = v.ctx.template.name
+            res['$'] = v.context.template.name
         return res
 
 
@@ -52,7 +52,7 @@ class EventSerializer(bsdf.Extension):
         return type(v) == EventNode
 
     def encode(self, s, v):
-        return {'ctx': v.context.template.name, 'a': v.attributes}
+        return {'ctx': v.context.template.name, 'a': v.attributes, 'oid': v.context.oid}
 
 
 serializer = bsdf.BsdfSerializer([HTMLElementSerializer, TextSerializer, EventSerializer],

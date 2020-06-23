@@ -1,20 +1,18 @@
-<a on:click="action">{{caption}}<span class="arrow">{{'>'}}</span></a>
+<a on:click="action"><div>{{caption}}</div><div class="arrow"/></a>
 
 <style type="text/scss">
     a {
-        display: block;
+        display: flex;
+        justify-content: space-between;
         color: #fff;
         font-weight: bold;
-        padding-top: 0.2rem;
-        padding-bottom: 0.2rem;
-        padding-left: 1rem;
-        padding-right: 0.3rem;
+        padding: 0.2rem 0.3rem 0.2rem 1rem;
         transition: all .12s ease-in-out;
         cursor: pointer;
         border-top: 1px solid black;
 
-        > .arrow {
-            float: right;
+        > .arrow:after {
+            content: '>';
         }
     }
     //a:first-child {

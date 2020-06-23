@@ -6,5 +6,5 @@ from .tools import AS, query_info
 
 __all__ = ['dbinfo', 'expose_databases', 'find_entity_info',
            'expose_to_pony', 'expose_to_django',
-           'Choice', 'AS',
-           'query_info']
+           'Choice',
+           'AS', 'query_info']

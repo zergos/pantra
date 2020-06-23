@@ -1,4 +1,19 @@
-<div class="inline-group">
+<div>
     <slot/>
 </div>
 
+<style type="text/scss">
+div {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+
+    > label {
+        padding-left: .12rem;
+    }
+    > button {
+        margin-left: .12rem;
+        margin-right: .12rem;
+    }
+}
+</style>

@@ -16,17 +16,17 @@
     </entity>
 
     <entity name="Document">
-        <attr name="number" type="str" unique="True" required="True"/>
+        <attr name="number" type="str" unique="True" required="True" width="6"/>
         <attr name="date" type="datetime" eval="datetime.now" required="True"/>
         <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>
     <entity name="DocumentLine">
         <attr name="document" type="Document" required="True"/>
-        <attr name="pos" type="int" required="True"/>
+        <attr name="pos" type="int" required="True" width="5"/>
         <attr name="data" type="Json" eval="dict" required="True" body="True"/>
     </entity>
     <entity name="Catalog">
-        <attr name="number" type="str" unique="True" required="True"/>
+        <attr name="number" type="str" unique="True" required="True" width="6"/>
         <attr name="name" type="str"/>
         <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>

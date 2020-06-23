@@ -1,0 +1,61 @@
+<div class="main">
+    <div class="cap">{{caption}}</div>
+    <div class="menu">
+        <PopupMenu ref:menu>
+            <MenuItem caption="Restart" action="restart"/>
+            <MenuItem caption="Switch App"/>
+            <MenuItem caption="Logout"/>
+        </PopupMenu>
+    </div>
+    <div class="menu-button" on:click="show"/>
+</div>
+
+<style type="text/scss">
+    .main {
+        width: 100%;
+        padding-right: 0;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+
+        > .cap {
+            flex-grow: 1;
+            font-size: 2em;
+        }
+
+        > .menu {
+            flex-grow: 0;
+        }
+
+        > .menu-button {
+            flex-grow: 0;
+            font-family: monospace;
+            font-size: 4rem;
+            padding-top: 3px;
+            cursor: pointer;
+            color: #14288a;
+            transition: color .15s ease-in-out;
+
+            &:after {
+                content: '䷉';
+            }
+
+            &:hover {
+                color: #1c42fd;
+            }
+        }
+    }
+</style>
+
+<python>
+from core.ctx import *
+
+caption: str = ''
+
+def show(node):
+    refs.menu.show()
+
+def restart(node):
+    session.restart()
+
+</python>

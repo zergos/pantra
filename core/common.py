@@ -207,7 +207,7 @@ class DynamicStyles(ADict):
                 super().__init__(style)
             else:
                 data = {
-                    expr.split('=')[0].strip(): expr.split('=')[1].strip()
+                    expr.split(':')[0].strip(): expr.split(':')[1].strip()
                     for expr in style.split(';') if expr.strip()
                 }
                 super().__init__(data)

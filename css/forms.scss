@@ -84,20 +84,6 @@ fieldset {
   margin-bottom: .375rem;
 }
 
-.inline-group {
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: row;
-
-  > label {
-    padding-left: .12rem;
-  }
-  > button {
-    margin-left: .12rem;
-    margin-right: .12rem;
-  }
-}
-
 legend {
   padding-left: .375rem;
   padding-right: .375rem;
@@ -131,27 +117,5 @@ input[type="radio"] {
   &:checked {
     background-color: $color-active;
     border-width: 0.4rem;
-  }
-}
-
-button {
-  display: block;
-  text-align: center;
-  vertical-align: middle;
-  border-radius: .25rem;
-  margin-top: .5rem;
-  margin-bottom: .25rem;
-  cursor: pointer;
-  color: $button-text-color;
-  border: 1px solid darken($button-color-base, 5%);
-  background-color: $button-color-base;
-  padding: .375rem .75rem;
-  @include x-user-select();
-  transition: all .15s ease-in-out;
-
-  &:focus, &:hover {
-    background-color: darken($button-color-base, 10%);
-    border-color: darken($button-color-base, 15%);
-    box-shadow: 0 0 0 3px rgba($color-active, .5);
   }
 }

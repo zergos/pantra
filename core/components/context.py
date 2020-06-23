@@ -62,8 +62,10 @@ class Slot(typing.NamedTuple):
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars', 'react_nodes']
 
-    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+    def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None, locals: Optional[Dict] = None):
         self.locals: HookDict = HookDict()
+        if locals:
+            self.locals.update(locals)
         self._executed: bool = False
         self.refs: Dict[str, Union['Context', HTMLElement]] = ADict()
         self.slot: Optional[Slot] = None

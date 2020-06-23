@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import typing
 
 from core.args import *
@@ -9,6 +8,7 @@ from core.defaults import *
 if typing.TYPE_CHECKING:
     from typing import *
     from pony.orm import Database
+
 
 def _detect_app():
     path = os.getcwd()
@@ -47,10 +47,10 @@ class Main:
 
     @context_args('app')
     def pony(self, x: bool = False):
-        '''
+        """
         generate pony code for type checker
         :param x: exclude default db initial block
-        '''
+        """
 
         from core.models import expose_to_pony
         expose_to_pony(self.app, not x)
@@ -58,9 +58,9 @@ class Main:
 
     @context_args('app')
     def django(self):
-        '''
+        """
         generate django code for debugging
-        '''
+        """
 
         from core.models import expose_to_django
         expose_to_django(self.app)
@@ -68,9 +68,9 @@ class Main:
 
     @context_args('app')
     def check(self):
-        '''
+        """
         load and check models definition runtime
-        '''
+        """
 
         from core.models import expose_databases
         expose_databases(self.app)

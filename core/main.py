@@ -173,10 +173,10 @@ async def main(host, port):
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, host=host, port=8005)
+    site = web.TCPSite(runner, host=host, port=port)
     await site.start()
     # wait for finish signal
-    print('Running wild at 8005')
+    print(f'Running wild at {host}:{port}')
     try:
         while True:
             await asyncio.sleep(3600)

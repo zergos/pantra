@@ -1,9 +1,5 @@
 <nav>
-    <slot>
-        {{#for l in get_filler()}}
-        <a>{{l}}<span class="arrow">{{'>'}}</span></a>
-        {{/for}}
-    </slot>
+    <slot/>
 </nav>
 
 <style type="text/scss">
@@ -16,13 +12,3 @@
         border: 1px solid $color-dark-gray;
     }
 </style>
-
-<python>
-import random
-import string
-
-def get_filler():
-    for i in range(20):
-        yield ''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 20)))
-
-</python>

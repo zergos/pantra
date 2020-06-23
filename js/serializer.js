@@ -102,10 +102,9 @@ const TextSerializer = {
 const EventSerializer = {
     name: 'e',
     decode: function (s, v) {
-        let selector = v.a.selector;
         for (let attr in v.a) {
-            if (attr !== 'selector')
-                process_event_attribute(v.ctx, selector, attr, v.a[attr]);
+            if (attr.startsWith('on:'))
+                process_event_attribute(v.ctx, v.a.selector || "", attr, v.a[attr], v.oid);
         }
     }
 };

@@ -14,12 +14,13 @@
                 <th colspan="{col.hspan}" rowspan="{col.vspan}">
                     {{#set col_info := col.info}}
                         {{#if col_info.resizable or col_info.sortable}}
-                        <div>{{col_info.title}}
-                            {{#if col_info.resizable}}
-                            <span class="resizable" on:drag="DragResize"/>
-                            {{/if}}
+                        <div>
+                            <div class="cap">{{col_info.title}}</div>
                             {{#if col_info.sortable}}
-                            <span class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
+                            <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
+                            {{/if}}
+                            {{#if col_info.resizable}}
+                            <div class="resizable" on:drag="DragResize"/>
                             {{/if}}
                         </div>
                         {{#else}}
@@ -41,20 +42,122 @@
                 {{/for}}
             </tr>
             {{/for}}
+        {{#else}}
+            <tr>
+                <td class="empty" colspan="{len(col_styles)}">Empty</td>
+            </tr>
         {{/for}}
         </tbody>
     </table>
 </div>
 
-<event selector=".Table td" global on:click="select_cell" on:dblclick="enter_cell"/>
-<event selector=".Table td input" global on:focusout="exit_cell"/>
+<event selector=".Table tbody td:not(.empty)" global on:click="select_cell" on:dblclick="enter_cell"/>
+<event selector=".Table tbody td input" global on:focusout="exit_cell"/>
 
 <style type="text/scss" global>
     @import "defaults";
+    @import "mixins";
+
+    .table-container {
+        overflow: auto;
+        width: 100%;
+        max-height: 100vh;
+    }
+
+    table {
+        table-layout: fixed;
+        width: 100%;
+        border: $table-border;
+        border-collapse: collapse;
+        min-width: $table-min-width;
+        max-width: $table-max-width;
+    }
+
+    @mixin arrows-font() {
+        font-family: $font-family-monospace;
+        font-size: 18px; // fixed size to make unicode arrows not so ugly
+    }
+
+    thead th {
+        font-family: $th-font;
+        border: $table-cell-border;
+        padding: 2px 0 2px 3px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        background-color: $color-caption;
+        color: white;
+        @include x-position-sticky();
+        top: -1px;
+        box-shadow: inset 0 1px 0 $body-color, inset 0 -1px 0 $body-color;
+        text-transform: capitalize;
+
+        > div {
+            display: flex;
+            flex-flow: row nowrap;
+
+            > .cap {
+                flex-grow: 1;
+            }
+
+            > .sortable {
+                @include arrows-font();
+                flex-grow: 0;
+
+                &:after {
+                    content: '⇅';
+                    cursor: pointer;
+                }
+
+                &.asc:after {
+                    content: '⬇';
+                }
+
+                &.desc:after {
+                    content: '⬆';
+                }
+            }
+
+            > .resizable {
+                flex-grow: 0;
+                width: 5px;
+                cursor: col-resize;
+            }
+        }
+    }
+
+    tbody {
+        td {
+            border: $table-cell-border;
+            padding: 2px 3px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            transition: box-shadow .15s ease-in-out;
+            background: $body-bg;
+        }
+
+        td:hover {
+            //border: 1px solid $table-cell-active-color;
+            box-shadow: 0 0 0 3px rgba($table-cell-active-color, 0.5);
+        }
+
+        tr.selected {
+            background-color: rgba($table-cell-selected-color, 0.2) !important;
+
+            td.selected {
+                background-color: rgba($table-cell-selected-color, 0.3) !important;
+                font-weight: bold;
+            }
+        }
+    }
 
     .Table.resizing {
         background-color: $color-active;
         background: linear-gradient(180deg, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
+    }
+
+    td.empty {
+        padding-left: 0.5em;
+        color: $color-passive;
     }
 </style>
 
@@ -97,7 +200,7 @@ def init():
             if col_name != col_id:
                 row.append(ColumnMap(info=col))
                 col.widget = collect_template(ctx.session, get_widget(col))
-        common_width = DynamicStyles(f'width={100 / (len(row)-1)}%')
+        common_width = DynamicStyles(f'width: {100 / (len(row)-1)}%')
         for col_name, col in columns.items():
             if col_name != col_id:
                 col_styles.append(common_width | col.style)
@@ -161,7 +264,7 @@ class DragResize(DragController):
 
     def get_options(self, node: HTMLElement):
         ctx.session.drop_metrics()
-        return DragOptions(0, True, False, None, node.metrics.left + 20, None, None)
+        return DragOptions(0, True, False, None, node.upto('th').metrics.left + 20, None, None)
 
     def start(self, node: HTMLElement):
         th = node.upto('th')

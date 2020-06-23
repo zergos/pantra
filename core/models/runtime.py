@@ -261,9 +261,10 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                             attr_info.type = t
                         else:
                             t = v
-                            reverse_name = attrs.get('reverse', f'{entity_name.lower()}s')
-                            set_later[v].append((db_name, reverse_name, entity_name))
                             attr_info.type = t
+                            if name == 'attr':
+                                reverse_name = attrs.get('reverse', f'{entity_name.lower()}s')
+                                set_later[v].append((db_name, reverse_name, entity_name))
                     else:
                         field = array_type_map[v]
                         attr_info.type = list
@@ -316,6 +317,13 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
 
 
 def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = True, app_info: Dict[str, DatabaseInfo] = None) -> Optional[Database]:
+    if not app_info and app in dbinfo:
+        app_info = dbinfo[app]
+        if 'db' in app_info:
+            return app_info['db'].factory.cls
+        else:
+            return None
+
     if not with_binding:
         with_mapping = False
 
@@ -370,7 +378,7 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
                 ent.factory.bases = bases
                 ent.factory.cls = type(ent_name, tuple(bases), ent.factory.fields)
 
-        # fill prop types
+        # fill attr and prop types
         for db in app_info.values():
             for ent in db.entities.values():
                 for attr_info in ent.attrs.values():

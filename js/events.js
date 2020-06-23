@@ -60,46 +60,6 @@ class DragListener extends EventListener {
     }
 }
 
-function process_special_attribute(attr, value, node, oid, is_new = false) {
-    if (attr === 'on:change' && node.tagName === 'SELECT') {
-        if (is_new) {
-            node.addEventListener('change', new SelectListener(value, oid));
-        }
-        return true;
-    } else if (attr === 'on:drag') {
-        if (is_new) {
-            node.addEventListener('dragstart', do_nothing);
-            node.addEventListener('selectstart', do_nothing);
-            node.addEventListener('mousedown', new DragListener(value, oid));
-            attach_drag_events();
-        }
-        return true;
-    } else if (attr.startsWith('on:keyup') || attr.startsWith('on:keydown')) {
-        if (is_new) {
-            let chunks = attr.split(':');
-            let key = chunks.length > 2 ? chunks[2]:null;
-            node.addEventListener(chunks[1], new KeyListener(value, key, oid));
-        }
-        return true;
-    } else if (attr.startsWith('on:')) {
-        if (is_new) {
-            node.addEventListener(attr.slice(3), new SimpleListener(value, oid));
-            if (attr === 'on:click')
-                node.addEventListener('mousedown', do_nothing);
-        }
-        return true;
-    } else if (attr === 'bind:value') {
-        if (is_new) {
-            if (node.tagName === 'INPUT')
-                node.addEventListener('input', new ValueListener(value, oid));
-            else
-                node.addEventListener('change',  new ValueListener(value, oid));
-        }
-        return true;
-    }
-    return false;
-}
-
 function attach_drag_events() {
     if (!drag_events_attached) {
         drag_events_attached = true;
@@ -126,32 +86,31 @@ function attach_drag_events() {
     }
 }
 
-let event_registered = [];
-let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
-
-function process_event_attribute(ctx, selector, attr, value) {
-    if (event_registered.includes(selector + attr)) return;
-    event_registered.push(selector + attr);
-
-    if (attr === 'on:change' && node.tagName === 'select') {
-        addEventHandler('change', selector, new SelectListener(value));
+function addEvent(attr, selector, method, oid) {
+    if (attr === 'on:select') {
+        addEventHandler('change', selector, new SelectListener(method, oid));
     } else if (attr === 'on:drag') {
         addEventHandler('dragstart', selector, do_nothing);
         addEventHandler('selectstart', selector, do_nothing);
-        addEventHandler('mousedown', selector, new DragListener(value));
+        addEventHandler('mousedown', selector, new DragListener(method, oid));
         attach_drag_events();
     } else if (attr.startsWith('on:keyup') || attr.startsWith('on:keydown')) {
         let chunks = attr.split(':');
         let key = chunks.length > 2 ? chunks[2]:null;
-        addEventHandler(chunks[1], selector, new KeyListener(value, key));
+        addEventHandler(chunks[1], selector, new KeyListener(method, key, oid));
     } else if (attr.startsWith('on:')) {
-        addEventHandler(attr.slice(3), selector, new SimpleListener(value));
-        if (attr === 'on:click')
-            addEventHandler('mousedown', selector, do_nothing);
+        addEventHandler(attr.slice(3), selector, new SimpleListener(method, oid));
+        /*if (attr === 'on:click')
+            addEventHandler('mousedown', selector, do_nothing);*/
     }
 }
 
 function addEventHandler(type, selector, listener) {
+    if (selector instanceof Element) {
+        selector.addEventListener(type, listener);
+        return;
+    }
+
     if (!(type in event_tab)) {
         event_tab[type] = [];
         root_node().addEventListener(type, (event) => process_events(type, event));
@@ -163,11 +122,48 @@ function addEventHandler(type, selector, listener) {
     event_tab[type].push({selector: selector, listener: listener});
 }
 
+function process_special_attribute(attr, value, node, oid, is_new = false) {
+    if (attr.startsWith('on:')) {
+        if (is_new)
+            addEvent(attr, node, value, oid);
+        return true;
+    } else if (attr === 'bind:value') {
+        if (is_new) {
+            if (node.tagName === 'INPUT')
+                node.addEventListener('input', new ValueListener(value, oid));
+            else
+                node.addEventListener('change',  new ValueListener(value, oid));
+        }
+        return true;
+    }
+    return false;
+}
+
+let event_registered = [];
+let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
+
+function process_event_attribute(ctx, selector, attr, value, oid) {
+    if (!selector) {
+        if (event_registered.includes(ctx + attr)) return;
+        event_registered.push(ctx + attr);
+        addEvent(attr, "", value, oid);
+    } else {
+        if (event_registered.includes(selector + attr)) return;
+        event_registered.push(selector + attr);
+        addEvent(attr, selector, value, null);
+    }
+}
+
 function process_events(type, event) {
     let node = event.target;
     for (let row of event_tab[type]) {
-        if (!node.matches(row.selector)) continue;
+        if (row.selector && !node.matches(row.selector)) continue;
         if (row.listener instanceof Function) row.listener(event);
         else row.listener.handleEvent(event);
     }
+}
+
+function reset_events() {
+    event_registered = [];
+    event_tab = {};
 }

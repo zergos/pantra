@@ -69,6 +69,7 @@ main.onmessage = (data) => {
             root_node().textContent = '';
             OID.clear();
             drag_mode_active = false;
+            reset_events();
             break;
 
         case 'app':

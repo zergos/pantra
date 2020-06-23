@@ -1,0 +1,41 @@
+<button type="button" on:click="action" class:danger>{{caption}}</button>
+
+<style type="text/scss">
+    @import "mixins";
+
+    $color-norm: #cfd23b;
+    $color-danger: #f19478;
+
+    button {
+        min-width: 7em;
+        display: block;
+        text-align: center;
+        vertical-align: middle;
+        cursor: pointer;
+        @include x-user-select();
+        color: #04122b;
+        background-color: $color-norm;
+        border: none;
+        border-left: solid 1px;
+        border-right: solid 1px;
+        transition: background-color 0.15s ease-in-out;
+
+        &:hover {
+            background-color: lighten($color-norm, 10%);
+        }
+
+        &.danger {
+            background-color: $color-danger;
+
+            &:hover {
+                background-color: lighten($color-danger, 10%);
+            }
+        }
+    }
+</style>
+
+<python>
+caption: str = ''
+action: str = ''
+danger: bool = False
+</python>
