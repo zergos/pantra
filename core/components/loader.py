@@ -239,8 +239,39 @@ class StyleVisitor(BCDParserVisitor):
         if self.global_mode:
             self.styles.append(text)
         else:
+            # color any selector and sub-selector with component-based class
             base_class = f'.{self.class_name}'
 
+            # collect and cut all global marks to make css parser happy
+            global_marks = []
+            glo = ':global('
+
+            def parse_globals(text: str):
+                res = []
+                for line, s in enumerate(text.splitlines()):
+                    while glo in s:
+                        pos = s.index(glo)
+                        left = pos + len(glo)
+                        right = left
+                        cnt = 1
+                        while cnt > 0 and right < len(s):
+                            if s[right] == ')':
+                                cnt -= 1
+                            elif s[right] == '(':
+                                cnt += 1
+                            elif s[right] == '{':
+                                break
+                            right += 1
+                        if cnt > 0:
+                            raise ValueError(':global pseudo-class should be closed')
+                        global_marks.append((line + 1, left + 1))
+                        s = s[:pos] + ' ' * len(glo) + s[left:right - 1] + ' ' + s[right:]
+                    res.append(s)
+                return '\n'.join(res)
+
+            text = parse_globals(text)
+
+            # walk parse tree and inject base class
             def go(l):
                 for node in l:
                     if type(node) == CSSMediaRule:
@@ -253,12 +284,14 @@ class StyleVisitor(BCDParserVisitor):
                             while i < len(lst):
                                 if first:
                                     if lst[i].type in ('type-selector', 'universal'):
-                                        lst.insert(i + 1, base_class, 'class')
-                                        i += 1
+                                        if (lst[i].line, lst[i].col) not in global_marks:
+                                            lst.insert(i + 1, base_class, 'class')
+                                            i += 1
                                         first = False
                                     elif lst[i].type in ('class', 'id'):
-                                        lst.insert(i, base_class, 'class')
-                                        i += 1
+                                        if (lst[i].line, lst[i].col - 1) not in global_marks:
+                                            lst.insert(i, base_class, 'class')
+                                            i += 1
                                         first = False
                                 elif lst[i].type in ('descendant', 'child', 'adjacent-sibling', 'following-sibling'):
                                     first = True
@@ -267,8 +300,11 @@ class StyleVisitor(BCDParserVisitor):
             sheet = self.parser.parseString(text)
             go(sheet)
 
+            # first naive attempt, save for history
             # chunks = re.split(r'(?<=})', text)
             # res = '\n'.join(f'.{self.class_name} {chunk.strip()}' for chunk in chunks if chunk.strip())
+
+            # recover css text with injections
             self.styles.append(str(sheet.cssText, 'utf8'))
 
     def visitRawName(self, ctx: BCDParser.RawNameContext):
