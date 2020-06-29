@@ -231,8 +231,112 @@ class Schema:
                 print(cur.statusmessage)
 
 
+class Locale:
+    """
+    Work with L10n and I18n
+    :param app: app name (auto-detection by current directory)
+    :param locale: set locale name
+    """
+
+    app: str = lambda: _detect_app()
+    locale: str = lambda: Locale._detect_locale()
+
+    @staticmethod
+    def _detect_locale():
+        path = os.getcwd()
+        if path.startswith(BASE_PATH):
+            path = os.path.relpath(path, BASE_PATH)
+            while os.path.dirname(path):
+                path, tail = os.path.split(path)
+                if os.path.basename(path) == 'locale':
+                    return tail
+        return Empty
+
+    def list(self, filter: str = None):
+        """
+        print all available locales
+        :param filter: filter by partial name
+        """
+        from babel.localedata import locale_identifiers
+        for l in locale_identifiers():
+            if filter and filter not in l:
+                continue
+            print(l)
+
+    @context_args('locale')
+    def info(self):
+        """
+        print locale information
+        """
+        from babel import Locale
+        l = Locale.parse(self.locale)
+        print(l.display_name)
+
+    @context_args('app', 'locale')
+    def gen(self, copyright: str = None, email: str = None, version: str = None, no_compile: bool = False, no_clear: bool = False):
+        """
+        collect messages for selected app
+        :param copyright: copyright holder
+        :param email: email address for bugs information
+        :param version: version number (X.Y)
+        :param no_compile: don't compile after update
+        :param no_clear: don't clear Babel temp files (`babel.ini` and `app.po`)
+        """
+        from babel.messages.frontend import CommandLineInterface
+
+        path = os.path.join(APPS_PATH, self.app)
+        ini_name = os.path.join(path, 'babel.ini')
+        with open(ini_name, 'wt') as f:
+            f.write('[extractors]\npython = core.trans:extract_python\nhtml = core.trans:extract_html\nxml = core.trans:extract_xml\n')
+            f.write('[python: **.py]\n[html: **.html]\n[xml: **.xml]\n')
+
+        pot_name = os.path.join(path, 'app.po')
+
+        args = ['', 'extract']
+        args.extend(['-F', ini_name])
+        args.extend(['-o', pot_name])
+        args.append('--sort-by-file')
+        args.append(f'--project=Fruits App "{self.app}"')
+        args.extend(['-c', 'NOTE'])
+        if copyright:
+            args.append(f'--copyright-holder={copyright}')
+        if email:
+            args.append(f'--msgid-bugs-address={email}')
+        if version:
+            args.append(f'--version={version}')
+        args.append(path)
+        CommandLineInterface().run(args)
+
+        dest_name = os.path.join(path, 'locale', self.locale, 'LC_MESSAGES', 'messages.po')
+        if not os.path.exists(dest_name):
+            args = ['', 'init']
+        else:
+            args = ['', 'update']
+        args.extend(['-i', pot_name])
+        args.extend(['-l', self.locale])
+        # args.extend(['-D', self.app])
+        args.extend(['-d', os.path.join(path, 'locale')])
+        CommandLineInterface().run(args)
+
+        if not no_clear:
+            os.remove(ini_name)
+            os.remove(pot_name)
+
+        if no_compile:
+            return
+
+        args = ['', 'compile']
+        args.extend(['-i', dest_name])
+        args.extend(['-l', self.locale])
+        # args.extend(['-D', self.app])
+        args.extend(['-d', os.path.join(path, 'locale')])
+        args.append('--statistics')
+        CommandLineInterface().run(args)
+
+
 def execute_from_command_line(argv):
     main = ExposeToArgs(Main())
     main.add_commands(Migrate())
     main.add_commands(Schema())
+    main.add_commands(Locale())
     main.execute(argv)
