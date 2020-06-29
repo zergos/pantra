@@ -26,11 +26,11 @@ def init():
 
 def exit_cell(node, key=None):
     if ctx.parent: # prevent double event
-        ctx.parent.save_value(ctx, value)
-        ctx.parent.remove_field(ctx, value)
+        ctx.parent['save_value'](ctx, value)
+        ctx.parent['remove_field'](ctx, value)
 
 def undo_edit(node, key):
     if ctx.parent:
-        ctx.parent.remove_field(ctx, original)
+        ctx.parent['remove_field'](ctx, original)
 
 </python>

@@ -1,3 +1,13 @@
+function show_online_bar() {
+	let bar = document.getElementById('online-bar');
+	bar.removeAttribute('style');
+}
+
+function hide_online_bar() {
+	let bar = document.getElementById('online-bar');
+	bar.setAttribute('style', 'display: none');
+}
+
 class WSClient {
 	constructor(url) {
 		this.url = url;
@@ -30,6 +40,7 @@ class WSClient {
 		if (this.show_logs)
 			console.log(`WSClient: connected`);
 		this.connected = true;
+		show_online_bar();
 		if (this.init)
 			this.onrefresh();
 		else
@@ -39,6 +50,7 @@ class WSClient {
 	}
 	onclose(e) {
 		this.connected = false;
+		hide_online_bar();
 		switch (e.code) {
 			case 1006:
 				console.log(`WSClient: server down...`);

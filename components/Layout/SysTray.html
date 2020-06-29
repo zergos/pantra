@@ -1,9 +1,13 @@
 <div class="main">
     <div class="cap">{{caption}}</div>
     <div class="menu">
-        <PopupMenu ref:menu>
+        <PopupMenu cref:menu>
             <MenuItem caption="Restart" action="restart"/>
-            <MenuItem caption="Switch App"/>
+            <MenuGroup caption="Switch App">
+                {{#for app in session.get_apps()}}
+                <MenuItem caption="{app}"/>
+                {{/for}}
+            </MenuGroup>
             <MenuItem caption="Logout"/>
         </PopupMenu>
     </div>
@@ -53,7 +57,7 @@ from core.ctx import *
 caption: str = ''
 
 def show(node):
-    refs.menu.show()
+    refs.menu.toggle()
 
 def restart(node):
     session.restart()

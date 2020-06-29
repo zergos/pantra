@@ -1,11 +1,12 @@
-<div ref:main/>
+<div on:render="bind_taskbar"/>
 
 <python>
 from core.ctx import *
 
 taskbar: Context
 
-def init():
-    taskbar.render_to = refs.main
+def bind_taskbar(node):
+    taskbar.render_to = node
+    node.set_scope('tasks', taskbar)
 
 </python>

@@ -1,11 +1,4 @@
-form {
-  border: $form-border;
-  border-radius: $form-radius;
-  padding: $form-padding;
-  background: $form-bg;
-}
-
-label {
+.default label {
   display: block;
   width: 100%;
   padding-top: .375rem;
@@ -13,17 +6,10 @@ label {
   &.inline {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    flex-direction: row;
+    flex-flow: row nowrap;
 
     > span {
       padding-right: .5rem;
-      /*flex: 0 0 16%;*/
-    }
-
-    > input,  > select {
-      flex-grow: 1;
     }
   }
 
@@ -34,7 +20,7 @@ label {
     }
     > input, > textarea {
       display: block;
-      width: 100%;
+      //width: 100%;
     }
   }
 

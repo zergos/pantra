@@ -7,7 +7,7 @@ CSS_PATH = os.path.join(BASE_PATH, 'css')
 APPS_PATH = os.path.join(BASE_PATH, 'apps')
 
 TASK_THREADS = 2
-SOCKET_TIMEOUT = 300
+SOCKET_TIMEOUT = 180
 MAX_MESSAGE_SIZE = 4 * 1024 * 1024
 
 DEFAULT_APP = COMPONENTS_PATH #os.path.join(BASE_PATH, 'apps', 'score_parser')

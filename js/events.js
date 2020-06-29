@@ -105,6 +105,9 @@ function addEvent(attr, selector, method, oid) {
     }
 }
 
+let event_registered = [];
+let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
+
 function addEventHandler(type, selector, listener) {
     if (selector instanceof Element) {
         selector.addEventListener(type, listener);
@@ -138,9 +141,6 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
     }
     return false;
 }
-
-let event_registered = [];
-let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
 
 function process_event_attribute(ctx, selector, attr, value, oid) {
     if (!selector) {

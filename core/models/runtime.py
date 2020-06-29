@@ -86,7 +86,7 @@ class EntityFactory:
 
 class AttrDict(ADict):
     def __call__(self):
-        yield from ((k, v) for k, v in self.items() if v.name != 'id' and not v.is_body)
+        yield from ((k, v) for k, v in self.items() if v.name != 'id' and not v.is_body and not v.is_cid)
 
 
 @dataclass
@@ -211,7 +211,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                         db_info.entities[root].schema = db_info.schema
                         db_info.entities[root].factory.fields['_table_'] = (db_info.schema, base.lower())
                     if not db_info.entities[root].factory.has_cid and 'classtype' not in entity_info.attrs:
-                        entity_info.attrs['classtype'] = AttrInfo(name='classtype', type=str, is_cid=True, readonly=True)
+                        entity_info.attrs['classtype'] = AttrInfo(name='classtype', type=str, title='type', is_cid=True, readonly=True)
                     bases.append(lambda: base_factory.cls)
             else:
                 db_info = app_info[db_name]

@@ -279,22 +279,29 @@ class StyleVisitor(BCDParserVisitor):
                     elif type(node) == CSSStyleRule:
                         for sel in node.selectorList:
                             lst = sel.seq
-                            first = True
+                            marked = False
                             i = 0
                             while i < len(lst):
-                                if first:
-                                    if lst[i].type in ('type-selector', 'universal'):
-                                        if (lst[i].line, lst[i].col) not in global_marks:
-                                            lst.insert(i + 1, base_class, 'class')
-                                            i += 1
-                                        first = False
-                                    elif lst[i].type in ('class', 'id'):
-                                        if (lst[i].line, lst[i].col - 1) not in global_marks:
-                                            lst.insert(i, base_class, 'class')
-                                            i += 1
-                                        first = False
-                                elif lst[i].type in ('descendant', 'child', 'adjacent-sibling', 'following-sibling'):
-                                    first = True
+                                token = lst[i]
+
+                                def mark(shift: int, after: int):
+                                    nonlocal i, marked
+                                    if (token.line, token.col - shift) not in global_marks:
+                                        lst.insert(i + after, base_class, 'class')
+                                        i += 1
+                                    marked = True
+
+                                if not marked:
+                                    if token.type in ('type-selector', 'universal'):  # a, *
+                                        mark(0, 1)
+                                    elif token.type in ('class', 'id', 'pseudo-class'):  # .Table, #id, :not
+                                        mark(1, 0)
+                                    elif token.type == 'pseudo-element':  # ::selection
+                                        mark(2, 0)
+                                    elif token.type == 'attribute-start':  # [...]
+                                        mark(0, 0)
+                                elif token.type in ('descendant', 'child', 'adjacent-sibling', 'following-sibling'):  # ' ', >, +, ~
+                                    marked = False
                                 i += 1
 
             sheet = self.parser.parseString(text)

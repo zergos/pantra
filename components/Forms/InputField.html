@@ -1,6 +1,6 @@
 <label class:inline class:block="{not inline}" class:required class:error>
     <span css:width="{caption_width}">{{caption}}</span>
-    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}" disabled="{readonly and 'y' or ''}">
+    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}" disabled="{readonly and 'y' or ''}" css:width>
     <div class="message">{{error}}</div>
 </label>
 
@@ -9,4 +9,5 @@ inline: bool = False
 type: str = 'text'
 placeholder: str = ''
 caption_width: int = ''
+width: str = ''
 </python>

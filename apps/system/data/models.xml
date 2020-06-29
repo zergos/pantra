@@ -16,7 +16,8 @@
     </entity>
 
     <entity name="Document">
-        <attr name="number" type="str" unique="True" required="True" width="6"/>
+        <attr name="prefix" type="str" default="" width="2"/>
+        <attr name="number" type="str" width="6"/>
         <attr name="date" type="datetime" eval="datetime.now" required="True"/>
         <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>
@@ -25,15 +26,16 @@
         <attr name="pos" type="int" required="True" width="5"/>
         <attr name="data" type="Json" eval="dict" required="True" body="True"/>
     </entity>
-    <entity name="Catalog">
-        <attr name="number" type="str" unique="True" required="True" width="6"/>
+    <entity name="Catalog" mixin="CatalogMixin">
+        <attr name="prefix" type="str" width="2" blank="True"/>
+        <attr name="number" type="int" required="True" width="6" blank="True"/>
         <attr name="name" type="str"/>
         <attr name="body" type="Json" eval="dict" required="True" body="True"/>
     </entity>
     <python>
 import hashlib
 import uuid
-
+from pony.orm import *
 
 class UserMixin:
     def set_password(self, password):
@@ -44,5 +46,19 @@ class UserMixin:
         check = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
         return check == self.password
 
+
+class CatalogMixin:
+    def before_insert(self):
+        if not self.number:
+            with db_session():
+                amount = self.filter(prefix=self.prefix).count()
+                if not amount:
+                    self.number = 1
+                else:
+                    max = select(o for o in self if o.prefix==self.prefix).max()
+                    self.number = max + 1
+        else:
+            if self.get(prefix=self.prefix, number=self.number):
+                raise ValueError(f'number {self.number} is not unique')
     </python>
 </models>

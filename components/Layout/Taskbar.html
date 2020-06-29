@@ -48,6 +48,7 @@
             background: linear-gradient(to right, #0042c1 0%, #9ebf00 100%);
             color: whitesmoke;
             padding-left: 1em;
+            text-align: center;
         }
         .close {
             font-weight: normal;
@@ -93,7 +94,7 @@ class Window:
     bar: HTMLElement = field(default=None)
     view: HTMLElement = field(default=None)
 
-def add_window(code: str, wintitle: str) -> HTMLElement:
+def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLElement, bool]:
     if code not in windows:
         bar = HTMLElement('div', refs.bars, {'on:click': 'click_bar'}, wintitle)
         bar.data.code = code
@@ -102,13 +103,20 @@ def add_window(code: str, wintitle: str) -> HTMLElement:
         bar.style.color = hsluv.hsluv_to_hex([color, 100, 20])
         windows[code] = Window(wintitle, bar)
         if render_to:
-            windows[code].view = HTMLElement('div', render_to)
+            view = HTMLElement('div', render_to)
+            windows[code].view = view
+            if caller:
+                view.set_scope('caller', caller)
+
         refs.bars.update(True)
+        new = True
+    else:
+        new = False
     switch_to(code)
-    return windows[code].view
+    return windows[code].view, new
 
 def switch_to(code: str, before_close: bool = False):
-    global active, title
+    global active
     if active and not before_close:
         windows[active].bar.remove_class('active')
         if windows[active].view:
@@ -118,14 +126,14 @@ def switch_to(code: str, before_close: bool = False):
         windows[code].bar.add_class('active')
         if windows[code].view:
             windows[code].view.remove_class('hidden')
-        ctx.title = windows[code].title
+        ctx['title'] = windows[code].title
     else:
-        ctx.title = ''
+        ctx['title'] = ''
 
 def click_bar(node):
     switch_to(node.data.code)
 
-def close(node):
+def close(node=None):
     current = active
     keys = list(windows.keys())
     idx = keys.index(active)

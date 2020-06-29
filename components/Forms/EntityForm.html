@@ -1,42 +1,86 @@
-<CardForm on:render="render" caption="{caption}">
+<form on:render="render">
 
-</CardForm>
+</form>
+<ToolBox>
+    <ToolButton caption="Save" action="save"/>
+    <ToolButton caption="Close" action="close"/>
+</ToolBox>
+
+<style type="text/scss">
+    @import "defaults";
+
+    form {
+        border: $form-border;
+        padding: $form-padding;
+        background: $form-bg;
+    }
+</style>
 
 <python>
-from pony.orm.core import EntityMeta, db_session
+from pony.orm.core import EntityMeta, db_session, commit
 from core.models import find_entity_info
-from core.components.context import Context, Slot
+from core.common import WebUnits
 from core.ctx import *
 
 entity: Optional[EntityMeta] = None
 caption: str = ''
 
+values = {}
+
 def init():
     global entity, caption
     if not caption:
-        caption = entity._entity_.__name__
+        caption = entity._entity_.__name__ if hasattr(entity, '_entity_') else entity.__name__
 
 @db_session
 def render(node):
     group = None
     if not ctx.slot:
         ent_info = find_entity_info(entity)
+        is_new = not hasattr(entity, '_entity_')
         max_len = round(max(len(title) for _, attr in ent_info() for title in [attr.title]) * 7)/10
         i = 0
         for attr_name, attr in ent_info():
-            if i%2 == 0:
-                group = ctx.render('InlineGroup', node.refs.content)
-                group.render.build()
+            #if i%2 == 0:
+            #    group = ctx.render('InlineGroup', node.refs.content)
             i += 1
-            c = ctx.render('InputText', group[0])
-            c.locals.update(dict(
+            #c = ctx.render('InputText', group[0], locals=dict(
+            c = ctx.render('InputText', node, locals=dict(
                 caption=attr.title,
                 required=not attr.blank,
                 inline=True,
-                value=getattr(entity, attr_name),
+                value='' if is_new else getattr(entity, attr_name),
                 caption_width=f'{max_len}rem',
+                width='' if not attr.width else WebUnits(attr.width, 'em'),
             ))
-            c.render.build()
+            values[attr_name] = c.locals
 
+
+def close(node=None):
+    ctx.scope.tasks.close()
+
+
+def is_valid():
+    ok = True
+    for node in ctx.select(['$InputField', '$SelectBox']):
+        ok &= node['is_valid']()
+    return ok
+
+
+@db_session
+def save(node):
+    if not is_valid():
+        return
+
+    is_new = not hasattr(entity, '_entity_')
+    pars = {}
+    for k, v in values.items():
+        pars[k] = v.value
+    if is_new:
+        entity(**pars)
+    else:
+        entity.set(**pars)
+    commit()
+    close()
 
 </python>

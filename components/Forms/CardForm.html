@@ -13,6 +13,13 @@
 <style type="text/scss">
     @import "defaults";
 
+    form {
+        border: $form-border;
+        border-radius: $form-radius;
+        padding: $form-padding;
+        background: $form-bg;
+    }
+
     .header {
         width: 100%;
         text-align: center;
@@ -44,7 +51,7 @@ caption: str = ''
 def is_valid():
     ok = True
     for node in ctx.select(['InputField', 'SelectBox']):
-        ok &= node.is_valid()
+        ok &= node['is_valid']()
     return ok
 
 #</python>

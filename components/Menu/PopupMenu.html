@@ -23,10 +23,13 @@ from core.ctx import *
 hidden: bool = True
 
 def show():
-    ctx.hidden = False
+    ctx['hidden'] = False
 
 def hide(node):
-    if not ctx.hidden:
-        ctx.hidden = True
+    if not hidden:
+        ctx['hidden'] = True
+
+def toggle():
+    ctx['hidden'] = not hidden
 
 </python>

@@ -16,11 +16,11 @@ def validate(func, message):
 def is_valid():
     for f, m in validators:
         if not f():
-            ctx.error = m
+            ctx['error'] = m
             return False
     if required and not value:
-        ctx.error = f'{caption} field is required'
+        ctx['error'] = f'{caption} field is required'
         return False
-    ctx.error = ''
+    ctx['error'] = ''
     return True
 

@@ -26,7 +26,8 @@
         grid: "header header header" minmax($header-height, max-content)
               "splitter-v splitter-v splitter-v" 3px
               "leftcol splitter-h main" auto /
-              minmax($leftcol-width, min-content) 3px auto;
+              //minmax($leftcol-width, min-content) 3px auto;
+              minmax(0, min-content) 3px auto;
 
         &.fullscreen {
             height: 100vh;
@@ -101,10 +102,11 @@ class HDragSplitter(DragController):
         self.drag_node.move(self.delta_x, 0)
 
     def stop(self):
-        global left_width
         self.drag_node.remove()
         width = self.source_width + self.x - self.from_x
-        ctx.left_width = WebUnits(width)
+        if width<100:
+            width = 0
+        ctx['left_width'] = WebUnits(width)
         refs.leftcol.metrics.width = width
 
 class VDragSplitter(DragController):
@@ -125,10 +127,9 @@ class VDragSplitter(DragController):
         self.drag_node.move(0, self.delta_y)
 
     def stop(self):
-        global top_height
         self.drag_node.remove()
         height = self.source_height + self.y - self.from_y
-        ctx.top_height = WebUnits(height)
+        ctx['top_height'] = WebUnits(height)
         refs.header.metrics.height = height
 
 </python>

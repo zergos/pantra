@@ -15,9 +15,37 @@
     <link rel="stylesheet" href="/css/basic.scss">
     <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/{{app}}.local.css">
+    <style>
+        #online-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: #bfff96;
+            background: linear-gradient(to right, #bfff96, #f9ff96);
+        }
+        .init-title {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            letter-spacing: 3px;
+            color: #a11600;
+            font-size: 4vw;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 
-<body id="display">
-<h1>Initialization...</h1>
+<body>
+<div id="online-bar" style="display: none" title="Online"></div>
+<div id="display">
+    <div class="init-title">
+        <div>Initialization...</div>
+    </div>
+</div>
 </body>
 </html>

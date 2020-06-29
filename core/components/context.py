@@ -8,7 +8,7 @@ from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
 
-from core.common import ADict, HookDict
+from core.common import ADict
 
 from .loader import collect_template, HTMLTemplate
 from core.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
@@ -59,11 +59,54 @@ class Slot(typing.NamedTuple):
             return super().__getitem__(name)
 
 
+class WatchDict(ADict):
+    def __init__(self, ctx: Context):
+        super().__init__()
+        self._ctx = ctx
+        self._node = None
+
+    def start_record(self, node: AnyNode):
+        self._node = node
+
+    def stop_record(self):
+        self._node = None
+
+    def _record(self, item):
+        self._ctx.react_vars[item].add(self._node)
+        self._ctx.react_nodes.add(self._node)
+
+    def __getitem__(self, item):
+        res = super().__getitem__(item)
+        if self._node and item[0] != '_':
+            self._record(item)
+        return res
+
+    def get(self, item, default=None):
+        res = super().get(item, default)
+        if self._node and item[0] != '_':
+            self._record(item)
+        return res
+
+    def __setattr__(self, key, value):
+        if key[0] == '_':
+            object.__setattr__(self, key, value)
+            return
+        if key not in self:
+            self[key] = value
+            return
+
+        old_value = self[key]
+        self[key] = value
+        if value != old_value and key in self._ctx.react_vars:
+            for node in frozenset(self._ctx.react_vars[key]):
+                node.update(True)
+
+
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars', 'react_nodes']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None, locals: Optional[Dict] = None):
-        self.locals: HookDict = HookDict()
+        self.locals: WatchDict = WatchDict(self)
         if locals:
             self.locals.update(locals)
         self._executed: bool = False
@@ -96,33 +139,13 @@ class Context(RenderNode):
 
     @property
     def tag_name(self):
-        return self.template.name + f':{self.name}' if self.name else ''
+        return self.template.name + (f':{self.name}' if self.name else '')
 
     @contextmanager
     def record_reactions(self, node: AnyNode):
-        self.locals._hook = lambda item: self.react_vars[item].add(node) or self.react_nodes.add(node)
-        HookDict.hook_set()
+        self.locals.start_record(node)
         yield
-        HookDict.hook_clear()
-        del self.locals['_hook']
-
-    def __getattr__(self, item):
-        if hasattr(Context, item):
-            return object.__getattribute__(self, item)
-        if item in self.locals:
-            return self.locals[item]
-        else:
-            raise AttributeError
-
-    def __setattr__(self, key, value):
-        if hasattr(Context, key):
-            object.__setattr__(self, key, value)
-        else:
-            old_value = object.__getattribute__(self, 'locals').get(key)
-            object.__getattribute__(self, 'locals')[key] = value
-            if value != old_value and key in self.react_vars:
-                for node in frozenset(self.react_vars[key]):
-                    node.update(True)
+        self.locals.stop_record()
 
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
@@ -132,7 +155,7 @@ class Context(RenderNode):
         return self.parent.context[item] if self.parent else EmptyCaller()
 
     def __setitem__(self, key, value):
-        self.locals[key] = value
+        setattr(self.locals, key, value)
 
     def __str__(self):
         return f'${self.template.name}' + (f':{self.name}' if self.name else '')
@@ -202,8 +225,8 @@ class HTMLElement(RenderNode):
         clone.style = deepcopy(self.style)
         return clone
 
-    def render(self, content: Union[str, RenderNode]):
-        self.context.render(self, content)
+    def render(self, template: Union[str, HTMLTemplate], locals: Dict = None, build: bool = True):
+        self.context.render(template, self, locals, build)
 
     @staticmethod
     def _set_metrics(oid: int, metrics: Dict[str, int]):
@@ -292,12 +315,6 @@ class HTMLElement(RenderNode):
         if type(item) == int:
             return self.children[item]
         return self.context[item]
-
-    def __getattr__(self, item):
-        if hasattr(HTMLElement, item):
-            return object.__getattribute__(self, item)
-        else:
-            return getattr(self.context, item)
 
     def __str__(self):
         return self.tag_name + (f':{self.name}' if self.name else '')
