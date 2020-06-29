@@ -47,7 +47,10 @@ async def get_ws(request: Request):
         app = os.path.join(APPS_PATH, app)
     else:
         app = COMPONENTS_PATH
-    session = Session(request.match_info['session_id'], ws, app)
+
+    lang_info = request.headers.get('Accept-Language', 'en')
+    lang = [part.split(';')[0].replace('-', '_') for part in lang_info.split(',')]
+    session = Session(request.match_info['session_id'], ws, app, lang)
 
     # token = request.match_info['token']
 
@@ -92,12 +95,14 @@ async def get_ws(request: Request):
 
                 elif command == 'DD':
                     process_drag_start(session, data['method'], data['oid'], data['x'], data['y'], data['button'])
+                    #print('DD')
 
                 elif command == 'DM':
                     process_drag_move(session, data['x'], data['y'])
 
                 elif command == 'DU':
                     process_drag_stop(session, data['x'], data['y'])
+                    #print('DU')
 
                 #await send_shot()
                 #print(f'message processed {command}')

@@ -95,6 +95,11 @@ class RenderNode(UniqueNode):
         else:
             yield from super().select(predicate)
 
+    def set_scope(self, data: Union[Dict, str], value: Any = None):
+        if isinstance(data, str):
+            data = {data: value}
+        self.scope = ADict(self.scope) | data
+
 
 class DefaultRenderer:
     __slots__ = ['ctx']
@@ -102,8 +107,8 @@ class DefaultRenderer:
     def __init__(self, ctx: Context):
         self.ctx: Context = ctx
 
-    def __call__(self, template: Union[str, HTMLTemplate], parent: AnyNode = None):
-        return self.render(template, parent)
+    def __call__(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
+        return self.render(template, parent, locals, build)
 
     def build(self):
         self.build_node(self.ctx.template, self.ctx)
@@ -121,9 +126,11 @@ class DefaultRenderer:
         ctx = self.ctx  # save ctx to lambda instead of self, as ctx could be temporarily changed by slot
         return lambda: self.trace_eval(ctx, text, node)
 
-    @staticmethod
-    def strip_quotes(s):
-        return s.strip('" \'')
+    def strip_quotes(self, s):
+        res = s.strip('" \'')
+        if res.startswith('#'):
+            return self.ctx.session.gettext(res[1:])
+        return res
 
     def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
@@ -143,31 +150,42 @@ class DefaultRenderer:
         else:
             return self.strip_quotes(source)
 
-    def process_special_attribute(self, attr: str, value: str, node: Optional[HTMLElement] = None) -> bool:
-        if attr.startswith('ref:'):
-            name = attr.split(':')[1].strip()
-            self.ctx.refs[name] = node
-            node.name = name
-            return True
-        elif attr.startswith('local:'):
-            name = attr.split(':')[1].strip()
-            #node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
-            node.context.locals[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
-            return True
-        elif attr == 'scope':
+    def process_special_attribute(self, attr: str, value: str, node: Union[HTMLElement, Context]) -> bool:
+        # common attributes
+        if ':' in attr:
+            if attr.startswith('ref:'):
+                name = attr.split(':')[1].strip()
+                self.ctx.refs[name] = node
+                node.name = name
+                return True
+            if attr.startswith('cref:'):
+                if typename(node) != 'Context':
+                    self.ctx.session.error('Use cref: with components only')
+                    return True
+                name = attr.split(':')[1].strip()
+                self.ctx.refs[name] = node.locals
+                return True
+            if attr.startswith('local:'):
+                name = attr.split(':')[1].strip()
+                #node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
+                node.context.locals[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
+                return True
+            if attr.startswith('scope:'):
+                name = attr.split(':')[1].strip()
+                node.scope[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
+                return True
+            if attr == 'on:render':
+                return True
+            if attr == 'on:init':
+                value = self.strip_quotes(value)
+                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+                return True
+        if attr == 'scope':
             node.scope = ADict(node.scope)
             return True
-        elif attr.startswith('scope:'):
-            name = attr.split(':')[1].strip()
-            node.scope[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
-            return True
-        elif attr == 'on:render':
-            return True
-        elif attr == 'on:init':
-            value = self.strip_quotes(value)
-            run_safe(self.ctx.session, lambda: self.ctx[value](node))
-            return True
-        elif typename(node) == 'HTMLElement':
+
+        # HTMLElement's only
+        if typename(node) == 'HTMLElement':
             if attr == 'style':
                 if node.style:
                     self.ctx.session.error(f'Styles already set before {attr}={value}')
@@ -177,12 +195,13 @@ class DefaultRenderer:
                 else:
                     node.style = DynamicStyles(self.strip_quotes(value))
                 return True
-            elif attr == 'class':
+            if attr == 'class':
                 if '{' in value:
                     node.classes = self.build_string(value, node)
                 else:
                     node.classes = DynamicClasses(self.strip_quotes(value))
-            elif attr.startswith('class:'):
+                return True
+            if attr.startswith('class:'):
                 cls = attr.split(':')[1].strip()
                 ctx = self.ctx
                 if value is None:
@@ -195,7 +214,7 @@ class DefaultRenderer:
                         func = lambda: ctx.locals[value]
                 node.con_classes.append((func, cls))
                 return True
-            elif attr.startswith('css:'):
+            if attr.startswith('css:'):
                 if type(node.style) != DynamicStyles:
                     self.ctx.session.error(f'Can not combine dynamic style with expressions {attr}={value}')
                     return True
@@ -209,7 +228,7 @@ class DefaultRenderer:
                     value = self.strip_quotes(value)
                     node.style[attr] = value #DynamicString(lambda: ctx.locals.get(value))
                 return True
-            elif attr == 'bind:value':
+            if attr == 'bind:value':
                 if value is None:
                     value = 'value'
                 else:
@@ -218,17 +237,21 @@ class DefaultRenderer:
                 node.attributes[attr] = value
                 node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
                 return True
-            elif attr == 'set:focus':
+            if attr == 'set:focus':
                 node._set_focus = True
                 return True
-            elif attr.startswith('data:'):
+            if attr.startswith('data:'):
                 attr = attr.split(':')[1].strip()
                 node.data[attr] = self.eval_string(self.strip_quotes(value), node)
                 return True
-        elif attr.startswith('not:'):
-            attr = attr.split(':')[1].strip()
-            node.locals[attr] = False
-            return True
+        else:
+            # Context's only
+            if attr.startswith('not:'):
+                attr = attr.split(':')[1].strip()
+                node.locals[attr] = False
+                return True
+            if attr == 'consume':
+                return True
 
         return False
 
@@ -271,6 +294,8 @@ class DefaultRenderer:
             node_template = collect_template(self.ctx.session, template.tag_name)
             if not node_template: return None
             node = c.Context(node_template, parent)
+            if 'consume' in template.attributes:
+                node.locals = parent.locals
 
             # attach slots
             if template.children:
@@ -292,29 +317,6 @@ class DefaultRenderer:
             if 'on:render' in template.attributes:
                 value = self.strip_quotes(template.attributes['on:render'])
                 run_safe(self.ctx.session, lambda: self.ctx[value](node))
-
-
-        elif template.tag_name == 'reuse':
-            node_template = collect_template(self.ctx.session, self.strip_quotes(template.attributes.template))
-            if not node_template: return None
-
-            node = parent
-            node.template = node_template
-            # evaluate attributes
-            with self.ctx.record_reactions(node):
-                for attr, value in template.attributes.items():
-                    if attr == 'template':
-                        continue
-                    if not self.process_special_attribute(attr, value, node):
-                        data = self.eval_string(value, node) if value else True
-                        node.locals[attr] = data
-
-            try:
-                self.ctx._executed = False
-                node.render.build()
-            except ContextInitFailed:
-                node.remove()
-                return None
 
         elif template.tag_name == 'slot':
             slot: Slot = parent.context.slot
@@ -573,13 +575,16 @@ class DefaultRenderer:
         if recursive:
             self.update_children(node)
 
-    def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None):
+    def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
         from core.components.context import Context
         if type(template) == str:
             template = collect_template(self.ctx.session, template)
         if not parent:
             parent = self.ctx
-        return Context(template, parent)
+        c = Context(template, parent, locals=locals)
+        if build:
+            c.render.build()
+        return c
 
 
 class ContextShot:

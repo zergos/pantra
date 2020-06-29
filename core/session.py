@@ -10,9 +10,10 @@ from queue import Queue
 from aiohttp import web
 
 from .defaults import APPS_PATH
-from .common import ADict, UniNode, typename
+from .common import ADict, UniNode
 from .compiler import exec_restart
 from .workers import async_worker
+from .trans import get_locale, get_translation, zgettext
 
 if typing.TYPE_CHECKING:
     from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
@@ -23,9 +24,9 @@ class Session:
     sessions: Dict[str, 'Session'] = dict()
     pending_errors: Queue[str] = Queue()
 
-    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title']
+    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title', 'locale', 'translations', '_']
 
-    def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
+    def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
         key = f'{session_id}/{app}'
         if key in cls.sessions:
             return cls.sessions[key]
@@ -33,7 +34,9 @@ class Session:
         cls.sessions[key] = self
         return self
 
-    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: Optional[str] = None):
+    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: List):
+        self.app: Optional[str] = app
+        self.ws: web.WebSocketResponse = ws
         if not hasattr(self, "state"):
             self.state: ADict = ADict()
             self.just_connected: bool = True
@@ -41,9 +44,7 @@ class Session:
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
-            self.title: str = ''
-        self.app: Optional[str] = app
-        self.ws: web.WebSocketResponse = ws
+            self.set_locale(lang)
 
     @staticmethod
     def gen_session_id():
@@ -154,6 +155,13 @@ class Session:
     def set_title(self, title):
         self.title = title
         self.send_title(title)
+
+    def set_locale(self, lang: Union[str, List]):
+        self.locale = get_locale(lang if isinstance(lang, str) else lang[0])
+        self.translations = get_translation(self.app, lang)
+
+    def gettext(self, message: str, **kwargs) -> str:
+        return zgettext(self.translations, message, **kwargs)
 
 
 def trace_errors(func):
