@@ -35,7 +35,7 @@ class SelectListener extends EventListener {
 class ValueListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
-        process_bind_value(this.method, this.get_oid(event), event.target.value);
+        process_bind_value(this.method, this.get_oid(event), event.target);
     }
 }
 

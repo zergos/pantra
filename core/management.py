@@ -284,7 +284,11 @@ class Locale:
         """
         from babel.messages.frontend import CommandLineInterface
 
-        path = os.path.join(APPS_PATH, self.app)
+        if self.app == 'C':
+            self.app = 'Components'
+            path = COMPONENTS_PATH
+        else:
+            path = os.path.join(APPS_PATH, self.app)
         ini_name = os.path.join(path, 'babel.ini')
         with open(ini_name, 'wt') as f:
             f.write('[extractors]\npython = core.trans:extract_python\nhtml = core.trans:extract_html\nxml = core.trans:extract_xml\n')

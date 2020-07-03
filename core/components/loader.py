@@ -44,6 +44,10 @@ class HTMLTemplate(UniNode):
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
 
+    @typing.type_check_only
+    @property
+    def children(self) -> List[HTMLTemplate]: return []
+
 
 class MyVisitor(BCDParserVisitor):
 
@@ -70,7 +74,7 @@ class MyVisitor(BCDParserVisitor):
             self.current.text = text
 
     def visitRawTag(self, ctx: BCDParser.RawTagContext):
-        tag_name = ctx.getText().strip()[1:]
+        tag_name = '@' + ctx.getText().strip()[1:]
         self.current = HTMLTemplate(tag_name, parent=self.current)
         self.current.filename = self.root.filename
         # raw nodes goes first
@@ -80,7 +84,10 @@ class MyVisitor(BCDParserVisitor):
         self.current = self.current.parent
 
     def visitTagBegin(self, ctx: BCDParser.TagBeginContext):
-        self.current = HTMLTemplate(tag_name=ctx.children[1].getText(), parent=self.current)
+        tag_name = ctx.children[1].getText()
+        if tag_name in ('slot', 'event', 'scope', 'react'):
+            tag_name = '@' + tag_name
+        self.current = HTMLTemplate(tag_name=tag_name, parent=self.current)
         # if not self.root: self.root = self.current
         self.visitChildren(ctx)
         if ctx.children[-1].symbol.type == BCDLexer.SLASH_CLOSE or self.current.tag_name.lower() in VOID_ELEMENTS:

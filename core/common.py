@@ -6,7 +6,7 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
+__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
 
 from .oid import gen_id
 

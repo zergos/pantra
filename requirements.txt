@@ -1,7 +1,6 @@
 aiohttp==3.6.2
 aiohttp-session==2.9.0
 antlr4-python3-runtime==4.7.2
-bsdf==2.2.1
 cssutils==1.0.2
 cuid==0.3
 libsass==0.19.4

@@ -53,7 +53,11 @@ main.onmessage = (data) => {
 
         case 'v': {
             let node = OID.node(obj.l);
-            send_message({C: 'V', oid: obj.l, value: node.value});
+            let value;
+            if (obj.t === 'number' || obj.t === 'time') value = node.valueAsNumber;
+            else if (obj.t === 'date') value = node.valueAsDate;
+            else value = node.value;
+            send_message({C: 'V', oid: obj.l, value: value});
             break;
         }
 
@@ -83,6 +87,11 @@ main.onmessage = (data) => {
 
         case 'title':
             document.title = obj.l;
+            break;
+
+        case 'valid':
+            let node = OID.node(obj.l);
+            send_message({C: 'VALID', oid: obj.l, validity: node.validity.valid});
     }
 };
 
@@ -111,7 +120,19 @@ function process_select(method, oid, options) {
     send_message({C: 'SELECT', method: method, oid: oid, opts: opts});
 }
 
-function process_bind_value(variable, oid, value) {
+function process_bind_value(variable, oid, target) {
+    let value;
+    if (target.type === 'number') value = target.valueAsNumber;
+    else if (target.type === 'time') {
+        value = target.valueAsDate;
+        //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
+        value = value.getTime();
+    }
+    else if (target.type === 'date') {
+        value = target.valueAsDate;
+        //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
+    }
+    else value = target.value;
     send_message({C: 'B', v: variable, oid: oid, x: value})
 }
 

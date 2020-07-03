@@ -4,6 +4,7 @@ import typing
 import traceback
 from contextlib import contextmanager
 
+from components.controllers import process_click_referred
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.loader import collect_template, HTMLTemplate
 from core.compiler import compile_context_code, ContextInitFailed
@@ -34,6 +35,10 @@ class RenderNode(UniqueNode):
             self.context = parent.context
         self.name = ''
         self._rebind = False
+
+    @typing.type_check_only
+    @property
+    def children(self) -> List[AnyNode]: return []
 
     def _cleanup_node(self, node):
         if node in self.context.react_nodes:
@@ -87,7 +92,7 @@ class RenderNode(UniqueNode):
                     clone.append(sub)
         return clone
 
-    def select(self, predicate: Union[Iterable[str], Callable[[AnyNode], bool]]) -> Generator[AnyNode]:
+    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]]) -> Generator[AnyNode]:
         if isinstance(predicate, str):
             yield from super().select(lambda node: node.tag_name == predicate)
         elif isinstance(predicate, typing.Iterable):
@@ -117,7 +122,7 @@ class DefaultRenderer:
     def trace_eval(ctx: Context, text: str, node: AnyNode):
         try:
             return eval(text, {'ctx': ctx, 'this': node}, ctx.locals)
-        except Exception as e:
+        except:
             ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {traceback.format_exc(1)}')
             return None
 
@@ -167,7 +172,7 @@ class DefaultRenderer:
                 return True
             if attr.startswith('local:'):
                 name = attr.split(':')[1].strip()
-                #node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
+                # node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
                 node.context.locals[name] = self.trace_eval(self.ctx, self.strip_quotes(value), node)
                 return True
             if attr.startswith('scope:'):
@@ -190,10 +195,7 @@ class DefaultRenderer:
                 if node.style:
                     self.ctx.session.error(f'Styles already set before {attr}={value}')
                     return True
-                if '{' in value:
-                    node.style = self.build_string(value, node)
-                else:
-                    node.style = DynamicStyles(self.strip_quotes(value))
+                node.style = self.build_string(value, node)
                 return True
             if attr == 'class':
                 if '{' in value:
@@ -222,11 +224,8 @@ class DefaultRenderer:
                 attr = attr.split(':')[1].strip()
                 if value is None:
                     node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
-                elif '{' in value:
-                    node.style[attr] = DynamicString(self.build_func('f'+value, node))
                 else:
-                    value = self.strip_quotes(value)
-                    node.style[attr] = value #DynamicString(lambda: ctx.locals.get(value))
+                    node.style[attr] = self.build_string(value, node)
                 return True
             if attr == 'bind:value':
                 if value is None:
@@ -235,7 +234,7 @@ class DefaultRenderer:
                     value = self.strip_quotes(value)
                 ctx = self.ctx
                 node.attributes[attr] = value
-                node.attributes.value = DynamicString(lambda: ctx.locals.get(value))
+                node.value = lambda: ctx.locals.get(value)
                 return True
             if attr == 'set:focus':
                 node._set_focus = True
@@ -244,6 +243,9 @@ class DefaultRenderer:
                 attr = attr.split(':')[1].strip()
                 node.data[attr] = self.eval_string(self.strip_quotes(value), node)
                 return True
+            if attr == 'type':
+                node.value_type = self.eval_string(self.strip_quotes(value), node)
+                return True
         else:
             # Context's only
             if attr.startswith('not:'):
@@ -251,6 +253,11 @@ class DefaultRenderer:
                 node.locals[attr] = False
                 return True
             if attr == 'consume':
+                if value is not None:
+                    for at in value.split(','):
+                        at = at.strip()
+                        if at in node.parent.context.locals:
+                            node[at] = node.parent[at]
                 return True
 
         return False
@@ -258,138 +265,12 @@ class DefaultRenderer:
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
         import core.components.context as c
         node: Optional[AnyNode] = None
-        if template.tag_name[0] == '#':
-            if template.tag_name == '#if':
-                node = c.ConditionNode(parent)
-                for child_template in template.children:  # type: HTMLTemplate
-                    if child_template.tag_name != '#else':
-                        item = c.Condition(self.build_func(child_template.macro, node), child_template)
-                    else:
-                        item = c.Condition((lambda: True), child_template)
-                    node.conditions.append(item)
-                self.update(node, record_reactions=True)
 
-            elif template.tag_name == '#for':
-                node: c.LoopNode = c.LoopNode(parent, template.children[0])
-                sides = template.macro.split('#')
-                chunks = sides[0].split(' in ')
-                node.var_name = chunks[0].strip()
-                node.iterator = self.build_func(chunks[1], node)
-                if len(sides) > 1:
-                    node.index_func = self.build_func(sides[1], node)
-
-                if len(template.children) > 1:
-                    node.else_template = template.children[1]
-                self.update(node)
-
-            elif template.tag_name == '#set':
-                node: c.SetNode = c.SetNode(parent, template)
-                chunks = template.macro.split(':=')
-                if len(chunks) == 2:
-                    node.var_name = chunks[0].strip()
-                    node.expr = self.build_func(chunks[1], node)
-                    self.update(node)
-
-        elif template.tag_name[0].isupper():
-            node_template = collect_template(self.ctx.session, template.tag_name)
-            if not node_template: return None
-            node = c.Context(node_template, parent)
-            if 'consume' in template.attributes:
-                node.locals = parent.locals
-
-            # attach slots
-            if template.children:
-                node.slot = c.Slot(self.ctx, template)
-
-            # evaluate attributes
-            with self.ctx.record_reactions(node):
-                for attr, value in template.attributes.items():
-                    if not self.process_special_attribute(attr, value, node):
-                        data = self.eval_string(value, node) if value else True
-                        node.locals[attr] = data
-
-            try:
-                node.render.build()
-            except ContextInitFailed:
-                node.remove()
-                return None
-
-            if 'on:render' in template.attributes:
-                value = self.strip_quotes(template.attributes['on:render'])
-                run_safe(self.ctx.session, lambda: self.ctx[value](node))
-
-        elif template.tag_name == 'slot':
-            slot: Slot = parent.context.slot
-            slot_template = None
-            if slot:
-                name = template.attributes.get('name')
-                if name:
-                    name = self.build_string(name, parent)
-                    slot_template = slot[name]
-                else:
-                    slot_template = slot.template
-
-            if not slot_template:
-                for child in template.children:
-                    self.build_node(child, parent)
-            else:
-                # temporarily replace local context, but preserve ns_type
-                # I know it's dirty, but it eliminates the need to add param context to all constructors
-                save_ctx = self.ctx
-                save_ns = slot.ctx.ns_type
-                parent.context = slot.ctx
-                self.ctx = slot.ctx
-                self.ctx.ns_type = save_ctx.ns_type
-                for child in slot_template.children:
-                    self.build_node(child, parent)
-                self.ctx.ns_type = save_ns
-                parent.context = save_ctx
-                self.ctx = save_ctx
-
-        elif template.tag_name == 'python':
-            if not self.ctx._executed:
-                self.ctx._executed = True
-                compile_context_code(self.ctx, template)
-
-        elif template.tag_name == 'style':
-            # styles collected elsewhere
-            if 'global' not in template.attributes:
-                self.ctx._restyle = True
-
-        elif template.tag_name == 'event':
-            node = c.EventNode(parent)
-            for k, v in template.attributes.items():
-                if k == 'selector':
-                    if 'global' in template.attributes:
-                        node.attributes[k] = self.strip_quotes(v)
-                    else:
-                        node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
-                        self.ctx._restyle = True
-                else:
-                    node.attributes[k] = self.build_string(v, node)
-
-        elif template.tag_name == 'scope':
-            scope = parent.scope
-            for k, v in template.attributes.items():
-                scope[k] = self.eval_string(v, parent)
-
-        elif template.tag_name == '@text':
-            node = c.TextNode(parent, self.strip_quotes(template.text))
-
-        elif template.tag_name == '@macro':
-            node = c.TextNode(parent, DynamicString(self.build_func(template.macro, node)))
-
-        elif template.tag_name[0] == '$':
-            node = self.ctx
-            node.context = node
-
-            for child in template.children:
-                self.build_node(child, node)
-
-        else:
+        tag_name = template.tag_name
+        if tag_name[0].islower():
             # reconstruct HTML element
 
-            node = c.HTMLElement(template.tag_name, parent=parent)
+            node = c.HTMLElement(tag_name, parent=parent)
 
             with self.ctx.record_reactions(node):
                 # evaluate attributes
@@ -417,6 +298,144 @@ class DefaultRenderer:
             if 'on:render' in template.attributes:
                 value = self.strip_quotes(template.attributes['on:render'])
                 run_safe(self.ctx.session, lambda: self.ctx[value](node))
+
+        elif tag_name[0].isupper():
+            node_template = collect_template(self.ctx.session, tag_name)
+            if not node_template: return None
+            node = c.Context(node_template, parent)
+            if 'consume' in template.attributes and template.attributes['consume'] is None:
+                node.locals = parent.context.locals
+
+            # attach slots
+            if template.children:
+                node.slot = c.Slot(self.ctx, template)
+
+            # evaluate attributes
+            with self.ctx.record_reactions(node):
+                for attr, value in template.attributes.items():
+                    if not self.process_special_attribute(attr, value, node):
+                        data = self.eval_string(value, node) if value else True
+                        node.locals[attr] = data
+
+            try:
+                node.render.build()
+            except ContextInitFailed:
+                node.remove()
+                return None
+
+            if 'on:render' in template.attributes:
+                value = self.strip_quotes(template.attributes['on:render'])
+                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+
+        elif tag_name[0] == '$':
+            node = self.ctx
+            node.context = node
+
+            for child in template.children:
+                self.build_node(child, node)
+
+        elif tag_name[0] == '#':
+            if tag_name == '#if':
+                node = c.ConditionNode(parent)
+                for child_template in template.children:  # type: HTMLTemplate
+                    if child_template.tag_name != '#else':
+                        item = c.Condition(self.build_func(child_template.macro, node), child_template)
+                    else:
+                        item = c.Condition((lambda: True), child_template)
+                    node.conditions.append(item)
+                self.update(node, record_reactions=True)
+
+            elif tag_name == '#for':
+                node: c.LoopNode = c.LoopNode(parent, template.children[0])
+                sides = template.macro.split('#')
+                chunks = sides[0].split(' in ')
+                node.var_name = chunks[0].strip()
+                node.iterator = self.build_func(chunks[1], node)
+                if len(sides) > 1:
+                    node.index_func = self.build_func(sides[1], node)
+
+                if len(template.children) > 1:
+                    node.else_template = template.children[1]
+                self.update(node)
+
+            elif tag_name == '#set':
+                node: c.SetNode = c.SetNode(parent, template)
+                chunks = template.macro.split(':=')
+                if len(chunks) == 2:
+                    node.var_name = chunks[0].strip()
+                    node.expr = self.build_func(chunks[1], node)
+                    self.update(node)
+
+        elif tag_name[0] == '@':
+            if tag_name == '@slot':
+                slot: Slot = parent.context.slot
+                slot_template = None
+                if slot:
+                    name = template.attributes.get('name')
+                    if name:
+                        name = self.build_string(name, parent)
+                        slot_template = slot[name]
+                    else:
+                        slot_template = slot.template
+
+                if not slot_template:
+                    for child in template.children:
+                        self.build_node(child, parent)
+                else:
+                    # temporarily replace local context, but preserve ns_type
+                    # I know it's dirty, but it eliminates the need to add param context to all constructors
+                    save_ctx = self.ctx
+                    save_ns = slot.ctx.ns_type
+                    parent.context = slot.ctx
+                    self.ctx = slot.ctx
+                    self.ctx.ns_type = save_ctx.ns_type
+                    for child in slot_template.children:
+                        self.build_node(child, parent)
+                    self.ctx.ns_type = save_ns
+                    parent.context = save_ctx
+                    self.ctx = save_ctx
+
+            elif tag_name == '@python':
+                if not self.ctx._executed:
+                    self.ctx._executed = True
+                    compile_context_code(self.ctx, template)
+
+            elif tag_name == '@style':
+                # styles collected elsewhere
+                if 'global' not in template.attributes:
+                    self.ctx._restyle = True
+
+            elif tag_name == '@event':
+                node = c.EventNode(parent)
+                for k, v in template.attributes.items():
+                    if k == 'selector':
+                        if 'global' in template.attributes:
+                            node.attributes[k] = self.strip_quotes(v)
+                        else:
+                            node.attributes[k] = ','.join(f'.{self.ctx.template.name} {s}' for s in self.strip_quotes(v).split(','))
+                            self.ctx._restyle = True
+                    else:
+                        node.attributes[k] = self.build_string(v, node)
+
+            elif tag_name == '@scope':
+                scope = parent.scope
+                for k, v in template.attributes.items():
+                    scope[k] = self.eval_string(v, parent)
+
+            elif tag_name == '@text':
+                node = c.TextNode(parent, self.strip_quotes(template.text))
+
+            elif tag_name == '@macro':
+                node = c.TextNode(parent, DynamicString(self.build_func(template.macro, node)))
+
+            elif tag_name == '@react':
+                var_name = template.attributes.get('to')
+                action = template.attributes.get('action')
+                if not var_name or not action:
+                    self.ctx.session.error('<react> tag must have `to` and `action`')
+                    return None
+                node = c.ReactNode(parent, var_name, action)
+                self.ctx.react_vars[var_name].add(action)
 
         return node
 
@@ -536,7 +555,7 @@ class DefaultRenderer:
                             index = node.index_func()
                             self.ctx.locals.forloop.index = index
                             if index in oldmap:
-                                for sub in oldmap[index]:
+                                for sub in oldmap[index]:  # type: AnyNode
                                     node.move(sub.index(), pos)
                                     self.rebind(sub)
                                     pos += 1
@@ -555,8 +574,10 @@ class DefaultRenderer:
                             self.ctx.locals.forloop = parentloop
                         else:
                             del self.ctx.locals['forloop']
-                        for sub in oldmap.values():
-                            sub.remove()
+                        for lst in oldmap.values():
+                            for sub in lst:
+                                sub.remove()
+                            lst.clear()
                         empty = not node.index_map
 
             if empty and node.else_template:
@@ -571,6 +592,10 @@ class DefaultRenderer:
             for child in node.template.children:
                 self.build_node(child, node)
             del self.ctx.locals[node.var_name]
+
+        elif typename(node) == 'ReactNode':
+            process_click_referred(self.ctx.session, self.ctx, node.action, node)
+            return
 
         if recursive:
             self.update_children(node)

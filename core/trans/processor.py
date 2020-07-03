@@ -22,7 +22,6 @@ def get_locale(lang: str) -> Locale:
 
 
 # TODO: make compatible with file watcher
-@lru_cache(maxsize=None)
 def get_translation(app_path: str, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
     return Translations.load(os.path.join(app_path, 'locale'), lang_lst)

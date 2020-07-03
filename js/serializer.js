@@ -49,6 +49,9 @@ const HTMLElementSerializer = {
             se_log(`element ${v.i} ${v.n} created`);
             parent.appendChild(element);
             is_new = true;
+
+            if (v.type !== undefined)
+                element.type = v.type;
         } else
             rebind_node(v, element);
         for (let at in v.a) {
@@ -79,6 +82,12 @@ const HTMLElementSerializer = {
             element.firstChild.nodeValue = v.t || '';
         if (v.f)
             element.focus();
+        if (v.v !== undefined)
+            if (v.v === '') element.value = '';
+            else if (v.type === 'number') element.valueAsNumber = v.v;
+            else if (v.type === 'time') element.valueAsDate = v.v;
+            else if (v.type === 'date') element.valueAsDate = v.v;
+            else element.value = v.v;
         return element;
     }
 };
@@ -109,6 +118,35 @@ const EventSerializer = {
     }
 };
 
+let fmt = {
+    dateFormat: new Intl.DateTimeFormat(undefined, {dateStyle: 'short'}),
+    timeFormat: new Intl.DateTimeFormat(undefined, {timeStyle: 'short'})
+}
+
+const DateSerializer = {
+    name: 'D',
+    match: function (s, v) {
+        return v instanceof Date;
+    },
+    decode: function (s, v) {
+        let d = new Date(v);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d;
+    },
+    encode: function (s, v) {
+        return v.getTime()
+    }
+};
+
+const TimeSerializer = {
+    name: 'T',
+    decode: function (s, v) {
+        let d = new Date(v);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d;
+    },
+};
+
 const serializer = new bsdf.BsdfSerializer(
-    [HTMLElementSerializer, TextSerializer, EventSerializer]);
+    [DateSerializer, TimeSerializer, HTMLElementSerializer, TextSerializer, EventSerializer]);
 

@@ -15,6 +15,7 @@ from core.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
 
 from core.components.render import RenderNode, DefaultRenderer
 from core.oid import get_node
+from core.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -22,9 +23,9 @@ if typing.TYPE_CHECKING:
     from core.components.render import ContextShot
     from core.session import Session
 
-__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'AnyNode']
+__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'ReactNode', 'AnyNode']
 
-AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', "SetNode"]
+AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'ReactNode']
 
 
 class NSType(Enum):
@@ -110,7 +111,7 @@ class Context(RenderNode):
         if locals:
             self.locals.update(locals)
         self._executed: bool = False
-        self.refs: Dict[str, Union['Context', HTMLElement]] = ADict()
+        self.refs: Dict[str, Union['Context', HTMLElement, WatchDict]] = ADict()
         self.slot: Optional[Slot] = None
 
         super().__init__(parent=parent, render_this=False, shot=shot, session=session)
@@ -152,7 +153,8 @@ class Context(RenderNode):
             return self.children[item]
         if item in self.locals:
             return self.locals[item]
-        return self.parent.context[item] if self.parent else EmptyCaller()
+        # return self.parent.context[item] if self.parent else EmptyCaller()
+        return EmptyCaller()
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)
@@ -186,7 +188,7 @@ class ConditionalClasses(list):
 
 class HTMLElement(RenderNode):
     __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style', 'data',
-                 '_set_focus', '_metrics', '_metrics_ev', '_value', '_value_ev'
+                 '_set_focus', '_metrics', '_metrics_ev', 'value_type', '_value', '_value_ev', '_validity', '_validity_ev'
                  ]
 
     def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
@@ -213,6 +215,7 @@ class HTMLElement(RenderNode):
         self.text: Union[DynamicString, str] = text
         self.data: ADict[str, Any] = ADict()
         self._set_focus = False
+        self.value_type = None
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         clone: HTMLElement = HTMLElement(self.tag_name, new_parent)
@@ -240,7 +243,7 @@ class HTMLElement(RenderNode):
         if not hasattr(self, '_metrics_cv'):
             self._metrics_ev = threading.Event()
         self.session.request_metrics(self)
-        self._metrics_ev.wait()
+        self._metrics_ev.wait(LOCKS_TIMEOUT)
 
     @property
     def metrics(self):
@@ -279,13 +282,27 @@ class HTMLElement(RenderNode):
             return self._value
         if not hasattr(self, '_value_cv'):
             self._value_ev = threading.Event()
-        self.session.request_value(self)
-        self._value_ev.wait()
+        self.session.request_value(self, self.value_type or 'text')
+        self._value_ev.wait(LOCKS_TIMEOUT)
         return self._value
 
     @value.setter
     def value(self, value):
         self._value = value
+
+    def check_validity(self):
+        if not hasattr(self, '_validity_ev'):
+            self._validity_ev = threading.Event()
+        self.session.request_validity(self)
+        self._validity_ev.wait(LOCKS_TIMEOUT)
+        return self._validity
+
+    @staticmethod
+    def _set_validity(oid: int, validity: bool):
+        self = get_node(oid)
+        if self is None: return
+        self._validity = validity
+        self._validity_ev.set()
 
     def move(self, delta_x, delta_y):
         self.style.left += delta_x
@@ -315,6 +332,9 @@ class HTMLElement(RenderNode):
         if type(item) == int:
             return self.children[item]
         return self.context[item]
+
+    def __setitem__(self, key, value):
+        self.context[key] = value
 
     def __str__(self):
         return self.tag_name + (f':{self.name}' if self.name else '')
@@ -362,9 +382,9 @@ class LoopNode(RenderNode):
         self.template: Optional[HTMLTemplate] = template
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
-        self.else_template: Optional[HTMLElement] = None
+        self.else_template: Optional[HTMLTemplate] = None
         self.index_func: Optional[Callable[[], Any]] = None
-        self.index_map: Dict[Any, List[AnyNode]] = {}
+        self.index_map: Dict[Hashable, List[AnyNode]] = {}
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('loop', new_parent)
@@ -414,3 +434,16 @@ class SetNode(RenderNode):
 
     def __str__(self):
         return ':='
+
+
+class ReactNode(RenderNode):
+    __slots__ = ['var_name', 'action']
+
+    def __init__(self, parent: RenderNode, var_name: str, action: str):
+        super().__init__(parent, False)
+        self.var_name = var_name
+        self.action = action
+
+    def __str__(self):
+        return '>'
+

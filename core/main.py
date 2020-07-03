@@ -104,8 +104,8 @@ async def get_ws(request: Request):
                     process_drag_stop(session, data['x'], data['y'])
                     #print('DU')
 
-                #await send_shot()
-                #print(f'message processed {command}')
+                elif command == 'VALID':
+                    HTMLElement._set_validity(data['oid'], data['validity'])
 
             elif msg.type == WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %

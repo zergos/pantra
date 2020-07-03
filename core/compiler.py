@@ -61,8 +61,8 @@ def trace_exec(func):
 def compile_context_code(ctx: Context, template: HTMLTemplate):
     initial_locals = ADict(ctx.locals) - ['init', 'on_restart']
     ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.gettext})
-    if 'namespace' in template.attributes:
-        exec_includes(template.attributes.namespace.strip('" '''), template.filename, ctx.locals)
+    if 'use' in template.attributes:
+        exec_includes(template.attributes.use.strip('" \''), template.filename, ctx.locals)
     if template.text is not None:
         if not template.code:
             template.code = compile(template.text, template.filename, 'exec')

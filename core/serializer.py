@@ -1,5 +1,6 @@
-import bsdf
+import contrib.bsdf_lite as bsdf
 import typing
+from datetime import date, time, datetime, timezone
 
 from .components.context import HTMLElement, TextNode, EventNode, NSElement, AnyNode
 
@@ -28,6 +29,10 @@ class HTMLElementSerializer(bsdf.Extension):
             v._rebind = False
         if v.context._restyle:
             res['$'] = v.context.template.name
+        if v.value_type:
+            res['type'] = v.value_type
+        if getattr(v, '_value', None) is not None:
+            res['v'] = v._value() if callable(v._value) else v._value
         return res
 
 
@@ -55,7 +60,30 @@ class EventSerializer(bsdf.Extension):
         return {'ctx': v.context.template.name, 'a': v.attributes, 'oid': v.context.oid}
 
 
-serializer = bsdf.BsdfSerializer([HTMLElementSerializer, TextSerializer, EventSerializer],
-                                 compression='bz2')
+class DateSerializer(bsdf.Extension):
+    name = 'D'
+
+    def match(self, s, v):
+        return type(v) == date
+
+    def encode(self, s, v: date):
+        return datetime(v.year, v.month, v.day, tzinfo=timezone.utc).timestamp()*1000
+
+    def decode(self, s, v):
+        return datetime.utcfromtimestamp(v//1000).date()
+
+
+class TimeSerializer(bsdf.Extension):
+    name = 'T'
+
+    def match(self, s, v):
+        return type(v) == time
+
+    def encode(self, s, v: time):
+        return datetime(1970, 1, 1, v.hour, v.minute, v.second, tzinfo=timezone.utc).timestamp()*1000
+
+
+serializer = bsdf.BsdfLiteSerializer([HTMLElementSerializer, TextSerializer, EventSerializer,
+                                      DateSerializer, TimeSerializer], compression='bz2')
 
 

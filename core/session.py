@@ -7,7 +7,6 @@ import functools
 import traceback
 import typing
 from queue import Queue
-from aiohttp import web
 
 from .defaults import APPS_PATH
 from .common import ADict, UniNode
@@ -16,6 +15,7 @@ from .workers import async_worker
 from .trans import get_locale, get_translation, zgettext
 
 if typing.TYPE_CHECKING:
+    from aiohttp import web
     from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
     from typing import *
 
@@ -24,7 +24,7 @@ class Session:
     sessions: Dict[str, 'Session'] = dict()
     pending_errors: Queue[str] = Queue()
 
-    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title', 'locale', 'translations', '_']
+    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title', 'locale', 'translations']
 
     def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
         key = f'{session_id}/{app}'
@@ -41,6 +41,7 @@ class Session:
             self.state: ADict = ADict()
             self.just_connected: bool = True
             self.root: Optional[Context] = None
+            self.title = 'Fruity App'
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
@@ -135,8 +136,11 @@ class Session:
             if hasattr(node, '_metrics'):
                 delattr(node, '_metrics')
 
-    def request_value(self, node: RenderNode):
-        self.send_message({'m': 'v', 'l': node.oid})
+    def request_value(self, node: HTMLElement, t: str = 'text'):
+        self.send_message({'m': 'v', 'l': node.oid, 't': t})
+
+    def request_validity(self, node: HTMLElement):
+        self.send_message({'m': 'valid', 'l': node.oid})
 
     def log(self, message):
         self.send_message({'m': 'log', 'l': message})
