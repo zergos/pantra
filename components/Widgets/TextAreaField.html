@@ -1,0 +1,21 @@
+<Field consume block>
+    <textarea
+        bind:value
+        required="{required or ''}"
+        readonly="{readonly or ''}"
+        css:width
+        cols="{cols}"
+        rows="{rows}"
+        maxlength="{maxlength}"
+    />
+</Field>
+
+<python>
+value: str = ''
+required: bool = ''
+readonly: bool = ''
+width: str = ''
+cols: int = 80
+rows: int = 5
+maxlength: int = ''
+</python>

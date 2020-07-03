@@ -1,0 +1,54 @@
+<input type="{type}"
+       bind:value
+       placeholder="{placeholder}"
+       required="{required or ''}"
+       readonly="{readonly or ''}"
+       css:width
+       min="{min_value}"
+       max="{max_value}"
+       step="{step}"
+       pattern="{pattern}"
+>
+<react to="value" action="on_change"/>
+
+<style type="text/scss">
+    @import "defaults";
+
+    input {
+        border: 1px solid $color-passive;
+        border-radius: 0.4rem;
+        padding: .3rem .7rem;
+        transition: all .15s ease-in-out;
+
+        &:focus {
+            border: 1px solid $color-active;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba($color-active, 0.58);
+        }
+    }
+</style>
+
+<python>
+from core.ctx import *
+
+type: str = 'text'
+value: str = ''
+placeholder: str = ''
+required: bool = False
+readonly: bool = False
+width: str = ''
+min_value: float = ''
+max_value: float = ''
+step: float = ''
+pattern: str = ''
+
+def is_valid():
+    if not check_validators():
+        return False
+    if required and not value:
+        ctx['error'] = _('field is empty')
+        return False
+    ctx['error'] = ''
+    return True
+
+</python>

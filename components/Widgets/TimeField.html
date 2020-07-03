@@ -1,0 +1,12 @@
+<TextField consume type="time" step="1" on_change="parse_input"/>
+
+<python>
+from datetime import time, datetime
+
+value: time = ''
+
+def parse_input(node):
+    global value
+    value = datetime.utcfromtimestamp(value/1000).time()
+
+</python>

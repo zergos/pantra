@@ -1,0 +1,59 @@
+<label class:block class:required class:error>
+    <div class="cap" css:width="{caption_width}">{{caption}}</div>
+    <div>
+        <div class="message">{{error}}</div>
+        <slot/>
+    </div>
+</label>
+
+<style type="text/scss">
+    @import "defaults";
+    @import "mixins";
+
+    label {
+        display: flex;
+        flex-flow: nowrap row;
+        align-items: flex-end;
+        padding-top: 0.35rem;
+
+        &.block {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        &.required {
+            > .cap:after {
+                content: '*';
+            }
+        }
+    }
+
+    .cap {
+        padding-right: 0.35rem;
+        padding-bottom: 0.35rem;
+    }
+
+    .message {
+        color: $color-error;
+        font-size: .75rem;
+        padding-bottom: 0.2rem;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .error {
+        :global(input), :global(textarea) {
+            border-color: $color-error;
+        }
+    }
+</style>
+
+<python use="validators">
+caption: str = ''
+block: bool = False
+required: bool = False
+error: str = ''
+caption_width: int = ''
+</python>
