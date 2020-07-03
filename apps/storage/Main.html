@@ -1,0 +1,34 @@
+<GridR fullscreen fixed_header>
+    <header>
+        <SysTray caption="Storage management"/>
+        <Taskbar cref:taskbar/>
+    </header>
+    <leftcol>
+        <SideMenu>
+            <MenuGroup caption="Catalogs">
+                <MenuItem caption="Storages" action="open_storages"/>
+                <MenuItem caption="Goods"/>
+                <MenuItem caption="Units"/>
+            </MenuGroup>
+            <MenuGroup caption="Documents">
+                <MenuItem caption="Rest entries"/>
+                <MenuItem caption="Sales"/>
+                <MenuItem caption="Incomes"/>
+            </MenuGroup>
+        </SideMenu>
+    </leftcol>
+    <main>
+        <MDI taskbar="{refs.taskbar}"/>
+    </main>
+</GridR>
+
+<python>
+from core.components.context import Context
+from core.ctx import *
+
+def open_storages(node):
+    window, new = refs.taskbar.add_window('Storages', 'Storages')
+    if new:
+        window.render('StorageList')
+
+</python>

@@ -1,0 +1,25 @@
+<form>
+    <TextField ref:f1 caption="#Text" required placeholder="#some text" error="#something wrong"/>
+    <NumberField ref:f2 caption="#Number" value="341"/>
+    <DateField ref:f3 caption="#Date"/>
+    <TimeField ref:f4 caption="#Time"/>
+    <DateTimeField ref:f5 caption="#Datetime" value="{datetime.utcnow()}"/>
+    <TextAreaField ref:f6 caption="#Big text" value="happy monkey" error="check it up"/>
+    <CheckField ref:f7 caption="Check this" error="Please, check"/>
+    <Button caption="Click" action="click"/>
+</form>
+
+<python>
+from datetime import datetime
+from core.ctx import *
+
+def click(node):
+    session.log(refs.f1['value'])
+    session.log(refs.f2['value'])
+    session.log(refs.f3['value'])
+    session.log(str(refs.f4['value']))
+    session.log(str(refs.f5['value']))
+    session.log(str(refs.f6['value']))
+    session.log(str(refs.f7['value']))
+
+</python>

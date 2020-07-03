@@ -1,0 +1,17 @@
+<ToolBox>
+    <ToolButton caption="Add" action="add_storage"/>
+    <ToolButton caption="Delete" danger/>
+</ToolBox>
+<EntityTable entity="{db.Storage}"/>
+
+<python>
+from apps.storage.data.pony import *
+from core.components.context import Context
+from core.ctx import *
+
+def add_storage(node):
+    w, new = ctx.scope.tasks.add_window('storage#', 'New storage', ctx)
+    if new:
+        w.render('StorageForm')
+
+</python>

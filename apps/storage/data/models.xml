@@ -1,0 +1,8 @@
+<models xmlns="app.models">
+    <entity name="Storage" base="Catalog"/>
+    <entity name="Unit" base="Catalog"/>
+    <entity name="Good" base="Catalog">
+        <prop name="unit" type="Unit"/>
+        <prop name="weight" type="float"/>
+    </entity>
+</models>
