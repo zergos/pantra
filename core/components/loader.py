@@ -44,10 +44,6 @@ class HTMLTemplate(UniNode):
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
 
-    @typing.type_check_only
-    @property
-    def children(self) -> List[HTMLTemplate]: return []
-
 
 class MyVisitor(BCDParserVisitor):
 
@@ -68,7 +64,7 @@ class MyVisitor(BCDParserVisitor):
         text = ctx.getText()
         if text.strip().strip('\uFEFF'):
             tag_name = self.current.tag_name
-            if tag_name == 'python':
+            if tag_name == '@python':
                 line_no = ctx.start.line
                 text = '#\n' * (line_no - 1) + text
             self.current.text = text

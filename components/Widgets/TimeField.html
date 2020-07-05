@@ -1,12 +1,17 @@
-<TextField consume type="time" step="1" on_change="parse_input"/>
+<Field consume>
+    <Input consume="required,readonly" cref:time type="time" step="1" on_change="parse_input on_change"/>
+</Field>
 
 <python>
 from datetime import time, datetime
+from core.ctx import *
 
 value: time = ''
 
 def parse_input(node):
     global value
-    value = datetime.utcfromtimestamp(value/1000).time()
+    value = refs.time.value
+    value = datetime.utcfromtimestamp(value/1000).time() if value else time()
+    refs.time['value'] = value
 
 </python>

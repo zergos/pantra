@@ -5,7 +5,7 @@ import traceback
 from contextlib import contextmanager
 
 from components.controllers import process_click_referred
-from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
+from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict, patch_typing
 from core.components.loader import collect_template, HTMLTemplate
 from core.compiler import compile_context_code, ContextInitFailed
 from core.session import Session, run_safe
@@ -36,7 +36,7 @@ class RenderNode(UniqueNode):
         self.name = ''
         self._rebind = False
 
-    @typing.type_check_only
+    @patch_typing
     @property
     def children(self) -> List[AnyNode]: return []
 
@@ -185,67 +185,70 @@ class DefaultRenderer:
                 value = self.strip_quotes(value)
                 run_safe(self.ctx.session, lambda: self.ctx[value](node))
                 return True
-        if attr == 'scope':
-            node.scope = ADict(node.scope)
-            return True
+        else:
+            if attr == 'scope':
+                node.scope = ADict(node.scope)
+                return True
 
         # HTMLElement's only
         if typename(node) == 'HTMLElement':
-            if attr == 'style':
-                if node.style:
-                    self.ctx.session.error(f'Styles already set before {attr}={value}')
-                    return True
-                node.style = self.build_string(value, node)
-                return True
-            if attr == 'class':
-                if '{' in value:
-                    node.classes = self.build_string(value, node)
-                else:
-                    node.classes = DynamicClasses(self.strip_quotes(value))
-                return True
-            if attr.startswith('class:'):
-                cls = attr.split(':')[1].strip()
-                ctx = self.ctx
-                if value is None:
-                    func = lambda: ctx.locals[cls]
-                else:
-                    value = self.strip_quotes(value)
-                    if '{' in value:
-                        func = self.build_func(value.strip('{}'), node)
+            if ':' in attr:
+                if attr.startswith('class:'):
+                    cls = attr.split(':')[1].strip()
+                    ctx = self.ctx
+                    if value is None:
+                        func = lambda: ctx.locals[cls]
                     else:
-                        func = lambda: ctx.locals[value]
-                node.con_classes.append((func, cls))
-                return True
-            if attr.startswith('css:'):
-                if type(node.style) != DynamicStyles:
-                    self.ctx.session.error(f'Can not combine dynamic style with expressions {attr}={value}')
+                        value = self.strip_quotes(value)
+                        if '{' in value:
+                            func = self.build_func(value.strip('{}'), node)
+                        else:
+                            func = lambda: ctx.locals[value]
+                    node.con_classes.append((func, cls))
                     return True
-                ctx = self.ctx
-                attr = attr.split(':')[1].strip()
-                if value is None:
-                    node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
-                else:
-                    node.style[attr] = self.build_string(value, node)
-                return True
-            if attr == 'bind:value':
-                if value is None:
-                    value = 'value'
-                else:
-                    value = self.strip_quotes(value)
-                ctx = self.ctx
-                node.attributes[attr] = value
-                node.value = lambda: ctx.locals.get(value)
-                return True
-            if attr == 'set:focus':
-                node._set_focus = True
-                return True
-            if attr.startswith('data:'):
-                attr = attr.split(':')[1].strip()
-                node.data[attr] = self.eval_string(self.strip_quotes(value), node)
-                return True
-            if attr == 'type':
-                node.value_type = self.eval_string(self.strip_quotes(value), node)
-                return True
+                if attr.startswith('css:'):
+                    if type(node.style) != DynamicStyles:
+                        self.ctx.session.error(f'Can not combine dynamic style with expressions {attr}={value}')
+                        return True
+                    ctx = self.ctx
+                    attr = attr.split(':')[1].strip()
+                    if value is None:
+                        node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
+                    else:
+                        node.style[attr] = self.build_string(value, node)
+                    return True
+                if attr == 'bind:value':
+                    if value is None:
+                        value = 'value'
+                    else:
+                        value = self.strip_quotes(value)
+                    ctx = self.ctx
+                    node.attributes[attr] = value
+                    node.value = lambda: ctx.locals.get(value)
+                    return True
+                if attr == 'set:focus':
+                    node._set_focus = True
+                    return True
+                if attr.startswith('data:'):
+                    attr = attr.split(':')[1].strip()
+                    node.data[attr] = self.eval_string(self.strip_quotes(value), node)
+                    return True
+            else:
+                if attr == 'style':
+                    if node.style:
+                        self.ctx.session.error(f'Styles already set before {attr}={value}')
+                        return True
+                    node.style = self.build_string(value, node)
+                    return True
+                if attr == 'class':
+                    if '{' in value:
+                        node.classes = self.build_string(value, node)
+                    else:
+                        node.classes = DynamicClasses(self.strip_quotes(value))
+                    return True
+                if attr == 'type':
+                    node.value_type = self.eval_string(self.strip_quotes(value), node)
+                    return True
         else:
             # Context's only
             if attr.startswith('not:'):
@@ -254,10 +257,14 @@ class DefaultRenderer:
                 return True
             if attr == 'consume':
                 if value is not None:
-                    for at in value.split(','):
-                        at = at.strip()
-                        if at in node.parent.context.locals:
-                            node[at] = node.parent[at]
+                    value = self.strip_quotes(value)
+                    if value == '*':
+                        node.locals |= node.parent.context.locals
+                    else:
+                        for at in value.split(','):
+                            at = at.strip()
+                            if at in node.parent.context.locals:
+                                node[at] = node.parent[at]
                 return True
 
         return False
@@ -434,8 +441,11 @@ class DefaultRenderer:
                 if not var_name or not action:
                     self.ctx.session.error('<react> tag must have `to` and `action`')
                     return None
+                var_name = self.strip_quotes(var_name)
+                action = self.strip_quotes(action)
                 node = c.ReactNode(parent, var_name, action)
-                self.ctx.react_vars[var_name].add(action)
+                # take in account consumed contexts
+                self.ctx.locals._ctx.react_vars[var_name].add(node)
 
         return node
 

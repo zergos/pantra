@@ -6,7 +6,7 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
+__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits', 'patch_typing']
 
 from .oid import gen_id
 
@@ -15,9 +15,12 @@ def typename(t):
     return type(t).__name__
 
 
+TADict = typing.TypeVar('TADict', bound='ADict')
+
+
 class ADict(dict):
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+    __setattr__ = dict.__setitem__  
+    __delattr__ = dict.__delitem__  
 
     def __getattr__(self, item):
         try:
@@ -25,19 +28,19 @@ class ADict(dict):
         except KeyError:
             raise AttributeError
 
-    def __or__(self, other: Dict):
+    def __or__(self: TADict, other: Dict) -> TADict:
         res = self.__class__(self)
         res.update(other)
         return res
 
-    def __sub__(self, other: Iterable):
+    def __sub__(self: TADict, other: Iterable) -> TADict:
         res = self.__class__(self)
         for k in other:
             if k in res:
                 del res[k]
         return res
 
-    def __truediv__(self, other: Iterable):
+    def __truediv__(self: TADict, other: Iterable) -> Tuple[TADict, TADict]:
         res = self.__class__(self)
         res2 = self.__class__()
         for k in other:
@@ -47,73 +50,80 @@ class ADict(dict):
         return res, res2
 
 
-class UniNode:
-    __slots__ = ['children', '_parent']
+TUniNode = typing.TypeVar('TUniNode', bound='UniNode')
 
-    def __init__(self, parent: Optional['UniNode'] = None):
+
+class UniNode:
+    __slots__ = ['_children', '_parent']
+
+    def __init__(self, parent: Optional[UniNode] = None):
         self._parent: Optional[UniNode] = parent
         if parent:
             parent.append(self)
-        self.children: List[UniNode] = []
+        self._children: List[UniNode] = []
 
     @property
-    def parent(self):
-        return self._parent
+    def parent(self: TUniNode) -> TUniNode:
+        return self._parent  
 
     @parent.setter
-    def parent(self, parent):
+    def parent(self: TUniNode, parent: Optional[TUniNode]):
         if self._parent:
-            self._parent.children.remove(self)
+            self._parent._children.remove(self)
         if parent:
             parent.append(self)
         self._parent = parent
 
-    def append(self, node):
-        self.children.append(node)
+    @property
+    def children(self: TUniNode) -> List[TUniNode]:
+        return self._children  
 
-    def remove(self, node):
+    def append(self: TUniNode, node: TUniNode):
+        self._children.append(node)
+
+    def remove(self: TUniNode, node: TUniNode):
         node.parent = None
 
     def clear(self):
-        self.children.clear()
+        self._children.clear()
 
     def index(self):
-        return self._parent.children.index(self)
+        return self._parent._children.index(self)
 
     def move(self, from_i: int, to_i: int):
         if from_i == to_i:
             return
-        self.children.insert(to_i, self.children.pop(from_i))
+        self._children.insert(to_i, self._children.pop(from_i))
 
     def __contains__(self, item):
-        return item in self.children
+        return item in self._children
 
-    def __getitem__(self, item):
-        return self.children[item]
+    def __getitem__(self: TUniNode, item) -> TUniNode:
+        return self._children[item]
 
-    def __iter__(self):
-        yield from self.children
+    def __iter__(self: TUniNode) -> Iterable[TUniNode]:
+        yield from self._children  
 
-    def path(self):
-        if not self.parent:
+    def path(self) -> str:
+        if not self._parent:
             return str(self)
-        return f'{self.parent.path()}/{self}'
+        return f'{self._parent.path()}/{self}'
 
-    def select(self, predicate: Callable[['UniNode'], bool]) -> Generator['UniNode']:
-        for child in self.children:
-            if predicate(child):
-                yield child
-            yield from child.select(predicate)
+    def select(self: TUniNode, predicate: Callable[[TUniNode], bool]) -> Iterable[TUniNode]:
+        for child in self._children:
+            if predicate(child):  
+                yield child  
+            yield from child.select(predicate)  
 
-    def upto(self, predicate: Union[str, Callable[['UniNode'], bool]]) -> Optional['UniNode']:
-        node = self.parent
+    def upto(self: TUniNode, predicate: Union[str, Callable[[TUniNode], bool]]) -> Optional[TUniNode]:
+        node = self._parent
         while node:
             if isinstance(predicate, str):
                 if str(node) == predicate:
-                    return node
+                    return node  
             else:
-                if predicate(node):
-                    return node
+                if predicate(node):  
+                    return node  
             node = node.parent
         return None
 
@@ -243,3 +253,7 @@ class EmptyCaller(str):
 
     def __call__(self, *args, **kwargs):
         return None
+
+
+def patch_typing(f):
+    pass

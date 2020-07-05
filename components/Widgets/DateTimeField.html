@@ -1,18 +1,18 @@
 <Field consume>
-    <Input ref:date consume="required,readonly" type="date" on_change="parse_input"/>
-    <Input ref:time consume="required,readonly" type="time" step="1" on_change="parse_input"/>
+    <Input cref:date consume="required,readonly" type="date" on_change="parse_input on_change"/>
+    <Input cref:time consume="required,readonly" type="time" step="1" on_change="parse_input on_change"/>
 </Field>
 
 <python>
-from datetime import datetime, timezone
+from datetime import datetime, time
 from core.ctx import *
 
 value: datetime = datetime.fromordinal(1)
 
 def parse_input(node):
     global value
-    d = refs.date['value']
-    t = datetime.utcfromtimestamp(refs.time['value']/1000).time()
+    d = refs.date.value
+    t = datetime.utcfromtimestamp(refs.time.value/1000).time() if refs.time.value else time()
     refs.time['value'] = t
     value = datetime.combine(d, t)
 

@@ -61,9 +61,13 @@ class Slot(typing.NamedTuple):
 
 
 class WatchDict(ADict):
-    def __init__(self, ctx: Context):
-        super().__init__()
-        self._ctx = ctx
+    def __init__(self, ctx: Union[Context, WatchDict]):
+        if type(ctx) == Context:
+            super().__init__()
+            self._ctx = ctx
+        else:
+            super().__init__(ctx)
+            self._ctx = ctx._ctx
         self._node = None
 
     def start_record(self, node: AnyNode):
