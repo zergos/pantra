@@ -26,7 +26,7 @@
         <attr name="pos" type="int" required="True" width="5"/>
         <attr name="data" type="Json" eval="dict" required="True" body="True"/>
     </entity>
-    <entity name="Catalog" mixin="CatalogMixin">
+    <entity name="Catalog" before_insert="catalog_auto_number" before_update="catalog_auto_number">
         <attr name="prefix" type="str" width="2" blank="True"/>
         <attr name="number" type="int" required="True" width="6" blank="True"/>
         <attr name="name" type="str"/>
@@ -47,18 +47,19 @@ class UserMixin:
         return check == self.password
 
 
-class CatalogMixin:
-    def before_insert(self):
-        if not self.number:
-            with db_session():
-                amount = self.filter(prefix=self.prefix).count()
-                if not amount:
-                    self.number = 1
-                else:
-                    max = select(o for o in self if o.prefix==self.prefix).max()
-                    self.number = max + 1
-        else:
-            if self.get(prefix=self.prefix, number=self.number):
-                raise ValueError(f'number {self.number} is not unique')
+def catalog_auto_number(self):
+    Catalog = self.__class__
+    if not self.number:
+        with db_session():
+            amount = Catalog.select(lambda row: row.prefix == self.prefix).count()
+            if not amount:
+                self.number = 1
+            else:
+                max = select(o.number for o in Catalog if o.prefix == self.prefix).max()
+                self.number = max + 1
+    else:
+        if Catalog.get(prefix=self.prefix, number=self.number):
+            raise ValueError(f'number {self.number} is not unique')
+
     </python>
 </models>

@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional, TYPE_CHECKING, List
+import typing
 
 from core.oid import get_node
 from core.session import trace_errors, Session
 from core.workers import thread_worker
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
+    from typing import *
     from core.components.context import Context, RenderNode, HTMLElement, AnyNode
 
 __all__ = ['DragOptions', 'DragController']
 
 
-class DragOptions(NamedTuple):
+class DragOptions(typing.NamedTuple):
     button: int = 0
     allow_x: bool = True
     allow_y: bool = True
@@ -107,26 +108,38 @@ def process_drag_stop(session: Session, x: int, y: int):
     delattr(session.state, "drag")
 
 
+def find_caller(node: AnyNode, method: str) -> Generator[Callable[[...], None]]:
+    def find_by_ctx(context: Context, method: str, check_action_ctx = False):
+        if ' ' in method:
+            for m in method.split(' '):
+                yield from find_by_ctx(context, m, check_action_ctx)
+            return
+        if method not in context.locals: return
+        func = context.locals[method]
+        if not func: return
+        if isinstance(func, str):
+            if check_action_ctx and node.action_context:
+                yield from find_by_ctx(node.action_context, func)
+            elif context.parent:
+                yield from find_by_ctx(context.parent.context, func)
+        else:
+            yield func
+
+    yield from find_by_ctx(node.context, method, True)
+
+
 @thread_worker
 def process_click(method: str, oid: int):
     node = get_node(oid)
     if node is None or not method: return
     context = node.context
-    process_click_referred(context.session, context, method, node)
+    process_click_referred(context.session, node, method)
 
 
 @trace_errors
-def process_click_referred(session: Session, context: Context, method: str, node: RenderNode):
-    if ' ' in method:
-        for m in method.split(' '):
-            process_click_referred.call(session, context, m, node)
-        return
-    func = context[method]
-    if not func: return
-    if callable(func):
+def process_click_referred(session: Session, node: AnyNode, method: str):
+    for func in find_caller(node, method):
         func(node)
-    elif context.parent:
-        process_click_referred.call(session, context.parent.context, func, node)
 
 
 @thread_worker
@@ -135,7 +148,7 @@ def process_select(method: str, oid: int, opts: List[int]):
     if not node or not method: return
     opts = [get_node(i) for i in opts]
     node._value = len(opts) == 1 and opts[0] or opts
-    process_click_referred(node.context.session, node.context, method, node)
+    process_click_referred(node.context.session, node, method)
 
 
 @thread_worker

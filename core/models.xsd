@@ -88,7 +88,7 @@
                     <xs:enumeration value="Decimal"/>
                     <xs:enumeration value="date"/>
                     <xs:enumeration value="time"/>
-                    <xs:enumeration value="timdelta"/>
+                    <xs:enumeration value="timedelta"/>
                     <xs:enumeration value="bytes"/>
                     <xs:enumeration value="LongStr"/>
                     <xs:enumeration value="UUID"/>

@@ -5,7 +5,7 @@ import traceback
 from contextlib import contextmanager
 
 from components.controllers import process_click_referred
-from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict, patch_typing
+from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.loader import collect_template, HTMLTemplate
 from core.compiler import compile_context_code, ContextInitFailed
 from core.session import Session, run_safe
@@ -19,9 +19,9 @@ __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
+    __slots__ = ['context', 'action_context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
 
-    def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+    def __init__(self: AnyNode, parent: Optional[AnyNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
         self.shot: 'ContextShot' = shot or parent.shot
         self.session: Session = session or parent.session
@@ -30,15 +30,16 @@ class RenderNode(UniqueNode):
         if render_this:
             self.shot(self)
         if typename(self) == 'Context':
-            self.context = self
+            self.context: Context = self
         else:
             self.context = parent.context
+        self.action_context: Optional[Context] = None if not parent else parent.action_context
         self.name = ''
         self._rebind = False
 
-    @patch_typing
     @property
     def children(self) -> List[AnyNode]: return []
+    del children
 
     def _cleanup_node(self, node):
         if node in self.context.react_nodes:
@@ -94,9 +95,9 @@ class RenderNode(UniqueNode):
 
     def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]]) -> Generator[AnyNode]:
         if isinstance(predicate, str):
-            yield from super().select(lambda node: node.tag_name == predicate)
+            yield from super().select(lambda node: str(node) == predicate)
         elif isinstance(predicate, typing.Iterable):
-            yield from super().select(lambda node: node.tag_name in predicate)
+            yield from super().select(lambda node: str(node) in predicate)
         else:
             yield from super().select(predicate)
 
@@ -123,7 +124,7 @@ class DefaultRenderer:
         try:
             return eval(text, {'ctx': ctx, 'this': node}, ctx.locals)
         except:
-            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {traceback.format_exc(1)}')
+            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {traceback.format_exc(-3)}')
             return None
 
     def build_func(self, text: str, node: AnyNode) -> Callable[[], Any]:
@@ -312,6 +313,7 @@ class DefaultRenderer:
             node = c.Context(node_template, parent)
             if 'consume' in template.attributes and template.attributes['consume'] is None:
                 node.locals = parent.context.locals
+                node.refs = parent.context.refs
 
             # attach slots
             if template.children:
@@ -394,10 +396,11 @@ class DefaultRenderer:
                     save_ctx = self.ctx
                     save_ns = slot.ctx.ns_type
                     parent.context = slot.ctx
+                    parent.action_context = slot.ctx
                     self.ctx = slot.ctx
                     self.ctx.ns_type = save_ctx.ns_type
                     for child in slot_template.children:
-                        self.build_node(child, parent)
+                         self.build_node(child, parent)
                     self.ctx.ns_type = save_ns
                     parent.context = save_ctx
                     self.ctx = save_ctx
@@ -449,7 +452,7 @@ class DefaultRenderer:
 
         return node
 
-    def rebind(self, node):
+    def rebind(self, node: AnyNode):
         if node.render_this:
             self.ctx.shot(node)
         else:
@@ -604,7 +607,7 @@ class DefaultRenderer:
             del self.ctx.locals[node.var_name]
 
         elif typename(node) == 'ReactNode':
-            process_click_referred(self.ctx.session, self.ctx, node.action, node)
+            process_click_referred(self.ctx.session, node, node.action)
             return
 
         if recursive:
@@ -612,8 +615,6 @@ class DefaultRenderer:
 
     def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
         from core.components.context import Context
-        if type(template) == str:
-            template = collect_template(self.ctx.session, template)
         if not parent:
             parent = self.ctx
         c = Context(template, parent, locals=locals)

@@ -63,7 +63,8 @@ class Session:
                 ctx.render.build()
                 self.send_shot()
         except Exception as e:
-            print(traceback.format_exc())
+            # print(traceback.format_exc())
+            self.error(traceback.format_exc(-3))
         self.remind_errors()
 
     @async_worker

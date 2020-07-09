@@ -73,10 +73,10 @@ main.onmessage = (data) => {
             let root = root_node();
             let parent = root.parentElement;
             root.remove();
+            OID.clear();
             root = document.createElement('div');
             root.id = 'display';
             parent.appendChild(root);
-            OID.clear();
             drag_mode_active = false;
             reset_events();
             break;

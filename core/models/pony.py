@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import typing
-import os
 from collections import defaultdict
 
 from core.defaults import *
 from .parser import parse_xml
+from .runtime import EVENTS
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -54,6 +54,10 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
             lines.append('\n    class {}({}{}):'.format(entity_name, attrs.get('base', 'EntityMeta'), ', '+attrs['mixin'] if 'mixin' in attrs else ''))
             if 'display' in attrs:
                 lines.append(f'    def __str__(self):\n            return {attrs["display"]}')
+            for event in EVENTS:
+                if event in attrs:
+                    lines.append(f'    {event} = {attrs[event]}')
+            lines.append('')
         elif name in ('attr', 'array', 'prop'):
             attr_name = attrs['name']
             if 'choices' in attrs:
@@ -84,7 +88,7 @@ def _pony_collect_models(app: str) -> Tuple[Dict, Dict, str]:
                 elif a == 'eval':
                     pars.append(f"default='{v}'")
                 elif a == 'choices':
-                    pars.append(f"{a}=v")
+                    pars.append(f"{a}={v}")
                 elif a == 'index':
                     if attrs['index'] != 'False':
                         pars.append('index=True')
@@ -150,15 +154,15 @@ def expose_to_pony(app: str, with_init: bool = True):
 from __future__ import annotations
 import typing'''.splitlines()
     if with_init:
-        body.append('from core.models import dbinfo, expose_databases')
+        body.append('''
+from core.models import dbinfo, expose_databases
+
+__all__ = ['db']
+''')
     body.append('''
 if typing.TYPE_CHECKING:
-    from datetime import datetime, time, timedelta, date
-    from decimal import Decimal
-    from uuid import UUID
+    from core.models.types import *
     from pony.orm import *
-    from pony.orm.core import EntityMeta
-    from core.models import Choice
 ''')
 
     body.extend([f'    {line}' for line in python.splitlines()])
@@ -178,5 +182,5 @@ if typing.TYPE_CHECKING:
 db: DB = dbinfo['{app}']['db'].factory.cls
 """)
 
-    with open(os.path.join(APPS_PATH, app, 'data', 'pony.py'), 'wt') as f:
+    with open(os.path.join(APPS_PATH, app, 'data', '__init__.py'), 'wt') as f:
         f.write('\n'.join(body))

@@ -235,6 +235,8 @@ def fmt(value, info):
         return value and '☑' or '☐'
     return value
 
+def refresh():
+    refs.tbody.update_tree()
 
 def get_order_class(node):
     if order_dir == 0 or order_node != node:
@@ -335,7 +337,7 @@ def remove_field(field: Context, value):
     field.parent.style -= 'padding'
     ctx.shot(field.parent)
     field.remove()
-    if order_col == field.column.name:
+    if order_col == field['column'].name:
         refs.tbody.update_tree()
 
 #</python>

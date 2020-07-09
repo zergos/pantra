@@ -6,7 +6,7 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits', 'patch_typing']
+__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
 
 from .oid import gen_id
 
@@ -254,6 +254,3 @@ class EmptyCaller(str):
     def __call__(self, *args, **kwargs):
         return None
 
-
-def patch_typing(f):
-    pass

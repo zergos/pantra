@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
 __all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
+SPECIAL_ELEMENTS = 'slot|event|scope|react'.split('|')
 
 templates: typing.Dict[str, HTMLTemplate] = {}
 
@@ -81,7 +82,7 @@ class MyVisitor(BCDParserVisitor):
 
     def visitTagBegin(self, ctx: BCDParser.TagBeginContext):
         tag_name = ctx.children[1].getText()
-        if tag_name in ('slot', 'event', 'scope', 'react'):
+        if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
         self.current = HTMLTemplate(tag_name=tag_name, parent=self.current)
         # if not self.root: self.root = self.current
@@ -106,6 +107,8 @@ class MyVisitor(BCDParserVisitor):
 
     def visitTagEnd(self, ctx: BCDParser.TagEndContext):
         tag_name = ctx.children[1].getText()
+        if tag_name in SPECIAL_ELEMENTS:
+            tag_name = '@' + tag_name
         match = False
         while self.current:
             if tag_name == self.current.tag_name:
@@ -154,7 +157,7 @@ class MyVisitor(BCDParserVisitor):
                 break
             self.current = self.current.parent
         if not match:
-            raise IllegalStateException(f"{self.root.filename}> macro close tag don't match {macro_tag}")
+            raise IllegalStateException(f"macro close tag don't match {macro_tag}")
         self.current = self.current.parent
 
     def visitInlineMacro(self, ctx: BCDParser.InlineMacroContext):
@@ -162,7 +165,7 @@ class MyVisitor(BCDParserVisitor):
         macro.macro = ctx.children[1].getText()
 
     def visitErrorNode(self, node):
-        raise IllegalStateException(f'{self.root.filename}> wrong node {node.getText()}')
+        raise IllegalStateException(f'wrong node {node.getText()}')
 
 
 class ErrorVisitor(ErrorListener):
@@ -188,7 +191,7 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
     try:
         visitor.visit(tree)
     except IllegalStateException as e:
-        error_callback(str(e))
+        error_callback(f'{filename}> {e}')
         return None
     return visitor.root
 

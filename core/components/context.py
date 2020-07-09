@@ -142,10 +142,6 @@ class Context(RenderNode):
             node.set_metrics(src.metrics, from_x=from_x, from_y=from_y)
         return node
 
-    @property
-    def tag_name(self):
-        return self.template.name + (f':{self.name}' if self.name else '')
-
     @contextmanager
     def record_reactions(self, node: AnyNode):
         self.locals.start_record(node)
@@ -155,10 +151,7 @@ class Context(RenderNode):
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
             return self.children[item]
-        if item in self.locals:
-            return self.locals[item]
-        # return self.parent.context[item] if self.parent else EmptyCaller()
-        return EmptyCaller()
+        return self.locals[item]
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)
@@ -369,10 +362,6 @@ class ConditionNode(RenderNode):
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('condition', new_parent)
 
-    @property
-    def tag_name(self):
-        return 'condition'
-
     def __str__(self):
         return '?'
 
@@ -393,10 +382,6 @@ class LoopNode(RenderNode):
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('loop', new_parent)
 
-    @property
-    def tag_name(self):
-        return 'loop'
-
     def __str__(self):
         return '@'
 
@@ -411,12 +396,8 @@ class TextNode(RenderNode):
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return TextNode(new_parent, self.text)
 
-    @property
-    def tag_name(self):
-        return 'text'
-
     def __str__(self):
-        return f'Text'
+        return f'text'
 
 
 class EventNode(RenderNode):

@@ -2,21 +2,17 @@ from __future__ import annotations
 
 import typing
 import json
-import os
 import types
 from collections import defaultdict
 from dataclasses import dataclass, field as dc_field
-from datetime import datetime, time, timedelta, date
-from decimal import Decimal
 from functools import lru_cache
-from uuid import UUID
 
-from pony.orm import Database, Optional, Required, Discriminator, Set, LongStr, Json, StrArray, FloatArray, IntArray
-from pony.orm.core import EntityMeta, EntityProxy
+from pony.orm import Database, Optional, Required, Discriminator, Set, StrArray, FloatArray, IntArray
+from pony.orm.core import EntityProxy
 from core.common import ADict
-from .parser import parse_xml, expat
-from .choicefield import Choice
 from core.defaults import *
+from .types import *
+from .parser import parse_xml, expat
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -59,6 +55,8 @@ array_type_map = {
     'int': IntArray,
 }
 
+EVENTS = ('before_insert', 'before_update', 'before_delete', 'after_insert', 'after_update', 'after_delete')
+
 @dataclass
 class DatabaseFactory:
     cls: Database
@@ -100,7 +98,7 @@ class EntityInfo:
 @dataclass
 class AttrInfo:
     name: str
-    type: type = dc_field(default=None)
+    type: Type = dc_field(default=None)
     title: str = dc_field(default='')
     width: int = dc_field(default=None)
     choices: Mapping = dc_field(default=None)
@@ -135,7 +133,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
         nonlocal in_python, python
         if name == 'python':
             in_python = True
-            python = '\n' * p.CurrentLineNumber
+            python = '\n' * (p.CurrentLineNumber-1)
 
     def end_python(name: str):
         nonlocal in_python, python
@@ -147,7 +145,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
     def python_data(data):
         nonlocal python
         if in_python:
-            python += data + '\n'
+            python += data
 
     p = expat.ParserCreate('UTF-8')
     parse_xml(file_name, start_python, end_python, python_data, parser=p)
@@ -190,6 +188,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             entity_info = db_info.entities[entity_name]
             entity_info.attrs['id'] = AttrInfo(name='id', type=int, title='#', readonly=True, width=4)
 
+            fields = {}
             body = None
             if 'base' in attrs:
                 bases = []
@@ -213,12 +212,16 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                     if not db_info.entities[root].factory.has_cid and 'classtype' not in entity_info.attrs:
                         entity_info.attrs['classtype'] = AttrInfo(name='classtype', type=str, title='type', is_cid=True, readonly=True)
                     bases.append(lambda: base_factory.cls)
+
+                    base_fields = base_factory.fields
+                    for event in EVENTS:
+                        if event in base_fields:
+                            fields[event] = base_fields[event]
             else:
                 db_info = app_info[db_name]
                 bases = [db_info.factory.cls.Entity]
             if 'mixin' in attrs:
                 bases.append(locals[attrs['mixin']])
-            fields = {}
             if db_info.schema and 'base' not in attrs:
                 fields['_table_'] = (db_info.schema, entity_name.lower())
             if 'cid' in attrs:
@@ -226,7 +229,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             if 'display' in attrs:
                 display = attrs['display']
                 fields['__str__'] = lambda self: eval(f'f"{display}"')
-            for event in ('before_insert', 'before_update', 'before_delete', 'after_insert', 'after_update', 'after_delete'):
+            for event in EVENTS:
                 if event in attrs:
                     fields[event] = locals[attrs[event]]
 
