@@ -11,6 +11,7 @@ if typing.TYPE_CHECKING:
     from core.models.runtime import AttrInfo
     from core.components.context import AnyNode
 
+
 class ValuesDict(ADict):
     def __getattr__(self, item):
         if item[0] == '_':
@@ -43,7 +44,7 @@ TEMPLATE_MAP = {
 
 def make_widget(parent: AnyNode, attr: AttrInfo, value: Any = None, **kwargs) -> Optional[Context]:
     locals = ADict(
-        caption=attr.title,
+        caption=parent.session.gettext(attr.title),
         readonly=attr.readonly,
         required=not attr.blank,
         width='' if not attr.width else WebUnits(attr.width, 'em'),

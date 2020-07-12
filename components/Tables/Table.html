@@ -181,7 +181,7 @@ order_col: Optional[str] = None
 order_dir: int = 0
 order_node: Optional[AnyNode] = None
 
-active_row: Optional[int] = None
+active_row_id: Optional[int] = None
 active_row_node: Optional[LoopNode] = None
 active_col: Optional[str] = None
 active_col_cell: Optional[HTMLElement] = None
@@ -298,8 +298,8 @@ def get_widget(col_info: ColumnInfo):
     return get_widget_default(col_info)
 
 def select_cell(node: HTMLElement):
-    global active_row, active_row_node, active_col, active_col_cell
-    if active_row is not None:
+    global active_row_id, active_row_node, active_col, active_col_cell
+    if active_row_id is not None:
         for n in active_row_node:
             n.classes -= 'selected'
             ctx.shot(n)
@@ -318,7 +318,7 @@ def select_cell(node: HTMLElement):
     for n in row:
         n.classes += 'selected'
         ctx.shot(n)
-        active_row = n.scope.row_id
+        active_row_id = n.scope.row_id
 
 def enter_cell(node: HTMLElement):
     if not editable or not node.data.col.editable:

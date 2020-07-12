@@ -228,7 +228,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 fields['_discriminator_'] = int(attrs['cid'])
             if 'display' in attrs:
                 display = attrs['display']
-                fields['__str__'] = lambda self: eval(f'f"{display}"')
+                fields['__str__'] = lambda self: eval(display)
             for event in EVENTS:
                 if event in attrs:
                     fields[event] = locals[attrs[event]]

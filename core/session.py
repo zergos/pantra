@@ -165,6 +165,9 @@ class Session:
         self.locale = get_locale(lang if isinstance(lang, str) else lang[0])
         self.translations = get_translation(self.app, lang)
 
+    @typing.overload
+    def gettext(self, message: str, *, plural: str = None, n: int = None, ctx: str = None): ...
+
     def gettext(self, message: str, **kwargs) -> str:
         return zgettext(self.translations, message, **kwargs)
 

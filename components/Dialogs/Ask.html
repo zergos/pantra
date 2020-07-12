@@ -1,0 +1,66 @@
+<div class="modal" on:click="cancel">
+    <div>
+        <h3>{{text}}</h3>
+        <div ref:buttons>
+            {{#for button in button_nodes}}
+            <button type="button" on:click="click" data:command="{button.command}">{{button.title}}</button>
+            {{/for}}
+        </div>
+    </div>
+</div>
+
+<style type="text/scss">
+    .modal {
+        position: fixed;
+        left: 0; top: 0;
+        width: 100vw; height: 100vh;
+        display: flex;
+        flex-flow: row nowrap;
+        align-content: center;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(161,153,121,0.15);
+        /*text-shadow: 2px 2px rgba(0,0,0,0.56);*/
+        z-index: 1000;
+
+        > div {
+            /*width: 33vw;*/
+            background: white;
+            max-width: 66vw;
+            border: 1px solid black;
+            padding: 0.5rem;
+            box-shadow: 5px 5px 3px black;
+        }
+    }
+</style>
+
+<python>
+from core.ctx import *
+
+if False:
+    _("Yes"); _("No")
+    _("OK"); _("Cancel")
+    _("Close")
+
+buttons: str = 'Yes,No'
+callback: Callable[[str], None] = lambda str: None
+
+class ButtonCommand(typing.NamedTuple):
+    command: str
+    title: str
+
+button_nodes: List[ButtonType] = []
+
+def init():
+    for btn in buttons.split(','):
+        button_nodes.append(ButtonCommand(btn, _(btn)))
+
+def click(node):
+    ctx.remove()
+    callback(node.data.command)
+
+def cancel(node):
+    ctx.remove()
+    callback('Cancel')
+
+</python>

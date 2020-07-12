@@ -9,6 +9,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from babel.support import Translations
+from core.defaults import APPS_PATH
 from .locale import Locale
 
 if typing.TYPE_CHECKING:
@@ -24,8 +25,9 @@ def get_locale(lang: str) -> Locale:
 # TODO: make compatible with file watcher
 def get_translation(app_path: str, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
-    return Translations.load(os.path.join(app_path, 'locale'), lang_lst)
-
+    sys_trans = Translations.load(os.path.join(APPS_PATH, 'system', 'locale'), lang_lst)
+    sys_trans.merge(Translations.load(os.path.join(app_path, 'locale'), lang_lst))
+    return sys_trans
 
 @dataclass
 class FRecord:
@@ -44,7 +46,7 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
         args = []
         for co in f_cache[f].args:
             args.append(eval(co, locals))
-        return f_cache[f].s, f_cache[f].args
+        return f_cache[f].s, args
 
     node = ast.parse(f"f'{f}'", mode='eval')
     frame = sys._getframe(3)

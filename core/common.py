@@ -252,5 +252,5 @@ class EmptyCaller(str):
         return super().__new__(cls, '')
 
     def __call__(self, *args, **kwargs):
-        return None
+        pass
 

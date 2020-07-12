@@ -17,6 +17,8 @@ def _detect_app():
         while os.path.dirname(path):
             path = os.path.dirname(path)
         return path
+    if path.startswith(COMPONENTS_PATH):
+        return 'C'
     return Empty
 
 

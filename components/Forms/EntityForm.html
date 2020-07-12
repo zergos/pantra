@@ -38,7 +38,7 @@ def render(node):
     if not ctx.slot:
         ent_info = find_entity_info(entity)
         is_new = not hasattr(entity, '_entity_')
-        max_len = round(max(len(title) for _, attr in ent_info() for title in [attr.title]) * 7)/10
+        max_len = round(max(len(title) for name, attr in ent_info() for title in [_(attr.title)]) * 7)/10
         for attr_name, attr in ent_info():
             values[attr_name] = make_widget(node, attr, None if is_new else getattr(entity, attr_name), caption_width=WebUnits(max_len, 'em'))
 

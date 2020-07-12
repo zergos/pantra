@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"storage\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-06-29 11:40+0300\n"
+"POT-Creation-Date: 2020-07-13 01:31+0300\n"
 "PO-Revision-Date: 2020-06-29 11:37+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -20,28 +20,81 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
+#: D:/projects/bol/bwf/apps/storage/Main.html:3
+msgid "Storage management"
+msgstr "Управление складом"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:8
+msgid "Catalogs"
+msgstr "Справочники"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:9
+#: D:/projects/bol/bwf/apps/storage/Main.html:30
+msgid "Storages"
+msgstr "Склады"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:10
+msgid "Goods"
+msgstr "Товары"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:11
+msgid "Units"
+msgstr "Единицы"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:13
+msgid "Documents"
+msgstr "Документы"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:14
+msgid "Rest entries"
+msgstr "Остатки"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:15
+msgid "Sales"
+msgstr "Продажи"
+
+#: D:/projects/bol/bwf/apps/storage/Main.html:16
+msgid "Incomes"
+msgstr "Приходы"
+
+#: D:/projects/bol/bwf/apps/storage/StorageList.html:3
+msgid "Refresh"
+msgstr "Обновить"
+
+#: D:/projects/bol/bwf/apps/storage/StorageList.html:4
+msgid "Add"
+msgstr "Добавить"
+
+#: D:/projects/bol/bwf/apps/storage/StorageList.html:5
+msgid "Delete"
+msgstr "Удалить"
+
+#: D:/projects/bol/bwf/apps/storage/StorageList.html:35
+msgid "Confirm deletion of {}"
+msgstr "Подтвердите удаление {}"
+
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:2
 msgid "Storage"
-msgstr ""
+msgstr "Склад"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:3
 msgid "Unit"
-msgstr ""
+msgstr "Единица"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:4
 msgid "Good"
-msgstr ""
+msgstr "Товар"
 
 #. prop
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:5
 msgid "unit"
-msgstr ""
+msgstr "единица"
 
 #. prop
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:6
 msgid "weight"
-msgstr ""
+msgstr "вес"
 

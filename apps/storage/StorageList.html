@@ -1,14 +1,17 @@
+'''
 <ToolBox>
-    <ToolButton caption="Add" action="add_storage"/>
-    <ToolButton caption="Delete" danger action="del_storage"/>
+    <ToolButton caption="#Refresh" action="refresh"/>
+    <ToolButton caption="#Add" action="add_storage"/>
+    <ToolButton caption="#Delete" danger action="del_storage"/>
 </ToolBox>
 <EntityTable cref:table entity="{db.Storage}"/>
 
-<python>
+<python>#'''
 from apps.storage.data import *
+from pony.orm import db_session
 from core.ctx import *
 
-def refresh():
+def refresh(node=None):
     refs.table.refresh()
 
 def add_storage(node):
@@ -17,6 +20,18 @@ def add_storage(node):
         w.render('StorageForm')
 
 def del_storage(node):
-    pass
+    if not refs.table.active_row_id: return
+    row_id = refs.table.active_row_id
+    with db_session:
+        name = str(db.Storage[row_id])
 
-</python>
+    def confirm_delete(command: str):
+        if command == 'Yes':
+            with db_session:
+                item = db.Storage[row_id]
+                item.delete()
+            refresh()
+
+    ctx.render('Ask', locals={'text': _('Confirm deletion of {name}'), 'buttons': 'Yes,No', 'callback': confirm_delete})
+
+#</python>

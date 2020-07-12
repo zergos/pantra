@@ -2,13 +2,13 @@
     <div class="cap">{{caption}}</div>
     <div class="menu">
         <PopupMenu cref:menu>
-            <MenuItem caption="Restart" action="restart"/>
-            <MenuGroup caption="Switch App">
+            <MenuItem caption="#Restart" action="restart"/>
+            <MenuGroup caption="#Switch App">
                 {{#for app in session.get_apps()}}
                 <MenuItem caption="{app}"/>
                 {{/for}}
             </MenuGroup>
-            <MenuItem caption="Logout"/>
+            <MenuItem caption="#Logout"/>
         </PopupMenu>
     </div>
     <div class="menu-button" on:click="show"/>

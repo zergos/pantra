@@ -109,7 +109,7 @@ def process_drag_stop(session: Session, x: int, y: int):
 
 
 def find_caller(node: AnyNode, method: str) -> Generator[Callable[[...], None]]:
-    def find_by_ctx(context: Context, method: str, check_action_ctx = False):
+    def find_by_ctx(context: Context, method: str, check_action_ctx=False):
         if ' ' in method:
             for m in method.split(' '):
                 yield from find_by_ctx(context, m, check_action_ctx)
@@ -163,18 +163,10 @@ def process_bind_value(oid: int, var_name: str, value: str):
 def process_key(method: str, oid: int, key: str):
     node = get_node(oid)
     if not node or not method: return
-    process_key_referred(node.context.session, node.context, node, method, key)
+    process_key_referred(node.context.session, node, method, key)
 
 
 @trace_errors
-def process_key_referred(session: Session, context: Context, node: AnyNode, method: str, key: str):
-    if ' ' in method:
-        for m in method.split(' '):
-            process_key_referred(session, context, node, m, key)
-        return
-    func = context[method]
-    if not func: return
-    if callable(func):
+def process_key_referred(session: Session, node: AnyNode, method: str, key: str):
+    for func in find_caller(node, method):
         func(node, key)
-    elif context.parent:
-        process_key_referred.call(session, context.parent.context, node, func, key)

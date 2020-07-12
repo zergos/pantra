@@ -70,6 +70,22 @@ class WatchDict(ADict):
             self._ctx = ctx._ctx
         self._node = None
 
+    def __setattr__(self, key, value):
+        if key[0] == '_':
+            object.__setattr__(self, key, value)
+            return
+        if key not in self:
+            self[key] = value
+            return
+
+        old_value = self[key]
+        self[key] = value
+        if value != old_value and key in self._ctx.react_vars:
+            for node in frozenset(self._ctx.react_vars[key]):
+                node.update(True)
+
+
+class WatchDictActive(WatchDict):
     def start_record(self, node: AnyNode):
         self._node = node
 
@@ -91,20 +107,6 @@ class WatchDict(ADict):
         if self._node and item[0] != '_':
             self._record(item)
         return res
-
-    def __setattr__(self, key, value):
-        if key[0] == '_':
-            object.__setattr__(self, key, value)
-            return
-        if key not in self:
-            self[key] = value
-            return
-
-        old_value = self[key]
-        self[key] = value
-        if value != old_value and key in self._ctx.react_vars:
-            for node in frozenset(self._ctx.react_vars[key]):
-                node.update(True)
 
 
 class Context(RenderNode):
@@ -144,14 +146,16 @@ class Context(RenderNode):
 
     @contextmanager
     def record_reactions(self, node: AnyNode):
+        self.locals.__class__ = WatchDictActive
         self.locals.start_record(node)
         yield
         self.locals.stop_record()
+        self.locals.__class__ = WatchDict
 
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
             return self.children[item]
-        return self.locals[item]
+        return self.locals.get(item, EmptyCaller)
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)

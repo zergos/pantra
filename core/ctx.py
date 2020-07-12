@@ -4,7 +4,7 @@ import typing
 
 if typing.TYPE_CHECKING:
     from .common import ADict
-    from .components.context import Context
+    from .components.context import Context, HTMLElement
     from .session import Session
     from typing import *
 
@@ -17,15 +17,15 @@ if typing.TYPE_CHECKING:
         pass
 
 
-    __all__ = ['ADict', 'Context', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'defined',
+    __all__ = ['ADict', 'Context', 'HTMLElement', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'defined',
                'Any', 'Callable', 'ClassVar', 'Generic', 'Optional', 'Tuple', 'Type', 'TypeVar', 'Union', 'AbstractSet',
                'ByteString', 'Container', 'ContextManager', 'Hashable', 'ItemsView', 'Iterable', 'Iterator', 'KeysView',
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
-               'Generator', 'NewType', 'NoReturn', ]
+               'Generator', 'NewType', 'NoReturn', 'typing']
 else:
-    __all__ = ['defined']
+    __all__ = ['defined', 'typing']
 
 
 def defined(name: str):
