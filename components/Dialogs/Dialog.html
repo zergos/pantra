@@ -2,7 +2,7 @@
     <div>
         <h3>{{text}}</h3>
         <div ref:buttons>
-            {{#for button in button_nodes}}
+            {{#for button in button_commands}}
             <button type="button" on:click="click" data:command="{button.command}">{{button.title}}</button>
             {{/for}}
         </div>
@@ -49,11 +49,11 @@ class ButtonCommand(typing.NamedTuple):
     command: str
     title: str
 
-button_nodes: List[ButtonType] = []
+button_commands: List[ButtonType] = []
 
 def init():
     for btn in buttons.split(','):
-        button_nodes.append(ButtonCommand(btn, _(btn)))
+        button_commands.append(ButtonCommand(btn, _(btn)))
 
 def click(node):
     ctx.remove()

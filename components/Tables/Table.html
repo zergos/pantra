@@ -235,7 +235,9 @@ def fmt(value, info):
         return value and '☑' or '☐'
     return value
 
-def refresh():
+def refresh(clear: bool = False):
+    if clear:
+        refs.tbody[0].reset_cache()
     refs.tbody.update_tree()
 
 def get_order_class(node):

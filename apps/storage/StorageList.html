@@ -9,10 +9,11 @@
 <python>#'''
 from apps.storage.data import *
 from pony.orm import db_session
+from components.Dialogs import *
 from core.ctx import *
 
 def refresh(node=None):
-    refs.table.refresh()
+    refs.table.refresh(True)
 
 def add_storage(node):
     w, new = ctx.scope.tasks.add_window('storage#', 'New storage', ctx)
@@ -20,8 +21,8 @@ def add_storage(node):
         w.render('StorageForm')
 
 def del_storage(node):
-    if not refs.table.active_row_id: return
     row_id = refs.table.active_row_id
+    if not row_id: return
     with db_session:
         name = str(db.Storage[row_id])
 
@@ -32,6 +33,6 @@ def del_storage(node):
                 item.delete()
             refresh()
 
-    ctx.render('Ask', locals={'text': _('Confirm deletion of {name}'), 'buttons': 'Yes,No', 'callback': confirm_delete})
+    make_dialog(ctx, _('Confirm deletion of {name}'), callback=confirm_delete)
 
 #</python>

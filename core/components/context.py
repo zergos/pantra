@@ -386,6 +386,9 @@ class LoopNode(RenderNode):
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return HTMLElement('loop', new_parent)
 
+    def reset_cache(self):
+        self.index_map = {}
+
     def __str__(self):
         return '@'
 
