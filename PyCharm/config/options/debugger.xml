@@ -1,0 +1,23 @@
+<application>
+  <component name="XDebuggerSettings">
+    <data-views />
+    <general />
+    <debuggers>
+      <debugger id="python">
+        <configuration>
+          <option name="steppingFilters">
+            <list>
+              <PySteppingFilter>
+                <option name="filter" value="*/common.py" />
+              </PySteppingFilter>
+              <PySteppingFilter>
+                <option name="filter" value="*/watchdict.py" />
+              </PySteppingFilter>
+            </list>
+          </option>
+          <option name="steppingFiltersEnabled" value="true" />
+        </configuration>
+      </debugger>
+    </debuggers>
+  </component>
+</application>

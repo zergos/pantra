@@ -1,4 +1,4 @@
-<button type="{'submit' if default else 'button'}" on:click="action">{{caption}}</button>
+<button type="button" on:click="action" class:default>{{caption}}</button>
 
 <style type="text/scss">
     @import "defaults";
@@ -23,6 +23,10 @@
             background-color: darken($button-color-base, 10%);
             border-color: darken($button-color-base, 15%);
             box-shadow: 0 0 0 3px rgba($color-active, .5);
+        }
+
+        &.default {
+            font-weight: bold;
         }
     }
 </style>

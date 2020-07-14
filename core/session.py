@@ -8,7 +8,7 @@ import traceback
 import typing
 from queue import Queue
 
-from .defaults import APPS_PATH
+from .defaults import APPS_PATH, COMPONENTS_PATH
 from .common import ADict, UniNode
 from .compiler import exec_restart
 from .workers import async_worker
@@ -46,6 +46,13 @@ class Session:
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
             self.set_locale(lang)
+
+    @property
+    def app_path(self):
+        if self.app == 'Core':
+            return COMPONENTS_PATH
+        else:
+            return os.path.join(APPS_PATH, self.app)
 
     @staticmethod
     def gen_session_id():
@@ -125,7 +132,7 @@ class Session:
     async def send_root(self):
         lst = []
         if 'on_restart' in self.root.locals:
-            exec_restart(self.root, self.root.template)
+            exec_restart(self.root)
         self._collect_children([self.root], lst)
         await self.send_message({'m': 'u', 'l': lst})
 
@@ -163,7 +170,7 @@ class Session:
 
     def set_locale(self, lang: Union[str, List]):
         self.locale = get_locale(lang if isinstance(lang, str) else lang[0])
-        self.translations = get_translation(self.app, lang)
+        self.translations = get_translation(self.app_path, lang)
 
     @typing.overload
     def gettext(self, message: str, *, plural: str = None, n: int = None, ctx: str = None): ...

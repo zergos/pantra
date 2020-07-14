@@ -1,4 +1,4 @@
-<button type="button" on:click="action" class:danger>{{caption}}</button>
+<button type="button" on:click="action" class:danger class:default>{{caption}}</button>
 
 <style type="text/scss">
     @import "mixins";
@@ -31,6 +31,10 @@
                 background-color: lighten($color-danger, 10%);
             }
         }
+
+        &.default {
+            font-weight: bold;
+        }
     }
 </style>
 
@@ -38,4 +42,5 @@
 caption: str = ''
 action: str = ''
 danger: bool = False
+default: bool = False
 </python>

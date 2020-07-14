@@ -117,7 +117,10 @@ class DefaultRenderer:
         return self.render(template, parent, locals, build)
 
     def build(self):
-        self.build_node(self.ctx.template, self.ctx)
+        try:
+            self.build_node(self.ctx.template, self.ctx)
+        except ContextInitFailed:
+            self.ctx.remove()
 
     @staticmethod
     def trace_eval(ctx: Context, text: str, node: AnyNode):
@@ -141,8 +144,7 @@ class DefaultRenderer:
     def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
             return None
-
-        if '{' in source:
+        if source.startswith('{', 1):
             return DynamicString(self.build_func('f'+source, node))
         else:
             return self.strip_quotes(source)
@@ -151,10 +153,22 @@ class DefaultRenderer:
         if not source:
             return None
 
-        if '{' in source:
+        if source.startswith('{', 1):
             return self.build_func(self.strip_quotes(source).strip('{}'), node)()
         else:
             return self.strip_quotes(source)
+
+    def build_bool(self, source: str, node: AnyNode) -> Union[str, DynamicString]:
+        if not source:
+            return 'True'
+        if source.startswith('{', 1):
+            expr = self.strip_quotes(source).strip('{}')
+            expr = f"({expr} or '')"
+            return DynamicString(self.build_func('f'+expr, node))
+        else:
+            ctx = self.ctx
+            source = self.strip_quotes(source)
+            return DynamicString(lambda: ctx.locals.get(source) or '')
 
     def process_special_attribute(self, attr: str, value: str, node: Union[HTMLElement, Context]) -> bool:
         # common attributes
@@ -227,8 +241,15 @@ class DefaultRenderer:
                     node.attributes[attr] = value
                     node.value = lambda: ctx.locals.get(value)
                     return True
-                if attr == 'set:focus':
-                    node._set_focus = True
+                if attr.startswith('set:'):
+                    attr = attr.split(':')[1].strip()
+                    if value is None:
+                        value = attr
+                    value = self.build_bool(value, node)
+                    if attr == 'focus':
+                        node._set_focus = bool(value)
+                    else:
+                        node.attributes[attr] = value
                     return True
                 if attr.startswith('data:'):
                     attr = attr.split(':')[1].strip()
@@ -433,7 +454,10 @@ class DefaultRenderer:
                     scope[k] = self.eval_string(v, parent)
 
             elif tag_name == '@text':
-                node = c.TextNode(parent, self.strip_quotes(template.text))
+                text = template.text
+                if text and text.startswith('#'):
+                    text = self.ctx.session.gettext(text)
+                node = c.TextNode(parent, text)
 
             elif tag_name == '@macro':
                 node = c.TextNode(parent, DynamicString(self.build_func(template.macro, node)))
@@ -544,7 +568,8 @@ class DefaultRenderer:
                         self.ctx.locals.forloop.counter0 = i
                         for temp_child in node.template.children:
                             self.build_node(temp_child, node)
-                    del self.ctx.locals[node.var_name]
+                    if node.var_name in self.ctx.locals:
+                        del self.ctx.locals[node.var_name]
                     if parentloop:
                         self.ctx.locals.forloop = parentloop
                     else:

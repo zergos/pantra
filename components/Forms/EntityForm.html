@@ -1,9 +1,8 @@
-<form on:render="render">
-
+<form on:render="render" on:keyup="default_click">
 </form>
 <ToolBox>
-    <ToolButton caption="Save" action="save"/>
-    <ToolButton caption="Close" action="close"/>
+    <ToolButton caption="#Save" action="save" default/>
+    <ToolButton caption="#Close" action="close"/>
 </ToolBox>
 
 <style type="text/scss">
@@ -20,7 +19,7 @@
 from pony.orm.core import EntityMeta, db_session, commit
 from core.common import WebUnits
 from core.models import find_entity_info
-from components.Widgets.utils import ValuesDict, make_widget
+from components.Widgets import ValuesDict, make_widget
 from core.ctx import *
 
 entity: Optional[EntityMeta] = None
@@ -31,7 +30,7 @@ values: ValuesDict = ValuesDict()
 def init():
     global entity, caption
     if not caption:
-        caption = entity._entity_.__name__ if hasattr(entity, '_entity_') else entity.__name__
+        caption = _(entity._entity_.__name__) if hasattr(entity, '_entity_') else _(entity.__name__)
 
 @db_session
 def render(node):
@@ -61,7 +60,8 @@ def save(node):
     is_new = not hasattr(entity, '_entity_')
     pars = {}
     for k, v in values.items():
-        pars[k] = v['value']
+        if v:
+            pars[k] = v['value']
     with db_session:
         if is_new:
             entity(**pars)
@@ -70,5 +70,10 @@ def save(node):
         commit()
     ctx.scope.caller['refresh']()
     close()
+
+
+def default_click(node, key):
+    if key == 'Enter':
+        save(None)
 
 </python>

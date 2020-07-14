@@ -14,6 +14,7 @@ from .loader import collect_template, HTMLTemplate
 from core.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
 
 from core.components.render import RenderNode, DefaultRenderer
+from core.components.watchdict import WatchDict, WatchDictActive
 from core.oid import get_node
 from core.defaults import *
 
@@ -58,55 +59,6 @@ class Slot(typing.NamedTuple):
                     return child
         else:
             return super().__getitem__(name)
-
-
-class WatchDict(ADict):
-    def __init__(self, ctx: Union[Context, WatchDict]):
-        if type(ctx) == Context:
-            super().__init__()
-            self._ctx = ctx
-        else:
-            super().__init__(ctx)
-            self._ctx = ctx._ctx
-        self._node = None
-
-    def __setattr__(self, key, value):
-        if key[0] == '_':
-            object.__setattr__(self, key, value)
-            return
-        if key not in self:
-            self[key] = value
-            return
-
-        old_value = self[key]
-        self[key] = value
-        if value != old_value and key in self._ctx.react_vars:
-            for node in frozenset(self._ctx.react_vars[key]):
-                node.update(True)
-
-
-class WatchDictActive(WatchDict):
-    def start_record(self, node: AnyNode):
-        self._node = node
-
-    def stop_record(self):
-        self._node = None
-
-    def _record(self, item):
-        self._ctx.react_vars[item].add(self._node)
-        self._ctx.react_nodes.add(self._node)
-
-    def __getitem__(self, item):
-        res = super().__getitem__(item)
-        if self._node and item[0] != '_':
-            self._record(item)
-        return res
-
-    def get(self, item, default=None):
-        res = super().get(item, default)
-        if self._node and item[0] != '_':
-            self._record(item)
-        return res
 
 
 class Context(RenderNode):
@@ -310,7 +262,7 @@ class HTMLElement(RenderNode):
         self.style.top += delta_y
         self.shot(self)
 
-    def focus(self):
+    def set_focus(self):
         self._set_focus = True
 
     def add_class(self, class_name):

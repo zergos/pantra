@@ -4,7 +4,7 @@ import typing
 
 if typing.TYPE_CHECKING:
     from .common import ADict
-    from .components.context import Context, HTMLElement
+    from .components.context import Context, HTMLElement, AnyNode
     from .session import Session
     from typing import *
 
@@ -17,7 +17,7 @@ if typing.TYPE_CHECKING:
         pass
 
 
-    __all__ = ['ADict', 'Context', 'HTMLElement', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'defined',
+    __all__ = ['ADict', 'Context', 'HTMLElement', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'AnyNode',
                'Any', 'Callable', 'ClassVar', 'Generic', 'Optional', 'Tuple', 'Type', 'TypeVar', 'Union', 'AbstractSet',
                'ByteString', 'Container', 'ContextManager', 'Hashable', 'ItemsView', 'Iterable', 'Iterator', 'KeysView',
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',
@@ -25,8 +25,5 @@ if typing.TYPE_CHECKING:
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
                'Generator', 'NewType', 'NoReturn', 'typing']
 else:
-    __all__ = ['defined', 'typing']
+    __all__ = ['typing']
 
-
-def defined(name: str):
-    return name in globals()

@@ -6,9 +6,9 @@
     <leftcol>
         <SideMenu>
             <MenuGroup caption="#Catalogs">
-                <MenuItem caption="#Storages" action="open_storages"/>
-                <MenuItem caption="#Goods"/>
-                <MenuItem caption="#Units"/>
+                <MenuItem caption="#Storages" name="Storage" action="open_catalog"/>
+                <MenuItem caption="#Goods" name="Good" action="open_catalog"/>
+                <MenuItem caption="#Units" name="Unit" action="open_catalog"/>
             </MenuGroup>
             <MenuGroup caption="#Documents">
                 <MenuItem caption="#Rest entries"/>
@@ -23,12 +23,12 @@
 </GridR>
 
 <python>
-from core.components.context import Context
+from components.Catalog import *
 from core.ctx import *
 
-def open_storages(node):
-    window, new = refs.taskbar.add_window('Storages', _('Storages'))
+def open_catalog(node):
+    window, new = refs.taskbar.add_window(node['name'], node['caption'])
     if new:
-        window.render('StorageList')
+        render_catalog_list(window, node['name'])
 
 </python>

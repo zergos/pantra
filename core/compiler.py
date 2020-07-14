@@ -70,7 +70,7 @@ def compile_context_code(ctx: Context, template: HTMLTemplate):
         exec(template.code, ctx.locals)
     ctx.locals.update(initial_locals)
     if 'init' in ctx.locals:
-        if ctx.locals.init() == False:
+        if ctx.locals.init() is False:
             raise ContextInitFailed()
     if 'on_restart' in ctx.locals:
         ctx.locals.on_restart()
@@ -79,7 +79,7 @@ def compile_context_code(ctx: Context, template: HTMLTemplate):
 
 
 @trace_exec
-def exec_restart(ctx: Context, template: HTMLTemplate):
+def exec_restart(ctx: Context):
     ctx.locals.on_restart()
 
 

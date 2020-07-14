@@ -18,7 +18,7 @@ def _detect_app():
             path = os.path.dirname(path)
         return path
     if path.startswith(COMPONENTS_PATH):
-        return 'C'
+        return 'Core'
     return Empty
 
 
@@ -286,8 +286,7 @@ class Locale:
         """
         from babel.messages.frontend import CommandLineInterface
 
-        if self.app == 'C':
-            self.app = 'Components'
+        if self.app == 'Core':
             path = COMPONENTS_PATH
         else:
             path = os.path.join(APPS_PATH, self.app)
@@ -298,7 +297,7 @@ class Locale:
 
         pot_name = os.path.join(path, 'app.po')
 
-        args = ['', 'extract']
+        args = ['', '-q', 'extract']
         args.extend(['-F', ini_name])
         args.extend(['-o', pot_name])
         args.append('--sort-by-file')

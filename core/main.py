@@ -43,10 +43,8 @@ async def get_ws(request: Request):
     await ws.prepare(request)
 
     app = request.match_info['app']
-    if app:
-        app = os.path.join(APPS_PATH, app)
-    else:
-        app = COMPONENTS_PATH
+    if not app:
+        app = 'Core'
 
     lang_info = request.headers.get('Accept-Language', 'en')
     lang = [part.split(';')[0].replace('-', '_') for part in lang_info.split(',')]

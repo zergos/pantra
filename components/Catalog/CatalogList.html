@@ -1,0 +1,51 @@
+<ToolBox>
+    <ToolButton caption="#Refresh" action="refresh"/>
+    <ToolButton caption="#Add" action="add_object"/>
+    <ToolButton caption="#Delete" danger action="del_object"/>
+</ToolBox>
+<EntityTable cref:table entity="{entity}"/>
+
+<python>
+from core.models import dbinfo, expose_databases
+from pony.orm import db_session
+from pony.orm.core import EntityMeta
+from components.Catalog import *
+from components.Dialogs import *
+from core.ctx import *
+
+db: str = 'db'
+name: str = ''
+
+entity: EntityMeta
+
+def init():
+    global entity
+    if not name:
+        return False
+    expose_databases(session.app)
+    entity = dbinfo[session.app][db].entities[name].factory.cls
+
+def refresh(node=None):
+    refs.table.refresh(True)
+
+def add_object(node):
+    w, new = ctx.scope.tasks.add_window(f'{name}#', _('New: {_(name)}'), ctx)
+    if new:
+        render_catalog_form(w, name, entity)
+
+def del_object(node):
+    row_id = refs.table.active_row_id
+    if not row_id: return
+    with db_session:
+        name = str(entity[row_id])
+
+    def confirm_delete(command: str):
+        if command == 'Yes':
+            with db_session:
+                item = entity[row_id]
+                item.delete()
+            refresh()
+
+    make_dialog(ctx, _('Confirm deletion of {name}'), callback=confirm_delete)
+
+</python>

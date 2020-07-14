@@ -45,14 +45,16 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
         if not f_cache[f].args:
             return f, None
         locals = sys._getframe(3).f_locals
+        globals = sys._getframe(3).f_globals
         args = []
         for co in f_cache[f].args:
-            args.append(eval(co, locals))
+            args.append(eval(co, globals, locals))
         return f_cache[f].s, args
 
     node = ast.parse(f"f'{f}'", mode='eval')
     frame = sys._getframe(3)
     locals = frame.f_locals
+    globals = frame.f_globals
     filename = frame.f_code.co_filename
     del frame
 
@@ -60,7 +62,7 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
         ex = ast.Expression(body=node)
         co = compile(ex, filename, 'eval')
         f_cache[f].args.append(co)
-        args.append(eval(co, locals))
+        args.append(eval(co, globals, locals))
 
     s = ''
     args = []

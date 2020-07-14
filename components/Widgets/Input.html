@@ -1,13 +1,15 @@
 <input type="{type}"
        bind:value
        placeholder="{placeholder}"
-       required="{required or ''}"
-       readonly="{readonly or ''}"
+       set:required
+       set:readonly
        css:width
        min="{min_value}"
        max="{max_value}"
        step="{step}"
        pattern="{pattern}"
+       list="{list}"
+       set:focus
 >
 <react to="value" action="on_change"/>
 
@@ -41,14 +43,6 @@ min_value: float = ''
 max_value: float = ''
 step: float = ''
 pattern: str = ''
-
-def is_valid():
-    if not check_validators():
-        return False
-    if required and not value:
-        ctx['error'] = _('field is empty')
-        return False
-    ctx['error'] = ''
-    return True
-
+list: str = ''
+focus: bool = False
 </python>

@@ -51,9 +51,21 @@
 </style>
 
 <python use="validators">
+from core.ctx import *
+
 caption: str = ''
 block: bool = False
 required: bool = False
 error: str = ''
 caption_width: int = ''
+
+def is_valid():
+    if not check_validators():
+        return False
+    if required and not value:
+        ctx['error'] = _('field is empty')
+        return False
+    ctx['error'] = ''
+    return True
+
 </python>

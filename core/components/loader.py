@@ -208,15 +208,15 @@ def _search_component(path, name):
 def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
     global templates
 
-    key = '/'.join([session.app, name])
+    key = '/'.join([session.app_path, name])
     if key in templates:
         return templates[key]
 
-    path = _search_component(session.app, name)
+    path = _search_component(session.app_path, name)
     if not path:
         path = _search_component(COMPONENTS_PATH, name)
         if not path:
-            session.error(f'component {name} not found')
+            # session.error(f'component {name} not found')
             return None
 
     template = load(path, session.error)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-13 01:41+0300\n"
+"POT-Creation-Date: 2020-07-14 21:44+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -20,25 +20,50 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
-#: D:/projects/bol/bwf/components/Dialogs/Ask.html:41
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:2
+msgid "Refresh"
+msgstr "Обновить"
+
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:3
+msgid "Add"
+msgstr "Добавить"
+
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:4
+msgid "Delete"
+msgstr "Удалить"
+
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:32
+msgid "New: {}"
+msgstr "Новый: {}"
+
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:49
+msgid "Confirm deletion of {}"
+msgstr "Подтвердите удаление {}"
+
+#: D:/projects/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "Yes"
 msgstr "Да"
 
-#: D:/projects/bol/bwf/components/Dialogs/Ask.html:41
+#: D:/projects/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "No"
 msgstr "Нет"
 
-#: D:/projects/bol/bwf/components/Dialogs/Ask.html:42
+#: D:/projects/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "OK"
 msgstr ""
 
-#: D:/projects/bol/bwf/components/Dialogs/Ask.html:42
+#: D:/projects/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "Cancel"
 msgstr "Отмена"
 
-#: D:/projects/bol/bwf/components/Dialogs/Ask.html:43
+#: D:/projects/bol/bwf/components/Dialogs/Dialog.html:43
+#: D:/projects/bol/bwf/components/Forms/EntityForm.html:5
 msgid "Close"
 msgstr "Закрыть"
+
+#: D:/projects/bol/bwf/components/Forms/EntityForm.html:4
+msgid "Save"
+msgstr "Записать"
 
 #: D:/projects/bol/bwf/components/Layout/SysTray.html:5
 msgid "Restart"
@@ -52,7 +77,11 @@ msgstr "Переключить приложение"
 msgid "Logout"
 msgstr "Выйти"
 
-#: D:/projects/bol/bwf/components/Widgets/Input.html:49
+#: D:/projects/bol/bwf/components/Tables/Table.html:47
+msgid "Empty"
+msgstr "Пусто"
+
+#: D:/projects/bol/bwf/components/Widgets/Field.html:66
 msgid "field is empty"
 msgstr "поле не заполнено"
 

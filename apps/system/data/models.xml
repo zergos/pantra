@@ -58,7 +58,7 @@ def catalog_auto_number(self):
                 max = select(o.number for o in Catalog if o.prefix == self.prefix and o.id != self.id).max()
                 self.number = max and max + 1 or 1
     else:
-        if Catalog.get(prefix=self.prefix, number=self.number):
+        if Catalog.get(prefix=self.prefix, number=self.number).id != self.id:
             raise ValueError(f'number {self.number} is not unique')
 
     </python>

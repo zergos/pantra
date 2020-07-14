@@ -1,6 +1,6 @@
 <label class:inline class:block="{not inline}" class:required class:error>
     <span css:width="{caption_width}">{{caption}}</span>
-    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}" disabled="{readonly and 'y' or ''}" css:width>
+    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}" set:disabled="readonly" css:width>
     <div class="message">{{error}}</div>
 </label>
 

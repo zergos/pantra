@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import enum
 
 from core.components.context import Context
 from core.models.types import *
@@ -10,6 +11,12 @@ if typing.TYPE_CHECKING:
     from typing import *
     from core.models.runtime import AttrInfo
     from core.components.context import AnyNode
+
+
+class EntityType(enum.Enum):
+    CATALOG = enum.auto()
+    DOCUMENT = enum.auto()
+    OTHER = enum.auto()
 
 
 class ValuesDict(ADict):
@@ -53,11 +60,15 @@ def make_widget(parent: AnyNode, attr: AttrInfo, value: Any = None, **kwargs) ->
         locals['value'] = value
     if attr.type == int:
         locals['step'] = 1
+    if attr.name == 'name':
+        locals['focus'] = True
     if isinstance(attr.type, EntityMeta):
-        return None  # TODO
-    template = TEMPLATE_MAP[attr.type]
-    if not template:
-        return None
+        template = 'EntityField'
+        locals['entity'] = attr.type
+    else:
+        template = TEMPLATE_MAP[attr.type]
+        if not template:
+            return None
     c = Context(template, parent, locals=locals)
     c.render.build()
     return c

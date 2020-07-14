@@ -50,6 +50,7 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
     if type(fileobj) == str:
         s = fileobj
     else:
+        print(f'PY  > {fileobj.name}')
         s = fileobj.read()
 
     root = ast.parse(s)
@@ -57,15 +58,16 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
 
     def warn(mes):
         # seg = ast.get_source_segment()
+        print(f'    INFO:{node.lineno}:{node.col_offset + 1} {mes}:')
         print(lines[node.lineno-1])
-        print(f'WARNING:{node.lineno}:{node.col_offset + 1} {mes}')
+        print(' '*(node.col_offset+2) + '^')
 
     def eval_ex(ex: ast.Expression):
         co = compile(ex, '<string>', 'eval')
         try:
             return eval(co, {}, {})
-        except Exception as e:
-            warn('eval error: ' + str(e))
+        except:
+            warn('skip runtime expression')
 
     for node in ast.walk(root):
         if type(node) == ast.Call and type(node.func) == ast.Name and node.func.id == '_':
@@ -142,6 +144,11 @@ class MyVisitor(BCDParserVisitor):
         if value.startswith('#'):
             self.res.append((ctx.start.line, '_', value[1:], []))
 
+    def visitText(self, ctx:BCDParser.TextContext):
+        text = ctx.getText()
+        if text.startswith('#'):
+            self.res.append((ctx.start.line, '_', text[1:], []))
+
 
 class ErrorVisitor(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
@@ -149,6 +156,10 @@ class ErrorVisitor(ErrorListener):
 
 
 def extract_html(fileobj, keywords, comment_tags, options):
+    """
+    Extract messages from HTML components
+    """
+    print(f'HTML> {fileobj.name}')
     in_stream = InputStream(fileobj.read().decode('utf-8'))
     lexer = BCDLexer(in_stream)
     stream = CommonTokenStream(lexer)
@@ -167,6 +178,7 @@ def extract_html(fileobj, keywords, comment_tags, options):
 
 
 def extract_xml(fileobj, keywords, comment_tags, options):
+    print(f'XML > {fileobj.name}')
     p = expat.ParserCreate()
 
     def start_element(name: str, attrs: dict):
