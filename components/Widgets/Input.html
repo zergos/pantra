@@ -10,7 +10,20 @@
        pattern="{pattern}"
        list="{list}"
        set:focus
+       css:padding-right="{button_padding}"
 >
+{{#if button_nodes}}
+<span css:margin-left="{-button_padding}">
+    {{#for btn in button_nodes}}
+    <button
+            type="button"
+            on:click="action"
+            data:code="{btn[1]}">
+        {{btn[0]}}
+    </button>
+    {{/for}}
+</span>
+{{/if}}
 <react to="value" action="on_change"/>
 
 <style type="text/scss">
@@ -26,6 +39,32 @@
             border: 1px solid $color-active;
             outline: 0;
             box-shadow: 0 0 0 3px rgba($color-active, 0.58);
+        }
+    }
+
+    button {
+        width: 1.2em;
+        height: 1.8rem;
+        padding-left: 0;
+        padding-right: 0;
+        border: 1px solid $color-passive;
+        transition: all .15s ease-in-out;
+
+        &:last-of-type {
+            border-top-right-radius: 0.4rem;
+            border-bottom-right-radius: 0.4rem;
+        }
+
+        &:hover {
+            background-color: $color-passive;
+            color: $button-text-color;
+        }
+
+        &:focus {
+            background-color: $color-passive;
+            color: $button-text-color;
+            outline-color: $color-passive;
+            outline-style: solid;
         }
     }
 </style>
@@ -45,4 +84,25 @@ step: float = ''
 pattern: str = ''
 list: str = ''
 focus: bool = False
+
+buttons: str = ''  # '...,O'
+
+button_padding: WebUnits = WebUnits(0, 'rem')
+button_nodes: List[Tuple[str, str]] = []
+
+BUTTONS_SYMBOLS = {
+    '...': '…',
+    'O': '⚪',
+}
+
+BUTTON_WIDTH = 1.2
+
+def init():
+    global button_padding
+    for btn in buttons.split(','):
+        if not btn: break
+        code = BUTTONS_SYMBOLS.get(btn, btn)
+        button_nodes.append((btn, code))
+        button_padding += BUTTON_WIDTH
+
 </python>

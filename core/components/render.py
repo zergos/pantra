@@ -144,7 +144,7 @@ class DefaultRenderer:
     def build_string(self, source: str, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if not source:
             return None
-        if source.startswith('{', 1):
+        if '{' in source:
             return DynamicString(self.build_func('f'+source, node))
         else:
             return self.strip_quotes(source)
@@ -153,8 +153,11 @@ class DefaultRenderer:
         if not source:
             return None
 
-        if source.startswith('{', 1):
-            return self.build_func(self.strip_quotes(source).strip('{}'), node)()
+        if '{' in source:
+            if source.startswith('{', 1):
+                return self.build_func(self.strip_quotes(source).strip('{}'), node)()
+            else:
+                return self.build_func('f'+source, node)()
         else:
             return self.strip_quotes(source)
 
@@ -253,7 +256,7 @@ class DefaultRenderer:
                     return True
                 if attr.startswith('data:'):
                     attr = attr.split(':')[1].strip()
-                    node.data[attr] = self.eval_string(self.strip_quotes(value), node)
+                    node.data[attr] = self.eval_string(value, node)
                     return True
             else:
                 if attr == 'style':
@@ -269,7 +272,7 @@ class DefaultRenderer:
                         node.classes = DynamicClasses(self.strip_quotes(value))
                     return True
                 if attr == 'type':
-                    node.value_type = self.eval_string(self.strip_quotes(value), node)
+                    node.value_type = self.eval_string(value, node)
                     return True
         else:
             # Context's only
@@ -315,7 +318,10 @@ class DefaultRenderer:
                 # evaluate children
                 if len(template.children) == 1:
                     if template.children[0].tag_name == '@text':
-                        node.text = template.children[0].text
+                        text = template.children[0].text
+                        if text.startswith('#'):
+                            text = self.ctx.session.gettext(text[1:])
+                        node.text = text
                         return node
                     elif template.children[0].tag_name == '@macro':
                         node.text = DynamicString(self.build_func(template.children[0].macro, node))
@@ -456,7 +462,7 @@ class DefaultRenderer:
             elif tag_name == '@text':
                 text = template.text
                 if text and text.startswith('#'):
-                    text = self.ctx.session.gettext(text)
+                    text = self.ctx.session.gettext(text[1:])
                 node = c.TextNode(parent, text)
 
             elif tag_name == '@macro':

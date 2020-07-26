@@ -1,0 +1,101 @@
+<Field consume>
+    <Input
+            cref:input
+            consume="required,readonly"
+            on_change="parse_input on_change"
+            list="o{ctx.oid}"
+            on:render="fill_value"
+            buttons="...,O"
+            action="button_action"
+    />
+    <datalist ref:lookups id="o{ctx.oid}">
+        {{#for item in lookup_items()}}
+        <option value="{item}"/>
+        {{/for}}
+    </datalist>
+</Field>
+
+<python>
+from components.Widgets import *
+from components.Catalog import *
+from pony.orm import make_proxy
+from pony.orm.core import EntityMeta, db_session
+from core.ctx import *
+
+value: EntityMeta = None
+entity: Type[EntityMeta] = None
+entity_type: EntityType = None
+
+lookup_min_chars = 3
+lookup_max_values = 10
+lookup_list: List = []
+
+def init():
+    global entity_type
+
+    if not entity:
+        return False
+
+    if not entity_type:
+        if entity._database_.Catalog in entity._all_bases_:
+            entity_type = EntityType.CATALOG
+        elif entity._database_.Document in entity._all_bases_:
+            entity_type = EntityType.DOCUMENT
+        else:
+            entity_type = EntityType.OTHER
+
+
+def fill_value(node):
+    refs.input.value = entity_to_text(value)
+
+
+def entity_to_text(v: Optional[EntityMeta]) -> str:
+    if not v:
+        return ''
+    with db_session:
+        if entity_type == EntityType.CATALOG:
+            return v.name
+        elif entity_type == EntityType.DOCUMENT:
+            return f'{_(v.classtype)} - {v.number} - {session.locale.datetime(v.date)}'
+        else:
+            return str(v)
+
+def text_to_entities(t: str) -> List[EntityMeta]:
+    res = []
+    if not t:
+        return res
+    with db_session:
+        if entity_type == EntityType.CATALOG:
+            for o in entity.select(lambda o: o.name.startswith(t)):
+                res.append(make_proxy(o))
+        elif entity_type == EntityType.DOCUMENT:
+            for o in entity.select(lambda o: o.number.startswith(t)):
+                res.append(make_proxy(o))
+        else:
+            return res
+
+def lookup_items():
+    limit = lookup_max_values
+    for item in lookup_list:
+        yield entity_to_text(item)
+        limit -= 1
+        if not limit:
+            break
+
+def parse_input(node):
+    global value, lookup_list
+    v = refs.input.value
+    if len(v) >= lookup_min_chars:
+        lookup_list = text_to_entities(v)
+        if len(lookup_list) == 1:
+            value = lookup_list[0]
+        refs.lookups.update()
+
+def button_action(node):
+    if node.data.code == '...':
+        entity_name = entity.__class__.__name__
+        window, new = session['taskbar'].add_window(f'{entity_name}Select', _('Select: {_(entity_name)}'))
+        if new:
+            render_catalog_select(window, entity_name)
+
+</python>

@@ -246,6 +246,9 @@ class WebUnits(str):
     def __floordiv__(self, other):
         return WebUnits(self.value // other, self.unit)
 
+    def __neg__(self):
+        return WebUnits(-self.value, self.unit)
+
 
 class EmptyCaller(str):
     def __new__(cls):

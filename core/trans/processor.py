@@ -85,7 +85,9 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
     return s, args
 
 
-def zgettext(trans: Translations, message: str, *, plural: str = None, n: int = None, ctx: str = None):
+def zgettext(trans: Translations, message: str, *, plural: str = None, n: int = None, ctx: str = None, many: bool = False):
+    if many:
+        message = f'{message}s'
     if plural is None and ctx is None:
         s, args = eval_fstring(message)
         t = trans.gettext(s)

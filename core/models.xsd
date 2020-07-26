@@ -97,7 +97,7 @@
             </xs:simpleType>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
-                    <xs:pattern value="^[A-Z][a-z]+"/>
+                    <xs:pattern value="^[A-Z][a-z.]+"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:union>

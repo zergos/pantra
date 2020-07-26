@@ -47,6 +47,15 @@ class Session:
             self.user: Optional[Dict[str, Any]] = None
             self.set_locale(lang)
 
+    def __getitem__(self, item):
+        return self.state[item]
+
+    def __setitem__(self, key, value):
+        self.state[key] = value
+
+    def __contains__(self, item):
+        return item in self.state
+
     @property
     def app_path(self):
         if self.app == 'Core':
@@ -69,7 +78,7 @@ class Session:
                 self.root = ctx
                 ctx.render.build()
                 self.send_shot()
-        except Exception as e:
+        except:
             # print(traceback.format_exc())
             self.error(traceback.format_exc(-3))
         self.remind_errors()
@@ -173,13 +182,13 @@ class Session:
         self.translations = get_translation(self.app_path, lang)
 
     @typing.overload
-    def gettext(self, message: str, *, plural: str = None, n: int = None, ctx: str = None): ...
+    def gettext(self, message: str, *, plural: str = None, n: int = None, ctx: str = None, many: bool = False): ...
 
     def gettext(self, message: str, **kwargs) -> str:
         return zgettext(self.translations, message, **kwargs)
 
 
-def trace_errors(func):
+def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)
     def res(*args, **kwargs):
         if args[0] is None:

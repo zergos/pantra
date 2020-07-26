@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from core.components.loader import collect_template
 from core.models.types import EntityMeta
+from components.Layout import *
 from core.ctx import *
 
-__all__ = ['render_catalog_list', 'render_catalog_form']
+__all__ = ['render_catalog_list', 'render_catalog_form', 'render_catalog_select']
 
 
-def render_catalog_list(parent: AnyNode, name: str, db: str = 'db') -> Context:
+def render_catalog_list(session: Session, name: str, db: str = 'db') -> Context:
+    parent, new = add_window(session, f'{name}List', session.gettext(name, many=True))
+    if not new:
+        return parent
     list_form = collect_template(parent.session, f'{name}List')
     if list_form:
         return parent.render(list_form)

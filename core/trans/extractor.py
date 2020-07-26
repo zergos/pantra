@@ -180,11 +180,25 @@ def extract_html(fileobj, keywords, comment_tags, options):
 def extract_xml(fileobj, keywords, comment_tags, options):
     print(f'XML > {fileobj.name}')
     p = expat.ParserCreate()
+    entity_name: str = ''
 
     def start_element(name: str, attrs: dict):
-        if name in ('entity', 'attr', 'prop'):
-            title = attrs.get('title', attrs['name'])
-            res.append((p.ErrorLineNumber, '_', title, [name]))
+        nonlocal entity_name
+        if name == 'entity':
+            entity_name = attrs['name']
+            res.append((p.ErrorLineNumber, 'ngettext', (entity_name, f'{entity_name}s'), ['entity']))
+            res.append((p.ErrorLineNumber, '_', f'{entity_name}s', ['entity plural']))
+            if 'title' in attrs:
+                title = attrs['title']
+                res.append((p.ErrorLineNumber, 'ngettext', (title, f'{title}s'), [f'title of {entity_name}']))
+                res.append((p.ErrorLineNumber, '_', f'{title}s', [f'title of {entity_name} plural']))
+
+        if name in ('attr', 'prop'):
+            if 'title' in attrs:
+                title = attrs['title']
+                res.append((p.ErrorLineNumber, '_', title, [f'title of {attrs["name"]} {name} of {entity_name}']))
+            else:
+                res.append((p.ErrorLineNumber, '_', attrs['name'], [f'{name} of {entity_name}']))
 
     p.StartElementHandler = start_element
     res = []

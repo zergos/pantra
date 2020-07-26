@@ -24,5 +24,14 @@
 </style>
 
 <python>
+from core.ctx import *
+
 action: str = ''
+caption: str = ''
+code: str = ''
+
+def init():
+    global caption
+    if not caption and code:
+        caption = _(f'{code}s')
 </python>

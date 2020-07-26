@@ -3,9 +3,12 @@
 <python>
 from core.ctx import *
 
-taskbar: Context
+taskbar: Context = None
 
 def bind_taskbar(node):
+    global taskbar
+    if not taskbar:
+        taskbar = session['taskbar']
     taskbar.render_to = node
     node.set_scope('tasks', taskbar)
 

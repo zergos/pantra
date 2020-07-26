@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"storage\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-13 01:31+0300\n"
+"POT-Creation-Date: 2020-07-17 21:36+0300\n"
 "PO-Revision-Date: 2020-06-29 11:37+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -28,16 +28,21 @@ msgstr "Управление складом"
 msgid "Catalogs"
 msgstr "Справочники"
 
+#. entity plural
 #: D:/projects/bol/bwf/apps/storage/Main.html:9
-#: D:/projects/bol/bwf/apps/storage/Main.html:30
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:2
 msgid "Storages"
 msgstr "Склады"
 
+#. entity plural
 #: D:/projects/bol/bwf/apps/storage/Main.html:10
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:4
 msgid "Goods"
 msgstr "Товары"
 
+#. entity plural
 #: D:/projects/bol/bwf/apps/storage/Main.html:11
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:3
 msgid "Units"
 msgstr "Единицы"
 
@@ -57,43 +62,53 @@ msgstr "Продажи"
 msgid "Incomes"
 msgstr "Приходы"
 
-#: D:/projects/bol/bwf/apps/storage/StorageList.html:3
+#: D:/projects/bol/bwf/apps/storage/_StorageList.html:2
 msgid "Refresh"
 msgstr "Обновить"
 
-#: D:/projects/bol/bwf/apps/storage/StorageList.html:4
+#: D:/projects/bol/bwf/apps/storage/_StorageList.html:3
 msgid "Add"
 msgstr "Добавить"
 
-#: D:/projects/bol/bwf/apps/storage/StorageList.html:5
+#: D:/projects/bol/bwf/apps/storage/_StorageList.html:4
 msgid "Delete"
 msgstr "Удалить"
 
-#: D:/projects/bol/bwf/apps/storage/StorageList.html:35
+#: D:/projects/bol/bwf/apps/storage/_StorageList.html:35
 msgid "Confirm deletion of {}"
 msgstr "Подтвердите удаление {}"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:2
 msgid "Storage"
-msgstr "Склад"
+msgid_plural "Storages"
+msgstr[0] "Склад"
+msgstr[1] "Склада"
+msgstr[2] "Складов"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:3
 msgid "Unit"
-msgstr "Единица"
+msgid_plural "Units"
+msgstr[0] "Единица"
+msgstr[1] "Единицы"
+msgstr[2] "Единиц"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:4
+#, fuzzy
 msgid "Good"
-msgstr "Товар"
+msgid_plural "Goods"
+msgstr[0] "Товар"
+msgstr[1] "Товара"
+msgstr[2] "Товаров"
 
-#. prop
+#. prop of Good
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:5
 msgid "unit"
 msgstr "единица"
 
-#. prop
+#. prop of Good
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:6
 msgid "weight"
 msgstr "вес"

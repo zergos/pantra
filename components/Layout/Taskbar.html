@@ -94,6 +94,9 @@ class Window:
     bar: HTMLElement = field(default=None)
     view: HTMLElement = field(default=None)
 
+def init():
+    session['taskbar'] = ctx.locals
+
 def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLElement, bool]:
     if code not in windows:
         bar = HTMLElement('div', refs.bars, {'on:click': 'click_bar'}, wintitle)

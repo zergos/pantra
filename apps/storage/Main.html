@@ -6,9 +6,9 @@
     <leftcol>
         <SideMenu>
             <MenuGroup caption="#Catalogs">
-                <MenuItem caption="#Storages" name="Storage" action="open_catalog"/>
-                <MenuItem caption="#Goods" name="Good" action="open_catalog"/>
-                <MenuItem caption="#Units" name="Unit" action="open_catalog"/>
+                {{#for cat in catalogs}}
+                <MenuItem code="{cat}" action="open_catalog"/>
+                {{/for}}
             </MenuGroup>
             <MenuGroup caption="#Documents">
                 <MenuItem caption="#Rest entries"/>
@@ -18,7 +18,7 @@
         </SideMenu>
     </leftcol>
     <main>
-        <MDI taskbar="{refs.taskbar}"/>
+        <MDI/>
     </main>
 </GridR>
 
@@ -26,9 +26,9 @@
 from components.Catalog import *
 from core.ctx import *
 
+catalogs = ['Storage', 'Good', 'Unit']
+
 def open_catalog(node):
-    window, new = refs.taskbar.add_window(node['name'], node['caption'])
-    if new:
-        render_catalog_list(window, node['name'])
+    render_catalog_list(session, node['code'])
 
 </python>
