@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-16 13:44+0300\n"
+"POT-Creation-Date: 2020-07-28 13:17+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -32,13 +32,21 @@ msgstr "Добавить"
 msgid "Delete"
 msgstr "Удалить"
 
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:32
-msgid "New: {}"
-msgstr "Новый: {}"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:49
+#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:48
 msgid "Confirm deletion of {}"
 msgstr "Подтвердите удаление {}"
+
+#: D:/projects/bol/bwf/components/Catalog/CatalogSelect.html:2
+msgid "Select"
+msgstr "Выбрать"
+
+#: D:/projects/bol/bwf/components/Catalog/__init__.py:26
+msgid "Select: {}"
+msgstr "Выбор: {}"
+
+#: D:/projects/bol/bwf/components/Catalog/__init__.py:48
+msgid "New: {}"
+msgstr "Новый: {}"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "Yes"
@@ -77,6 +85,10 @@ msgstr "Переключить приложение"
 msgid "Logout"
 msgstr "Выйти"
 
+#: D:/projects/bol/bwf/components/Layout/__init__.py:15
+msgid "Can not add window, session has no taskbar"
+msgstr "Не могу добавить окно, неопределена панель задач"
+
 #: D:/projects/bol/bwf/components/Tables/Table.html:47
 msgid "Empty"
 msgstr "Пусто"
@@ -84,4 +96,7 @@ msgstr "Пусто"
 #: D:/projects/bol/bwf/components/Widgets/Field.html:66
 msgid "field is empty"
 msgstr "поле не заполнено"
+
+#~ msgid "New: {}"
+#~ msgstr "Новый: {}"
 

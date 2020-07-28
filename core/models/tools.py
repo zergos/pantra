@@ -29,18 +29,18 @@ def query_info(q: Query) -> Optional[Dict[str, AttrInfo]]:
     trans = q._translator
 
     if isinstance(trans.expr_type, EntityMeta):
-        ent_info = find_entity_info(trans.expr_type)
-        res = {name: ent_info[name] for name in trans.col_names if name != 'id' and not ent_info[name].is_body and not ent_info[name].is_cid}
+        attrs = find_entity_info(trans.expr_type).attrs
+        res = {name: attrs[name] for name in trans.col_names if name != 'id' and not attrs[name].is_body and not attrs[name].is_cid}
         return res
 
     for expr, col_name, col_type in zip(trans.expr_columns, trans.col_names, trans.expr_type):
         if expr[0] == 'COLUMN':
-            ent_info = find_entity_info(trans.namespace[expr[1]].type)
-            res[expr[2]] = ent_info[expr[2]]
+            attrs = find_entity_info(trans.namespace[expr[1]].type).attrs
+            res[expr[2]] = attrs[expr[2]]
         elif expr[0] == 'JSON_QUERY':
             name = q._vars[tuple(*[expr[2][0][1][0]])]
-            ent_info = find_entity_info(trans.namespace[expr[1][1]].type)
-            res[name] = ent_info[name]
+            attrs = find_entity_info(trans.namespace[expr[1][1]].type).attrs
+            res[name] = attrs[name]
         else:
             if col_name.startswith('AS('):
                 name = re.search(query_info.re_as, col_name).group(1)

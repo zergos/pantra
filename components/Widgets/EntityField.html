@@ -1,10 +1,10 @@
 <Field consume>
     <Input
-            cref:input
+            ref:input
             consume="required,readonly"
             on_change="parse_input on_change"
             list="o{ctx.oid}"
-            on:render="fill_value"
+            value="{entity_to_text(value)}"
             buttons="...,O"
             action="button_action"
     />
@@ -16,6 +16,7 @@
 </Field>
 
 <python>
+from core.models import find_entity_info
 from components.Widgets import *
 from components.Catalog import *
 from pony.orm import make_proxy
@@ -46,8 +47,10 @@ def init():
 
 
 def fill_value(node):
-    refs.input.value = entity_to_text(value)
-
+    if value is None:
+        return
+    refs.input['value'] = entity_to_text(value)
+    refs.input.update_tree()
 
 def entity_to_text(v: Optional[EntityMeta]) -> str:
     if not v:
@@ -71,8 +74,7 @@ def text_to_entities(t: str) -> List[EntityMeta]:
         elif entity_type == EntityType.DOCUMENT:
             for o in entity.select(lambda o: o.number.startswith(t)):
                 res.append(make_proxy(o))
-        else:
-            return res
+    return res
 
 def lookup_items():
     limit = lookup_max_values
@@ -84,18 +86,28 @@ def lookup_items():
 
 def parse_input(node):
     global value, lookup_list
-    v = refs.input.value
+    v = refs.input['value']
     if len(v) >= lookup_min_chars:
         lookup_list = text_to_entities(v)
         if len(lookup_list) == 1:
             value = lookup_list[0]
-        refs.lookups.update()
+        refs.lookups.update_tree()
 
 def button_action(node):
     if node.data.code == '...':
-        entity_name = entity.__class__.__name__
-        window, new = session['taskbar'].add_window(f'{entity_name}Select', _('Select: {_(entity_name)}'))
-        if new:
-            render_catalog_select(window, entity_name)
+        entity_name = entity.__name__
+        render_catalog_select(session, entity_name, callback=select_value)
+    elif node.data.code == 'O':
+        if not value:
+            return
+        render_catalog_form(session, ctx, value)
+
+def select_value(selected_value):
+    global value
+    value = selected_value
+    fill_value(None)
+
+def refresh():
+    fill_value(None)
 
 </python>

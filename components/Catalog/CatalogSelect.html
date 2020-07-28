@@ -1,0 +1,35 @@
+<ToolBox>
+    <ToolButton caption="#Select" action="select" default/>
+</ToolBox>
+<EntityTable cref:table entity="{entity}" not:editable selectable callback="{select_row}"/>
+
+<python>
+from pony.orm import db_session, make_proxy
+from pony.orm.core import EntityMeta
+from core.models import expose_databases, dbinfo
+from core.ctx import *
+
+db: str = 'db'
+name: str = ''
+callback: Callable[[Any], None] = lambda value: None
+
+entity: EntityMeta
+
+def init():
+    global entity
+    if not name:
+        return False
+    expose_databases(session.app)
+    entity = dbinfo[session.app][db].entities[name].factory.cls
+
+def select(node):
+    select_row(refs.table.active_row_id)
+
+def select_row(value):
+    with db_session:
+        value = make_proxy(entity[value])
+    callback(value)
+    session['taskbar'].close()
+
+
+</python>

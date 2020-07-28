@@ -118,6 +118,7 @@ async def get_ws(request: Request):
     return ws
 
 
+# TODO: cache styles and join with file watcher
 @routes.get(r'/css/global.css')
 async def get_global_css(request: Request):
     styles = collect_styles(COMPONENTS_PATH, Session.error_later)

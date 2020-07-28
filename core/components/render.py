@@ -4,11 +4,11 @@ import typing
 import traceback
 from contextlib import contextmanager
 
-from components.controllers import process_click_referred
 from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from core.components.loader import collect_template, HTMLTemplate
 from core.compiler import compile_context_code, ContextInitFailed
 from core.session import Session, run_safe
+from core.components.controllers import process_click_referred
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -162,15 +162,15 @@ class DefaultRenderer:
             return self.strip_quotes(source)
 
     def build_bool(self, source: str, node: AnyNode) -> Union[str, DynamicString]:
+        source = self.strip_quotes(source)
         if not source:
             return 'True'
         if source.startswith('{', 1):
-            expr = self.strip_quotes(source).strip('{}')
+            expr = source.strip('{}')
             expr = f"({expr} or '')"
             return DynamicString(self.build_func('f'+expr, node))
         else:
             ctx = self.ctx
-            source = self.strip_quotes(source)
             return DynamicString(lambda: ctx.locals.get(source) or '')
 
     def process_special_attribute(self, attr: str, value: str, node: Union[HTMLElement, Context]) -> bool:
@@ -638,7 +638,8 @@ class DefaultRenderer:
             del self.ctx.locals[node.var_name]
 
         elif typename(node) == 'ReactNode':
-            process_click_referred(self.ctx.session, node, node.action)
+            if not recursive:
+                process_click_referred(self.ctx.session, node, node.action)
             return
 
         if recursive:

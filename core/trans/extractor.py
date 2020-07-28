@@ -52,6 +52,8 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
     else:
         print(f'PY  > {fileobj.name}')
         s = fileobj.read()
+        if type(s) is bytes:
+            s = str(s, 'utf8')
 
     root = ast.parse(s)
     lines = s.splitlines()

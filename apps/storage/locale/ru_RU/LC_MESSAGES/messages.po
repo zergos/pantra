@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"storage\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-17 21:36+0300\n"
+"POT-Creation-Date: 2020-07-26 20:16+0300\n"
 "PO-Revision-Date: 2020-06-29 11:37+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -27,24 +27,6 @@ msgstr "Управление складом"
 #: D:/projects/bol/bwf/apps/storage/Main.html:8
 msgid "Catalogs"
 msgstr "Справочники"
-
-#. entity plural
-#: D:/projects/bol/bwf/apps/storage/Main.html:9
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:2
-msgid "Storages"
-msgstr "Склады"
-
-#. entity plural
-#: D:/projects/bol/bwf/apps/storage/Main.html:10
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:4
-msgid "Goods"
-msgstr "Товары"
-
-#. entity plural
-#: D:/projects/bol/bwf/apps/storage/Main.html:11
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:3
-msgid "Units"
-msgstr "Единицы"
 
 #: D:/projects/bol/bwf/apps/storage/Main.html:13
 msgid "Documents"
@@ -86,6 +68,11 @@ msgstr[0] "Склад"
 msgstr[1] "Склада"
 msgstr[2] "Складов"
 
+#. entity plural
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:2
+msgid "Storages"
+msgstr "Склады"
+
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:3
 msgid "Unit"
@@ -94,14 +81,23 @@ msgstr[0] "Единица"
 msgstr[1] "Единицы"
 msgstr[2] "Единиц"
 
+#. entity plural
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:3
+msgid "Units"
+msgstr "Единицы"
+
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:4
-#, fuzzy
 msgid "Good"
 msgid_plural "Goods"
 msgstr[0] "Товар"
 msgstr[1] "Товара"
 msgstr[2] "Товаров"
+
+#. entity plural
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:4
+msgid "Goods"
+msgstr "Товары"
 
 #. prop of Good
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:5

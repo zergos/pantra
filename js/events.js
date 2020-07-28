@@ -46,7 +46,7 @@ class KeyListener extends EventListener {
     }
     handleEvent(event) {
         super.handleEvent(event);
-        if (!this.key || event.key === this.key)
+        if (event.key !== undefined && (!this.key || event.key === this.key))
             process_key(this.method, this.get_oid(event), event.key);
     }
 }

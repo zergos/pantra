@@ -55,6 +55,7 @@ def make_widget(parent: AnyNode, attr: AttrInfo, value: Any = None, **kwargs) ->
         readonly=attr.readonly,
         required=not attr.blank,
         width='' if not attr.width else WebUnits(attr.width, 'em'),
+        in_body=hasattr(attr, 'body'),
     ) | kwargs
     if value is not None:
         locals['value'] = value

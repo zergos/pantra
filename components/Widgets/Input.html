@@ -18,8 +18,8 @@
     <button
             type="button"
             on:click="action"
-            data:code="{btn[1]}">
-        {{btn[0]}}
+            data:code="{btn[0]}">
+        {{btn[1]}}
     </button>
     {{/for}}
 </span>
@@ -92,7 +92,7 @@ button_nodes: List[Tuple[str, str]] = []
 
 BUTTONS_SYMBOLS = {
     '...': '…',
-    'O': '⚪',
+    'O': '⩺',
 }
 
 BUTTON_WIDTH = 1.2

@@ -171,6 +171,8 @@ from core.ctx import *
 editable: bool = True
 resizable: bool = True
 sortable: bool = True
+selectable: bool = False
+callback: Callable[[Any], None] = lambda value: None
 
 columns: Columns
 
@@ -322,6 +324,10 @@ def select_cell(node: HTMLElement):
         active_row_id = n.scope.row_id
 
 def enter_cell(node: HTMLElement):
+    if selectable:
+        callback(active_row_id)
+        return
+
     if not editable or not node.data.col.editable:
         return
 

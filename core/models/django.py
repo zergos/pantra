@@ -160,6 +160,7 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                         field = django_type_map[v]
                     else:
                         field = 'models.ForeignKey'
+                        # TODO: foreign schema usage
                         pars.insert(0, f"'{v}'")
                         if required:
                             pars.insert(1, 'on_delete=models.CASCADE')

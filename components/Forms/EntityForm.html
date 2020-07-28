@@ -35,10 +35,10 @@ def init():
 @db_session
 def render(node):
     if not ctx.slot:
-        ent_info = find_entity_info(entity)
+        attrs = find_entity_info(entity).attrs
         is_new = not hasattr(entity, '_entity_')
-        max_len = round(max(len(title) for name, attr in ent_info() for title in [_(attr.title)]) * 7)/10
-        for attr_name, attr in ent_info():
+        max_len = round(max(len(title) for name, attr in attrs() for title in [_(attr.title)]) * 7)/10
+        for attr_name, attr in attrs():
             values[attr_name] = make_widget(node, attr, None if is_new else getattr(entity, attr_name), caption_width=WebUnits(max_len, 'em'))
 
 
@@ -60,13 +60,17 @@ def save(node):
     is_new = not hasattr(entity, '_entity_')
     pars = {}
     for k, v in values.items():
-        if v:
+        if v and not v['in_body']:
             pars[k] = v['value']
     with db_session:
         if is_new:
-            entity(**pars)
+            e = entity(**pars)
         else:
+            e = entity
             entity.set(**pars)
+        for k, v in values.items():
+            if v and v['in_body']:
+                setattr(e, k, v['value'])
         commit()
     ctx.scope.caller['refresh']()
     close()

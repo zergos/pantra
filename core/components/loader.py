@@ -313,7 +313,7 @@ class StyleVisitor(BCDParserVisitor):
             sheet = self.parser.parseString(text)
             go(sheet)
 
-            # first naive attempt, save for history
+            # first naive attempt, saved for history
             # chunks = re.split(r'(?<=})', text)
             # res = '\n'.join(f'.{self.class_name} {chunk.strip()}' for chunk in chunks if chunk.strip())
 

@@ -299,8 +299,12 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 fields[attr_name] = field(t, **kwargs)
             elif name == 'prop':
                 body = attr_info.body.name
-                prop = property(lambda self: getattr(self, body)[attr_name],
-                                lambda self, value: getattr(self, body).__setitem__(attr_name, value))
+                if not isinstance(attr_info.type, str):
+                    prop = property(lambda self: getattr(self, body)[attr_name],
+                                    lambda self, value: getattr(self, body).__setitem__(attr_name, value))
+                else:
+                    prop = property(lambda self: attr_info.type[getattr(self, body)[attr_name]],
+                                    lambda self, value: getattr(self, body).__setitem__(attr_name, value.id))
                 fields[attr_name] = prop
 
         elif name == 'set':
@@ -402,7 +406,7 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
 
 
 @lru_cache(maxsize=None)
-def _find_entity_info_cached(entity: EntityMeta) -> Optional[AttrDict[str, AttrInfo]]:
+def _find_entity_info_cached(entity: EntityMeta) -> EntityInfo:
     if not dbinfo:
         raise NameError('databases not exposed')
 
@@ -410,11 +414,11 @@ def _find_entity_info_cached(entity: EntityMeta) -> Optional[AttrDict[str, AttrI
         for db in app.values():
             for ent in db.entities.values():
                 if ent.factory.cls == entity:
-                    return ent.attrs
+                    return ent
 
-    raise NameError(f'entity is unknown ({entity.__class__.__name__})')
+    raise NameError(f'entity is unknown ({entity.__name__})')
 
 
-def find_entity_info(entity: Union[EntityMeta, EntityProxy]) -> Optional[AttrDict[str, AttrInfo]]:
+def find_entity_info(entity: Union[EntityMeta, EntityProxy]) -> EntityInfo:
     return _find_entity_info_cached(entity if type(entity) == EntityMeta else entity._entity_)
 

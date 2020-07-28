@@ -17,6 +17,16 @@ if typing.TYPE_CHECKING:
     from types import CodeType
 
 
+class TranslationsExtra(Translations):
+    def gettext(self, message):
+        tmsg = self._catalog.get(message)
+        if tmsg is None:
+            tmsg = self._catalog.get((message, 0))
+            if tmsg is None:
+                return message
+        return tmsg
+
+
 @lru_cache(maxsize=None)
 def get_locale(lang: str) -> Locale:
     return Locale.parse(lang)
@@ -25,7 +35,7 @@ def get_locale(lang: str) -> Locale:
 # TODO: make compatible with file watcher
 def get_translation(app_path: str, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
-    trans = Translations.load(os.path.join(COMPONENTS_PATH, 'locale'), lang_lst)
+    trans = TranslationsExtra.load(os.path.join(COMPONENTS_PATH, 'locale'), lang_lst)
     trans.merge(Translations.load(os.path.join(APPS_PATH, 'system', 'locale'), lang_lst))
     trans.merge(Translations.load(os.path.join(app_path, 'locale'), lang_lst))
     return trans
@@ -103,5 +113,4 @@ def zgettext(trans: Translations, message: str, *, plural: str = None, n: int = 
         t = trans.pgettext(ctx, s)
     if args: t = t.format(*args)
     return t
-
 

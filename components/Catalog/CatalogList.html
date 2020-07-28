@@ -3,11 +3,11 @@
     <ToolButton caption="#Add" action="add_object"/>
     <ToolButton caption="#Delete" danger action="del_object"/>
 </ToolBox>
-<EntityTable cref:table entity="{entity}"/>
+<EntityTable cref:table entity="{entity}" not:editable selectable callback="{open_object}"/>
 
 <python>
 from core.models import dbinfo, expose_databases
-from pony.orm import db_session
+from pony.orm import db_session, make_proxy
 from pony.orm.core import EntityMeta
 from components.Layout import *
 from components.Catalog import *
@@ -30,9 +30,7 @@ def refresh(node=None):
     refs.table.refresh(True)
 
 def add_object(node):
-    w, new = ctx.scope.tasks.add_window(f'{name}#', _('New: {_(name)}'), ctx)
-    if new:
-        render_catalog_form(w, name, entity)
+    render_catalog_form(session, ctx, entity)
 
 def del_object(node):
     row_id = refs.table.active_row_id
@@ -48,5 +46,10 @@ def del_object(node):
             refresh()
 
     make_dialog(ctx, _('Confirm deletion of {name}'), callback=confirm_delete)
+
+def open_object(value):
+    with db_session:
+        ent = make_proxy(entity[value])
+    render_catalog_form(session, ctx, ent)
 
 </python>
