@@ -9,7 +9,7 @@ from core.ctx import *
 
 query: Optional[Query] = None
 entity: Entity
-col_id: int = 0
+col_id: str = 'id'
 
 columns: Columns = {}
 
@@ -42,6 +42,7 @@ def init():
 
 @db_session
 def get_rows(order_col, order_dir):
+    global columns
     if order_col:
         col = getattr(entity, order_col)
         if order_dir<0:
@@ -50,7 +51,7 @@ def get_rows(order_col, order_dir):
     else:
         q = query
     for row in q:
-        yield [value if not isinstance(value, Entity) else make_proxy(value) for value in row]
+        yield dict(zip(columns.keys(), (value if not isinstance(value, Entity) else make_proxy(value) for value in row)))
 
 @db_session
 def save_value(field: Context, value):
