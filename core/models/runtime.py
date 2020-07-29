@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field as dc_field
 from functools import lru_cache
 
+from pony import options as pony_options
 from pony.orm import Database, Optional, Required, Discriminator, Set, StrArray, FloatArray, IntArray
 from pony.orm.core import EntityProxy
 from core.common import ADict
@@ -16,6 +17,9 @@ from .parser import parse_xml, expat
 
 if typing.TYPE_CHECKING:
     from typing import *
+
+
+pony_options.CUT_TRACEBACK = False
 
 type_map = {
     'bool': bool,
@@ -99,6 +103,8 @@ class EntityInfo:
 class AttrInfo:
     name: str
     type: Type = dc_field(default=None)
+    is_prop: bool = dc_field(default=False)
+    is_ref: bool = dc_field(default=False)
     title: str = dc_field(default='')
     width: int = dc_field(default=None)
     choices: Mapping = dc_field(default=None)
@@ -298,6 +304,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             elif name == 'attr':
                 fields[attr_name] = field(t, **kwargs)
             elif name == 'prop':
+                attr_info.is_prop = True
                 body = attr_info.body.name
                 if not isinstance(attr_info.type, str):
                     prop = property(lambda self: getattr(self, body)[attr_name],
@@ -305,6 +312,9 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 else:
                     prop = property(lambda self: attr_info.type[getattr(self, body)[attr_name]],
                                     lambda self, value: getattr(self, body).__setitem__(attr_name, value.id))
+                    attr_info.is_ref = True
+                    prop_id = property(lambda self: getattr(self, body)[attr_name])
+                    fields[f'{attr_name}_id'] = prop_id
                 fields[attr_name] = prop
 
         elif name == 'set':

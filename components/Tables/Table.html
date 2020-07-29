@@ -33,12 +33,12 @@
             {{/for}}
         </thead>
         <tbody ref:tbody>
-        {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id else forloop.counter}}
+        {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id is not None else forloop.counter}}
             {{#for row in maps}}
             <tr scope>
                 <scope row_id="{forloop.parent.index}"/>
                 {{#for col in row}}
-                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[forloop.counter0], col.info)}}</td>
                 {{/for}}
             </tr>
             {{/for}}
@@ -188,7 +188,7 @@ active_row_node: Optional[LoopNode] = None
 active_col: Optional[str] = None
 active_col_cell: Optional[HTMLElement] = None
 
-col_id: Optional[str] = None
+col_id: Optional[int] = None
 
 def init():
     global maps, col_id, col_styles, columns
@@ -234,7 +234,10 @@ def fmt(value, info):
         return f'{value:%x %X}'
     if info.type == bool:
         return value and '☑' or '☐'
-    return value
+    if isinstance(info.type, EntityMeta):
+        with db_session:
+            return str(value._get_object())
+    return str(value)
 
 def refresh(clear: bool = False):
     if clear:

@@ -1,15 +1,15 @@
 <Table consume/>
 
 <python>
-from pony.orm.core import Query, Entity, db_session, desc
-from core.models import query_info
+from pony.orm.core import Query, Entity, db_session, desc, select, make_proxy, EntityMeta
+from core.models import query_info, find_entity_info
 from core.common import WebUnits
 from components.Tables import Columns, ColumnInfo
 from core.ctx import *
 
 query: Optional[Query] = None
 entity: Entity
-col_id: str = "id"
+col_id: int = 0
 
 columns: Columns = {}
 
@@ -17,15 +17,24 @@ def init():
     global query, columns
     # default query
     if query is None:
+        info = find_entity_info(entity)
+        qinfo = dict((k, a) for k, a in info.attrs.items() if not a.is_body and not a.is_cid)
+        query_text = ','.join(f'e.{a.name}' if not a.is_ref else f'{a.name}' for a in qinfo.values())
+        fors = ['for e in entity']
+        for a in qinfo.values():
+            if a.is_ref:
+                fors.append(f'for {a.name} in info.attrs["{a.name}"].type if e.{a.name}_id == {a.name}.id')
+        query_text = f'({query_text}) ' + ' '.join(fors)
         with db_session():
-            query = entity.select()
+            query = select(query_text)
 
-    # detect types
-    info = query_info(query)
-    if not info:
-        return
+    else:
+        # detect types
+        qinfo = query_info(query)
+        if not qinfo:
+            return
 
-    for name, attr in info.items():
+    for name, attr in qinfo.items():
         col = ColumnInfo(name=name, type=attr.type, title=_(attr.title), editable=not attr.readonly)
         if attr.width:
             col.style.width = WebUnits(attr.width, 'em')
@@ -41,7 +50,7 @@ def get_rows(order_col, order_dir):
     else:
         q = query
     for row in q:
-        yield row.to_dict()
+        yield [value if not isinstance(value, Entity) else make_proxy(value) for value in row]
 
 @db_session
 def save_value(field: Context, value):

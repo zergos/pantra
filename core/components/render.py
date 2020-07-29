@@ -566,18 +566,18 @@ class DefaultRenderer:
                 iter = node.iterator()
                 if iter:
                     parentloop = self.ctx.locals.get('forloop')
-                    self.ctx.locals.forloop = ADict(parent=parentloop)
+                    self.ctx.locals['forloop'] = ADict(parent=parentloop)
                     for i, value in enumerate(iter):
                         empty = False
                         self.ctx.locals[node.var_name] = value
-                        self.ctx.locals.forloop.counter = i + 1
-                        self.ctx.locals.forloop.counter0 = i
+                        self.ctx.locals['forloop'].counter = i + 1
+                        self.ctx.locals['forloop'].counter0 = i
                         for temp_child in node.template.children:
                             self.build_node(temp_child, node)
                     if node.var_name in self.ctx.locals:
                         del self.ctx.locals[node.var_name]
                     if parentloop:
-                        self.ctx.locals.forloop = parentloop
+                        self.ctx.locals['forloop'] = parentloop
                     else:
                         del self.ctx.locals['forloop']
             else:
@@ -591,13 +591,13 @@ class DefaultRenderer:
                     with self.ctx.shot.rebind():
                         pos = 0
                         parentloop = self.ctx.locals.get('forloop')
-                        self.ctx.locals.forloop = ADict(parentloop=parentloop)
+                        self.ctx.locals['forloop'] = ADict(parentloop=parentloop)
                         for i, value in enumerate(iter):
                             self.ctx.locals[node.var_name] = value
-                            self.ctx.locals.forloop.counter = i + 1
-                            self.ctx.locals.forloop.counter0 = i
+                            self.ctx.locals['forloop'].counter = i + 1
+                            self.ctx.locals['forloop'].counter0 = i
                             index = node.index_func()
-                            self.ctx.locals.forloop.index = index
+                            self.ctx.locals['forloop'].index = index
                             if index in oldmap:
                                 for sub in oldmap[index]:  # type: AnyNode
                                     node.move(sub.index(), pos)
@@ -615,7 +615,7 @@ class DefaultRenderer:
                         if node.var_name in self.ctx.locals:
                             del self.ctx.locals[node.var_name]
                         if parentloop:
-                            self.ctx.locals.forloop = parentloop
+                            self.ctx.locals['forloop'] = parentloop
                         else:
                             del self.ctx.locals['forloop']
                         for lst in oldmap.values():
