@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import typing
 import json
 import types
 from collections import defaultdict
 from dataclasses import dataclass, field as dc_field
-from functools import lru_cache
 
 from pony import options as pony_options
 from pony.orm import Database, Optional, Required, Discriminator, Set, StrArray, FloatArray, IntArray
-from pony.orm.core import EntityProxy
 from core.common import ADict, define_getter, define_setter
 from core.defaults import *
 from .types import *
@@ -423,22 +420,4 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
     if 'db' not in app_info:
         return None
     return app_info['db'].factory.cls
-
-
-@lru_cache(maxsize=None)
-def _find_entity_info_cached(entity: EntityMeta) -> EntityInfo:
-    if not dbinfo:
-        raise NameError('databases not exposed')
-
-    for app in dbinfo.values():
-        for db in app.values():
-            for ent in db.entities.values():
-                if ent.factory.cls == entity:
-                    return ent
-
-    raise NameError(f'entity is unknown ({entity.__name__})')
-
-
-def find_entity_info(entity: Union[EntityMeta, EntityProxy]) -> EntityInfo:
-    return _find_entity_info_cached(entity if type(entity) == EntityMeta else entity._entity_)
 

@@ -40,6 +40,10 @@ class RenderNode(UniqueNode):
         self._rebind = False
 
     @property
+    def parent(self) -> Optional[AnyNode]: return None
+    del parent
+
+    @property
     def children(self) -> List[AnyNode]: return []
     del children
 

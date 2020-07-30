@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from core.components.loader import collect_template
 from pony.orm import db_session
-from core.models.types import EntityMeta
+from core.models.types import EntityMeta, Entity, EntityProxy
 from components.Layout import *
 from core.ctx import *
 
@@ -35,11 +35,15 @@ def render_catalog_select(session: Session, name: str, callback: Callable[[Any],
 
 
 def render_catalog_form(session: Session, caller: Context, entity: EntityMeta) -> Context:
-    if hasattr(entity, '_entity_'):
+    if isinstance(entity, EntityProxy):
         name = entity._entity_.__name__
         code = entity._obj_pk_
         with db_session:
             title = str(entity._get_object())
+    elif isinstance(entity, Entity):
+        name = entity.__class__.__name__
+        code = entity._pk_
+        title = str(entity)
     else:
         name = entity.__name__
         code = ''

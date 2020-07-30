@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import typing
 import re
+from functools import lru_cache
 
-from pony.orm.core import Query, EntityMeta
-from .runtime import find_entity_info, AttrInfo
+from pony.orm.core import Query, EntityMeta, EntityProxy, Entity
+from .runtime import AttrInfo, dbinfo
 
 if typing.TYPE_CHECKING:
     from typing import *
+    from .types import AnyEntity
+    from .runtime import EntityInfo
 
-__all__ = ['AS', 'query_info']
+__all__ = ['AS', 'query_info', 'entity_name', 'get_entity', 'find_entity_info']
 
 
 def AS(expr, name):
@@ -49,3 +52,46 @@ def query_info(q: Query) -> Optional[Dict[str, AttrInfo]]:
             res[name] = AttrInfo(name=name, type=col_type, readonly=True)
     return res
 query_info.re_as = re.compile(r'[\'"](.*?)[\'"]\s*\)$')
+
+
+def entity_name(ent):
+    if isinstance(ent, EntityProxy):
+        return ent._entity_.__name__
+    elif isinstance(ent, Entity):
+        return ent.__class__.__name__
+    else:  # EntityMeta
+        return ent.__name__
+
+
+def get_entity(ent: AnyEntity) -> Optional[EntityMeta]:
+    if isinstance(ent, EntityProxy):
+        return ent._entity_
+    elif isinstance(ent, Entity):
+        return ent
+    elif hasattr(ent, '_entity_'):
+        return ent._entity_
+    else:
+        return None
+
+
+@lru_cache(maxsize=None)
+def _find_entity_info_cached(entity: EntityMeta) -> EntityInfo:
+    if not dbinfo:
+        raise NameError('databases not exposed')
+
+    for app in dbinfo.values():
+        for db in app.values():
+            for ent in db.entities.values():
+                if ent.factory.cls == entity:
+                    return ent
+
+    raise NameError(f'entity is unknown ({entity.__name__})')
+
+
+def find_entity_info(entity: AnyEntity) -> Optional[EntityInfo]:
+    if type(entity) == EntityMeta:
+        return _find_entity_info_cached(entity)
+    elif isinstance(entity, Entity):
+        return _find_entity_info_cached(type(entity))
+    else:  # EntityProxy
+        return _find_entity_info_cached(entity._entity_)

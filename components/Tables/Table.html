@@ -140,10 +140,12 @@
             box-shadow: 0 0 0 3px rgba($table-cell-active-color, 0.5);
         }
 
-        tr.selected {
-            background-color: rgba($table-cell-selected-color, 0.2) !important;
+        > tr.selected {
+            > td {
+                background-color: rgba($table-cell-selected-color, 0.2) !important;
+            }
 
-            td.selected {
+            > td.selected {
                 background-color: rgba($table-cell-selected-color, 0.3) !important;
                 font-weight: bold;
             }
@@ -300,8 +302,10 @@ class DragResize(DragController):
         refs.colgroup[0][self.source_index].style = col_style
         refs.colgroup.update_tree()
 
+
 def get_widget(col_info: ColumnInfo):
     return get_widget_default(col_info)
+
 
 def select_cell(node: HTMLElement):
     global active_row_id, active_row_node, active_col, active_col_cell
@@ -326,6 +330,7 @@ def select_cell(node: HTMLElement):
         ctx.shot(n)
         active_row_id = n.scope.row_id
 
+
 def enter_cell(node: HTMLElement):
     if selectable:
         callback(active_row_id)
@@ -334,13 +339,11 @@ def enter_cell(node: HTMLElement):
     if not editable or not node.data.col.editable:
         return
 
-    field = Context(node.data.col.widget, node)
-    field.locals.column = node.data.col
-    field.locals.value = str(node.text)
-    field.render.build()
+    node.render(node.data.col.widget, {'column': node.data.col, 'value': str(node.text)})
     node.text = ''
     node.style.padding = 0
     ctx.shot(node)
+
 
 def remove_field(field: Context, value):
     field.parent.text = value

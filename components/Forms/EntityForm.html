@@ -17,13 +17,14 @@
 
 <python>
 import dis
-from pony.orm.core import EntityMeta, db_session, commit
+from pony.orm.core import EntityMeta, EntityProxy, Entity, db_session, commit
 from core.common import WebUnits
-from core.models import find_entity_info
+from core.models import find_entity_info, entity_name, get_entity
+from core.models.types import AnyEntity
 from components.Widgets import ValuesDict, make_widget
 from core.ctx import *
 
-entity: Optional[EntityMeta] = None
+entity: Optional[AnyEntity] = None
 caption: str = ''
 
 values: ValuesDict = ValuesDict()
@@ -31,13 +32,13 @@ values: ValuesDict = ValuesDict()
 def init():
     global entity, caption
     if not caption:
-        caption = _(entity._entity_.__name__) if hasattr(entity, '_entity_') else _(entity.__name__)
+        caption = _(entity_name(entity))
 
 @db_session
 def render(node):
     if not ctx.slot:
         attrs = find_entity_info(entity).attrs
-        is_new = not hasattr(entity, '_entity_')
+        is_new = not get_entity(entity)
         max_len = round(max(len(title) for name, attr in attrs() for title in [_(attr.title)]) * 7)/10
         for attr_name, attr in attrs():
             values[attr_name] = make_widget(node, attr, None if is_new else getattr(entity, attr_name), caption_width=WebUnits(max_len, 'em'))
