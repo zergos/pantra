@@ -88,6 +88,8 @@ render_to: str = ''
 windows: Dict[str, 'Window'] = {}
 nodes: List[Context] = []
 
+history: List[str] = []
+
 @dataclass
 class Window:
     title: str
@@ -126,6 +128,10 @@ def switch_to(code: str, before_close: bool = False):
             windows[active].view.add_class('hidden')
     active = code
     if code:
+        if code in history:
+            history.remove(code)
+        history.append(code)
+
         windows[code].bar.add_class('active')
         if windows[code].view:
             windows[code].view.remove_class('hidden')
@@ -138,15 +144,19 @@ def click_bar(node):
 
 def close(node=None):
     current = active
-    keys = list(windows.keys())
-    idx = keys.index(active)
-    if idx == len(keys)-1:
-        if idx == 0:
-            switch_to('', True)
-        else:
-            switch_to(keys[idx-1], True)
+    if len(history) > 1:
+        history.pop()
+        switch_to(history.pop())
     else:
-        switch_to(keys[idx+1], True)
+        keys = list(windows.keys())
+        idx = keys.index(active)
+        if idx == len(keys)-1:
+            if idx == 0:
+                switch_to('', True)
+            else:
+                switch_to(keys[idx-1], True)
+        else:
+            switch_to(keys[idx+1], True)
     windows[current].bar.remove()
     if windows[current].view:
         windows[current].view.remove()
