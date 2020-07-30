@@ -38,9 +38,9 @@ class HTMLTemplate(UniNode):
     def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
-        self.attributes: ADict = attributes and ADict(attributes) or ADict()
+        self.attributes: Dict[str, Union[str, CodeType]] = attributes and ADict(attributes) or ADict()
         self.text: str = text
-        self.macro: str = ""
+        self.macro: CodeType = None
         self.name: Optional[str] = None
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
@@ -96,7 +96,20 @@ class MyVisitor(BCDParserVisitor):
             self.current.attributes[self.cur_attr] = None
 
     def visitAttrValue(self, ctx: BCDParser.AttrValueContext):
-        self.current.attributes[self.cur_attr] = ctx.getText()
+        text = ctx.getText().strip('"\'')
+        if '{' in text:
+            if text.startswith('{'):
+                if not self.cur_attr.startswith('set:'):
+                    value = compile(text.strip('{}'), f'<attribute:{self.cur_attr}>', 'eval')
+                else:
+                    text = text.strip('{}')
+                    text = f"({text} or '')"
+                    value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
+            else:
+                value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
+        else:
+            value = text
+        self.current.attributes[self.cur_attr] = value
 
     def visitRawName(self, ctx:BCDParser.RawNameContext):
         self.cur_attr = ctx.getText()
@@ -162,7 +175,9 @@ class MyVisitor(BCDParserVisitor):
 
     def visitInlineMacro(self, ctx: BCDParser.InlineMacroContext):
         macro = HTMLTemplate('@macro', parent=self.current)
-        macro.macro = ctx.children[1].getText()
+        text = ctx.children[1].getText()
+        code = compile(text, '<macro>', 'eval')
+        macro.macro = code
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')
@@ -191,6 +206,9 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
     try:
         visitor.visit(tree)
     except IllegalStateException as e:
+        error_callback(f'{filename}> {e}')
+        return None
+    except SyntaxError as e:
         error_callback(f'{filename}> {e}')
         return None
     return visitor.root
