@@ -10,7 +10,7 @@ from functools import lru_cache
 from pony import options as pony_options
 from pony.orm import Database, Optional, Required, Discriminator, Set, StrArray, FloatArray, IntArray
 from pony.orm.core import EntityProxy
-from core.common import ADict
+from core.common import ADict, define_getter, define_setter
 from core.defaults import *
 from .types import *
 from .parser import parse_xml, expat
@@ -97,12 +97,13 @@ class EntityInfo:
     attrs: AttrDict[str, AttrInfo] = dc_field(default_factory=AttrDict)
     schema: str = dc_field(default_factory=str)
     title: str = dc_field(default_factory=str)
-
+    prop_later: List[AttrInfo] = dc_field(default_factory=list)
 
 @dataclass
 class AttrInfo:
     name: str
     type: Type = dc_field(default=None)
+    is_id: bool = dc_field(default=False)
     is_prop: bool = dc_field(default=False)
     is_ref: bool = dc_field(default=False)
     title: str = dc_field(default='')
@@ -129,7 +130,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
     if not os.path.exists(file_name):
         return
 
-    locals = {}
+    pylocals = {}
 
     # load python module
     in_python = False
@@ -146,7 +147,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
         if name == 'python':
             in_python = False
             code = compile(python, file_name, 'exec')
-            exec(code, locals)
+            exec(code, pylocals)
 
     def python_data(data):
         nonlocal python
@@ -192,7 +193,7 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             if entity_name not in db_info.entities:
                 db_info.entities[entity_name] = EntityInfo(title=attrs.get('title', f'{entity_name}s'))
             entity_info = db_info.entities[entity_name]
-            entity_info.attrs['id'] = AttrInfo(name='id', type=int, title='#', readonly=True, width=4)
+            entity_info.attrs['id'] = AttrInfo(name='id', type=int, is_id=True, title='#', readonly=True, width=4)
 
             fields = {}
             body = None
@@ -227,17 +228,19 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 db_info = app_info[db_name]
                 bases = [db_info.factory.cls.Entity]
             if 'mixin' in attrs:
-                bases.append(locals[attrs['mixin']])
+                bases.append(pylocals[attrs['mixin']])
             if db_info.schema and 'base' not in attrs:
                 fields['_table_'] = (db_info.schema, entity_name.lower())
             if 'cid' in attrs:
                 fields['_discriminator_'] = int(attrs['cid'])
             if 'display' in attrs:
-                display = attrs['display']
-                fields['__str__'] = lambda self: eval(display)
+                to_str = define_getter(attrs['display'])
+                fields['__str__'] = to_str
+            #else:
+            #    to_str = define_getter('to_str', f"f'{entity_name} #{{self.id}}'")
             for event in EVENTS:
                 if event in attrs:
-                    fields[event] = locals[attrs[event]]
+                    fields[event] = pylocals[attrs[event]]
 
             entity_info.factory = EntityFactory(bases, fields, body)
 
@@ -280,13 +283,13 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 elif a == 'default':
                     kwargs[a] = type_factory[type_name](v)
                 elif a == 'eval':
-                    kwargs['default'] = eval(v, {'datetime': datetime}, locals)
+                    kwargs['default'] = eval(v, {'datetime': datetime}, pylocals)
                 elif a == 'title':
                     attr_info.title = v
                 elif a == 'width':
                     attr_info.width = float(v)
                 elif a == 'choices':
-                    attr_info.choices = locals[v]
+                    attr_info.choices = pylocals[v]
                 elif a == 'blank':
                     attr_info.blank = v == 'True'
                 elif a == 'body':
@@ -306,16 +309,17 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
             elif name == 'prop':
                 attr_info.is_prop = True
                 body = attr_info.body.name
+
                 if not isinstance(attr_info.type, str):
-                    prop = property(lambda self: getattr(self, body)[attr_name],
-                                    lambda self, value: getattr(self, body).__setitem__(attr_name, value))
+                    getter = define_getter(f'self.{body}["{attr_name}"]')
+                    setter = define_setter(f'self.{body}["{attr_name}"] = value')
+                    prop = property(getter, setter)
+                    fields[attr_name] = prop
                 else:
-                    prop = property(lambda self: attr_info.type[getattr(self, body)[attr_name]],
-                                    lambda self, value: getattr(self, body).__setitem__(attr_name, value.id))
+                    entity_info.prop_later.append(attr_info)
                     attr_info.is_ref = True
-                    prop_id = property(lambda self: getattr(self, body)[attr_name])
+                    prop_id = property(define_getter(f'self.{body}["{attr_name}"]'))
                     fields[f'{attr_name}_id'] = prop_id
-                fields[attr_name] = prop
 
         elif name == 'set':
             attr_name = attrs['name']
@@ -401,6 +405,12 @@ def expose_databases(app: str, with_binding: bool = True, with_mapping: bool = T
                 for attr_info in ent.attrs.values():
                     if isinstance(attr_info.type, str):
                         attr_info.type = db.entities[attr_info.type].factory.cls
+                for attr_info in ent.prop_later:
+                    getter = define_getter(f'entity[self.{attr_info.body.name}["{attr_info.name}"]]', locals={'entity': attr_info.type})
+                    setter = define_setter(f'self.{attr_info.body.name}["{attr_info.name}"] = value.id')
+                    prop = property(getter, setter)
+                    setattr(ent.factory.cls, attr_info.name, prop)
+                delattr(ent, "prop_later")
 
     else:
         expose_models(app, app_info)

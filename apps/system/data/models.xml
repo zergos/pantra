@@ -1,5 +1,5 @@
 <models xmlns="app.models">
-    <entity name="User" mixin="UserMixin" display="{self.name}">
+    <entity name="User" mixin="UserMixin" display="self.name">
         <attr name="name" type="str" required=""/>
         <attr name="password" type="str" required=""/>
         <attr name="salt" type="str" required=""/>

@@ -28,6 +28,7 @@ class ColumnInfo:
     editable: bool = field(default=True)
     sortable: bool = field(default=True)
     resizable: bool = field(default=True)
+    hidden: bool = field(default=False)
     style: DynamicStyles = field(default_factory=DynamicStyles)
     widget: HTMLTemplate = field(default=None)
 

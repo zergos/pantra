@@ -6,7 +6,8 @@ from dataclasses import dataclass
 if typing.TYPE_CHECKING:
     from typing import *
 
-__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits']
+__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
+           'EmptyCaller', 'define_getter', 'define_setter']
 
 from .oid import gen_id
 
@@ -257,3 +258,14 @@ class EmptyCaller(str):
     def __call__(self, *args, **kwargs):
         pass
 
+
+def define_getter(src, name='getter', locals = None):
+    locals = locals or {}
+    exec(f'def {name}(self): return {src}', locals)
+    return locals[name]
+
+
+def define_setter(src, name='setter', locals = None):
+    locals = locals or {}
+    exec(f'def {name}(self, value): {src}', locals)
+    return locals[name]

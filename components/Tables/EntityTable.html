@@ -3,6 +3,7 @@
 <python>
 from pony.orm.core import Query, Entity, db_session, desc, select, make_proxy, EntityMeta
 from core.models import query_info, find_entity_info
+from core.models.runtime import AttrInfo
 from core.common import WebUnits
 from components.Tables import Columns, ColumnInfo
 from core.ctx import *
@@ -18,8 +19,17 @@ def init():
     # default query
     if query is None:
         info = find_entity_info(entity)
-        qinfo = dict((k, a) for k, a in info.attrs.items() if not a.is_body and not a.is_cid)
-        query_text = ','.join(f'e.{a.name}' if not a.is_ref else f'{a.name}' for a in qinfo.values())
+        qinfo: Dict[str, AttrInfo] = dict((k, a) for k, a in info.attrs.items() if not a.is_body and not a.is_cid)
+        #query_text = ','.join(f'e.{a.name}' if not a.is_ref else f'{a.name}' for a in qinfo.values())
+        query_vars = []
+        for a in qinfo.values():
+            if not a.is_ref:
+                query_vars.append(f'e.{a.name}')
+            else:
+                query_vars.append(a.name)
+                query_vars.append(f'{a.name}.__str__()')
+        query_text = ','.join(query_vars)
+
         fors = ['for e in entity']
         for a in qinfo.values():
             if a.is_ref:
@@ -35,10 +45,12 @@ def init():
             return
 
     for name, attr in qinfo.items():
-        col = ColumnInfo(name=name, type=attr.type, title=_(attr.title), editable=not attr.readonly)
+        col = ColumnInfo(name=name, type=attr.type, title=_(attr.title), editable=not attr.readonly, hidden=attr.is_id)
         if attr.width:
             col.style.width = WebUnits(attr.width, 'em')
         columns[name] = col
+        if attr.is_ref:
+            columns[f'{name}$'] = ColumnInfo(name=name, type=attr.type, hidden=True)
 
 @db_session
 def get_rows(order_col, order_dir):

@@ -198,7 +198,7 @@ def init():
         maps = []
         row = []
         for col_name, col in columns.items():
-            if col_name != col_id:
+            if not col.hidden:
                 row.append(ColumnMap(info=col))
                 col.widget = collect_template(ctx.session, get_widget(col))
         common_width = DynamicStyles(f'width: {100 / (len(row)-1)}%')
