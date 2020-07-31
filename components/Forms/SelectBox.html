@@ -2,7 +2,7 @@
     {{#if caption}}<span>{{caption}}</span>{{/if}}
     <select class:wide multiple="{multiple}" required="{required}" on:change="update_value action">
         {{#if blank}}
-        <SelectItem caption="" selected></SelectItem>
+        <SelectItem caption="" selected/>
         {{/if}}
         <slot>
             <option disabled>Empty</option>

@@ -5,4 +5,13 @@
         <prop name="unit" type="Unit"/>
         <prop name="weight" type="float"/>
     </entity>
+
+    <entity name="Purchase" base="Document">
+        <attr name="storage" type="Storage" required="True"/>
+    </entity>
+    <entity name="PurchaseLine" base="Document">
+        <attr name="good" type="Good"/>
+        <attr name="unit" type="Unit"/>
+        <attr name="qty" type="float"/>
+    </entity>
 </models>

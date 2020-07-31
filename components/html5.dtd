@@ -1,0 +1,1272 @@
+
+
+
+
+<!ENTITY % ContentType "CDATA">
+    
+
+<!ENTITY % ContentTypes "CDATA">
+    
+
+<!ENTITY % Charset "CDATA">
+    
+
+<!ENTITY % Charsets "CDATA">
+    
+
+<!ENTITY % LanguageCode "NMTOKEN">
+    
+
+<!ENTITY % Character "CDATA">
+    
+
+<!ENTITY % Number "CDATA">
+    
+
+<!ENTITY % Date "CDATA">
+    
+
+<!ENTITY % LinkTypes "(alternate | archives | author | bookmark | contact | external | first | help | icon | index | last | license | next | nofollow | noreferrer | pingback | prefetch | prev | search | stylesheet | sidebar | tag | up)">
+    
+
+<!ENTITY % MediaDesc "(all|braille|embossed|handheld|print|projection|screen|speech|tty|tv)">
+    
+
+<!ENTITY % URI "CDATA">
+    
+
+<!ENTITY % UriList "CDATA">
+    
+
+<!ENTITY % Datetime "CDATA">
+    
+
+<!ENTITY % Script "CDATA">
+    
+
+<!ENTITY % StyleSheet "CDATA">
+    
+
+<!ENTITY % Text "CDATA">
+    
+
+<!ENTITY % FrameTarget "(_blank | _parent | _self | _top)">
+    
+
+<!ENTITY % Length "CDATA">
+    
+
+<!ENTITY % MultiLength "CDATA">
+    
+
+<!ENTITY % Pixels "CDATA">
+    
+
+<!ENTITY % Boolean "(true|false)">
+
+<!ENTITY % OlType "(1 | a | A | i | I)">
+    
+
+
+
+<!ENTITY % Shape "(rect|circle|poly|default)">
+
+<!ENTITY % Coords "CDATA">
+    
+
+
+<!ENTITY % Color "CDATA">
+
+
+
+
+
+
+<!ENTITY % coreattrs
+	"id          ID             #IMPLIED
+	class       CDATA          #IMPLIED
+	style       %StyleSheet;   #IMPLIED
+	title       %Text;         #IMPLIED
+	class:name  %Text;         #IMPLIED
+	css:name    %Text;         #IMPLIED
+	set:name    %Text;         #IMPLIED
+	data:name   %Text;         #IMPLIED
+	ref:name    %Text;         #IMPLIED
+	cref:name   %Text;         #IMPLIED
+	local:name  %Text;	       #IMPLIED
+	scope:name  %Text;	       #IMPLIED
+	on:render   %Text;		   #IMPLIED
+	on:init     %Text;         #IMPLIED
+	"
+  >
+
+
+<!ENTITY % i18n
+ "lang        %LanguageCode; #IMPLIED
+  xml:lang    %LanguageCode; #IMPLIED
+  dir         (ltr|rtl)      #IMPLIED"
+  >
+
+
+<!ENTITY % events
+ "onclick     %Script;       #IMPLIED
+  ondblclick  %Script;       #IMPLIED
+  onmousedown %Script;       #IMPLIED
+  onmouseup   %Script;       #IMPLIED
+  onmouseover %Script;       #IMPLIED
+  onmousemove %Script;       #IMPLIED
+  onmouseout  %Script;       #IMPLIED
+  onkeypress  %Script;       #IMPLIED
+  onkeydown   %Script;       #IMPLIED
+  onkeyup     %Script;       #IMPLIED
+  ondrag        %Script;      #IMPLIED      
+  ondragend     %Script;      #IMPLIED      
+  ondragenter   %Script;      #IMPLIED      
+  ondragleave   %Script;      #IMPLIED      
+  ondragover    %Script;      #IMPLIED      
+  ondragstart   %Script;      #IMPLIED      
+  ondrop        %Script;      #IMPLIED      
+  onmousewheel  %Script;      #IMPLIED      
+  onscroll      %Script;      #IMPLIED      
+  on:click     CDATA          #IMPLIED
+  on:dblclick  CDATA          #IMPLIED
+  on:mousedown CDATA          #IMPLIED
+  on:mouseup   CDATA          #IMPLIED
+  on:mouseover CDATA          #IMPLIED
+  on:mousemove CDATA          #IMPLIED
+  on:mouseout  CDATA          #IMPLIED
+  on:keypress  CDATA          #IMPLIED
+  on:keydown   CDATA          #IMPLIED
+  on:keyup     CDATA          #IMPLIED
+  on:drag        CDATA         #IMPLIED
+  on:dragend     CDATA         #IMPLIED
+  on:dragenter   CDATA         #IMPLIED
+  on:dragleave   CDATA         #IMPLIED
+  on:dragover    CDATA         #IMPLIED
+  on:dragstart   CDATA         #IMPLIED
+  on:drop        CDATA         #IMPLIED
+  on:mousewheel  CDATA         #IMPLIED
+  on:scroll      CDATA         #IMPLIED
+ "
+  >
+
+
+<!ENTITY % focus
+ "accesskey   %Character;    #IMPLIED
+  tabindex    %Number;       #IMPLIED
+  onfocus     %Script;       #IMPLIED
+  onblur      %Script;       #IMPLIED"
+  >
+
+
+<!ENTITY % html5attrs
+ "contenteditable    %Boolean;     #IMPLIED
+  contextmenu        ID            #IMPLIED
+  draggable          (true | false | auto) #IMPLIED
+  hidden             (hidden)      #IMPLIED
+  item               CDATA         #IMPLIED
+  itemprop           CDATA         #IMPLIED
+  spellcheck         %Boolean;     #IMPLIED
+  subject            ID            #IMPLIED
+  contextmenu        ID            #IMPLIED
+  contextmenu        ID            #IMPLIED
+  contextmenu        ID            #IMPLIED
+  contextmenu        ID            #IMPLIED
+ "
+  >
+
+
+
+
+<!ENTITY % html5mediaevents
+ "onabort               %Script;      #IMPLIED  
+  oncanplay             %Script;      #IMPLIED  
+  oncanplaythrough      %Script;      #IMPLIED  
+  ondurationchange      %Script;      #IMPLIED  
+  onemptied             %Script;      #IMPLIED  
+  onended               %Script;      #IMPLIED  
+  onerror               %Script;      #IMPLIED  
+  onloadeddata          %Script;      #IMPLIED  
+  onloadedmetadata      %Script;      #IMPLIED  
+  onloadstart           %Script;      #IMPLIED  
+  onpause               %Script;      #IMPLIED  
+  onplay                %Script;      #IMPLIED  
+  onplaying             %Script;      #IMPLIED  
+  onprogress            %Script;      #IMPLIED  
+  onratechange          %Script;      #IMPLIED  
+  onreadystatechange    %Script;      #IMPLIED  
+  onseeked              %Script;      #IMPLIED  
+  onseeking             %Script;      #IMPLIED  
+  onstalled             %Script;      #IMPLIED  
+  onsuspend             %Script;      #IMPLIED  
+  ontimeupdate          %Script;      #IMPLIED  
+  onvolumechange        %Script;      #IMPLIED  
+  onwaiting             %Script;      #IMPLIED  
+ "
+>
+
+
+
+
+
+
+
+<!ENTITY % attrs "%coreattrs; %i18n; %events; %html5attrs;">
+
+
+
+<!ENTITY % special.extra
+   "object | img | map | iframe">
+	
+<!ENTITY % special.basic
+	"br | span | bdo">
+
+<!ENTITY % special
+   "%special.basic; | %special.extra;">
+
+<!ENTITY % fontstyle.basic "small | i | b | u">
+
+<!ENTITY % fontstyle "%fontstyle.basic;">
+
+<!ENTITY % phrase.extra "sub | sup">
+<!ENTITY % phrase.basic "em | strong | dfn | code | q |
+                   samp | kbd | var | cite | abbr | acronym">
+
+<!ENTITY % phrase "%phrase.basic; | %phrase.extra;">
+
+<!ENTITY % inline.forms "input | output | select | textarea | label | button |
+                         datetime | datetime-local | data | month | week |
+                         time | number | range | email | url | menu |
+                         datalist">
+
+
+<!ENTITY % misc.inline "ins | del | script">
+
+
+<!ENTITY % misc "noscript | %misc.inline;">
+
+<!ENTITY % inline "a | %special; | %fontstyle; | %phrase; | %inline.forms;">
+
+
+<!ENTITY % Inline "(#PCDATA | %inline; | %misc.inline;)*">
+
+
+
+<!ENTITY % heading "h1|h2|h3|h4|h5|h6">
+<!ENTITY % lists "ul | ol | dl">
+<!ENTITY % blocktext "pre | hr | blockquote | address | article | aside |
+                      summary | mark">
+
+<!ENTITY % block
+    "p | %heading; | div | %lists; | %blocktext; | fieldset | table |
+    header | footer | section | hgroup | main | nav | dialog | figure |
+    datagrid | canvas | audio | video | source | embed | keygen |
+    progress | ruby | %components;">
+
+
+<!ENTITY % Flow "(#PCDATA | %block; | form | %inline; | %misc;)*">
+
+
+
+
+
+
+
+
+<!ENTITY % a.content
+   "(#PCDATA | %special; | %fontstyle; | %phrase; | %inline.forms; | %misc.inline;)*">
+
+
+
+<!ENTITY % pre.content
+   "(#PCDATA | a | %special.basic; | %fontstyle.basic; | %phrase.basic; |
+	   %inline.forms; | %misc.inline;)*">
+
+
+
+<!ENTITY % form.content "(#PCDATA | %block; | %inline; | %misc;)*">
+
+
+
+<!ENTITY % button.content
+   "(#PCDATA | p | %heading; | div | %lists; | %blocktext; |
+      table | datagrid | br | span | bdo | object | img | map |
+      %fontstyle; | %phrase; | %misc;)*">
+
+
+
+
+
+<!ELEMENT html (head, body)>
+<!ATTLIST html
+  %i18n;
+  id          ID             #IMPLIED
+  xmlns       %URI;          #FIXED 'http://www.w3.org/1999/xhtml'
+  manifest    %URI;          #IMPLIED
+  >
+
+
+
+<!ENTITY % head.misc "(script|style|meta|link|object)*">
+
+
+
+<!ELEMENT head (%head.misc;,
+     ((title, %head.misc;, (base, %head.misc;)?) |
+      (base, %head.misc;, (title, %head.misc;))))>
+
+<!ATTLIST head
+  %i18n;
+  id          ID             #IMPLIED
+  profile     %URI;          #IMPLIED
+  >
+
+
+<!ELEMENT title (#PCDATA)>
+<!ATTLIST title 
+  %i18n;
+  id          ID             #IMPLIED
+  >
+
+
+
+<!ELEMENT base EMPTY>
+<!ATTLIST base
+  id          ID             #IMPLIED
+  href        %URI;          #IMPLIED
+  target      %FrameTarget;  #IMPLIED
+  >
+
+
+<!ELEMENT meta EMPTY>
+<!ATTLIST meta
+  %i18n;
+  id          ID             #IMPLIED
+  http-equiv  CDATA          #IMPLIED
+  name        CDATA          #IMPLIED
+  content     CDATA          #REQUIRED
+  charset     %Charset;      #IMPLIED
+  >
+
+
+
+<!ELEMENT link EMPTY>
+<!ATTLIST link
+  %attrs;
+  href        %URI;          #IMPLIED
+  hreflang    %LanguageCode; #IMPLIED
+  type        %ContentType;  #IMPLIED
+  rel         %LinkTypes;    #IMPLIED
+  media       %MediaDesc;    #IMPLIED
+  sizes       %Number;       #IMPLIED
+  >
+
+<!ELEMENT style (#PCDATA)>
+<!ATTLIST style
+  %i18n;
+  id          ID             #IMPLIED
+  type        CDATA          #FIXED "text/scss"
+  media       %MediaDesc;    #IMPLIED
+  scoped      (scoped)       #IMPLIED
+  >
+
+
+<!ELEMENT script (#PCDATA)>
+<!ATTLIST script
+  id          ID             #IMPLIED
+  charset     %Charset;      #IMPLIED
+  type        CDATA          #FIXED "text/javascript"
+  language    CDATA          #IMPLIED
+  src         %URI;          #IMPLIED
+  defer       (defer)        #IMPLIED
+  async       (async)        #IMPLIED
+  >
+
+
+
+<!ELEMENT noscript %Flow;>
+<!ATTLIST noscript
+  %attrs;
+  >
+
+
+
+
+
+<!ELEMENT iframe %Flow;>
+<!ATTLIST iframe
+  %coreattrs;
+  %html5attrs;
+  name        NMTOKEN        #IMPLIED
+  src         %URI;          #IMPLIED
+  height      %Length;       #IMPLIED
+  width       %Length;       #IMPLIED
+  sandbox     (allow-forms | allow-same-origin | allow-scripts)        #IMPLIED
+  seamless    CDATA          #IMPLIED
+  srcdoc      CDATA          #IMPLIED
+  >
+
+
+
+<!ELEMENT body %Flow;>
+<!ATTLIST body
+  %attrs;
+  onload      %Script;       #IMPLIED
+  onunload    %Script;       #IMPLIED
+  onafterprint    %Script;   #IMPLIED
+  onbeforeprint   %Script;   #IMPLIED
+  onbeforeonload  %Script;   #IMPLIED
+  onerror         %Script;   #IMPLIED
+  onhaschange     %Script;   #IMPLIED
+  onmessage       %Script;   #IMPLIED
+  onoffline       %Script;   #IMPLIED
+  ononline        %Script;   #IMPLIED
+  onpagehide      %Script;   #IMPLIED
+  onpageshow      %Script;   #IMPLIED
+  onpopstate      %Script;   #IMPLIED
+  onredo          %Script;   #IMPLIED
+  onresize        %Script;   #IMPLIED
+  onstorage       %Script;   #IMPLIED
+  onundo          %Script;   #IMPLIED
+  onunload        %Script;   #IMPLIED
+  >
+
+<!ELEMENT div %Flow;>  
+<!ATTLIST div
+  %attrs;
+  >
+
+
+
+<!ELEMENT p %Inline;>
+<!ATTLIST p
+  %attrs;
+  >
+
+
+
+
+
+<!ELEMENT h1  %Inline;>
+<!ATTLIST h1
+  %attrs;
+  >
+
+<!ELEMENT h2 %Inline;>
+<!ATTLIST h2
+  %attrs;
+  >
+
+<!ELEMENT h3 %Inline;>
+<!ATTLIST h3
+  %attrs;
+  >
+
+<!ELEMENT h4 %Inline;>
+<!ATTLIST h4
+  %attrs;
+  >
+
+<!ELEMENT h5 %Inline;>
+<!ATTLIST h5
+  %attrs;
+  >
+
+<!ELEMENT h6 %Inline;>
+<!ATTLIST h6
+  %attrs;
+  >
+
+
+
+
+
+
+<!ELEMENT ul (li)+>
+<!ATTLIST ul
+  %attrs;
+  >
+
+
+
+<!ELEMENT ol (li)+>
+<!ATTLIST ol
+  %attrs;
+  type        %OlType;        #IMPLIED
+  start       %Number;       #IMPLIED
+  reversed    (reversed)     #IMPLIED
+  >
+
+
+
+<!ELEMENT li %Flow;>
+<!ATTLIST li
+  %attrs;
+  value       %Number;       #IMPLIED
+  >
+
+
+
+<!ELEMENT dl (dt|dd)+>
+<!ATTLIST dl
+  %attrs;
+  >
+
+<!ELEMENT dt %Inline;>
+<!ATTLIST dt
+  %attrs;
+  >
+
+<!ELEMENT dd %Flow;>
+<!ATTLIST dd
+  %attrs;
+  >
+
+
+
+
+
+<!ELEMENT address (#PCDATA | %inline; | %misc.inline; | p)*>
+<!ATTLIST address
+  %attrs;
+  >
+
+
+
+<!ELEMENT hr EMPTY>
+<!ATTLIST hr
+  %attrs;
+  >
+
+
+
+
+
+<!ELEMENT pre %pre.content;>
+<!ATTLIST pre
+  %attrs;
+  >
+
+
+
+<!ELEMENT blockquote %Flow;>
+<!ATTLIST blockquote
+  %attrs;
+  cite        %URI;          #IMPLIED
+  >
+
+
+
+
+<!ELEMENT ins %Flow;>
+<!ATTLIST ins
+  %attrs;
+  cite        %URI;          #IMPLIED
+  datetime    %Datetime;     #IMPLIED
+  >
+
+<!ELEMENT del %Flow;>
+<!ATTLIST del
+  %attrs;
+  cite        %URI;          #IMPLIED
+  datetime    %Datetime;     #IMPLIED
+  >
+
+
+
+
+
+<!ELEMENT a %a.content;>
+<!ATTLIST a
+  %attrs;
+  %focus;
+  href        %URI;          #IMPLIED
+  hreflang    %LanguageCode; #IMPLIED
+  rel         %LinkTypes;    #IMPLIED
+  target      %FrameTarget;  #IMPLIED
+  media       CDATA          #IMPLIED
+  ping        %URI;          #IMPLIED
+  type        %ContentType;  #IMPLIED
+  >
+
+
+
+<!ELEMENT span %Inline;> 
+<!ATTLIST span
+  %attrs;
+  >
+
+<!ELEMENT bdo %Inline;>  
+<!ATTLIST bdo
+  %coreattrs;
+  %html5attrs;
+  %events;
+  lang        %LanguageCode; #IMPLIED
+  xml:lang    %LanguageCode; #IMPLIED
+  dir         (ltr|rtl)      #REQUIRED
+  >
+
+<!ELEMENT br EMPTY>   
+<!ATTLIST br
+  %coreattrs;
+  %html5attrs;
+  >
+
+<!ELEMENT em %Inline;>   
+<!ATTLIST em %attrs;>
+
+<!ELEMENT strong %Inline;>   
+<!ATTLIST strong %attrs;>
+
+<!ELEMENT dfn %Inline;>   
+<!ATTLIST dfn %attrs;>
+
+<!ELEMENT code %Inline;>   
+<!ATTLIST code %attrs;>
+
+<!ELEMENT samp %Inline;>   
+<!ATTLIST samp %attrs;>
+
+<!ELEMENT kbd %Inline;>  
+<!ATTLIST kbd %attrs;>
+
+<!ELEMENT var %Inline;>   
+<!ATTLIST var %attrs;>
+
+<!ELEMENT cite %Inline;>   
+<!ATTLIST cite %attrs;>
+
+<!ELEMENT abbr %Inline;>   
+<!ATTLIST abbr %attrs;>
+
+<!ELEMENT q %Inline;>   
+<!ATTLIST q
+  %attrs;
+  cite        %URI;          #IMPLIED
+  >
+
+<!ELEMENT sub %Inline;> 
+<!ATTLIST sub %attrs;>
+
+<!ELEMENT sup %Inline;> 
+<!ATTLIST sup %attrs;>
+
+<!ELEMENT i %Inline;>   
+<!ATTLIST i %attrs;>
+
+<!ELEMENT b %Inline;>   
+<!ATTLIST b %attrs;>
+
+<!ELEMENT small %Inline;>   
+<!ATTLIST small %attrs;>
+
+
+
+
+<!ELEMENT object (#PCDATA | param | %block; | form | %inline; | %misc;)*>
+<!ATTLIST object
+  %attrs;
+  %html5mediaevents;
+  data        %URI;          #IMPLIED
+  type        %ContentType;  #IMPLIED
+  height      %Length;       #IMPLIED
+  width       %Length;       #IMPLIED
+  usemap      %URI;          #IMPLIED
+  name        NMTOKEN        #IMPLIED
+  tabindex    %Number;       #IMPLIED
+  form        CDATA          #IMPLIED
+  >
+
+
+<!ELEMENT param EMPTY>
+<!ATTLIST param
+  id          ID             #IMPLIED
+  name        CDATA          #REQUIRED
+  value       CDATA          #IMPLIED
+  >
+
+
+
+
+
+<!ELEMENT img EMPTY>
+<!ATTLIST img
+  %attrs;
+  %html5mediaevents;
+  src         %URI;          #REQUIRED
+  alt         %Text;         #REQUIRED
+  name        NMTOKEN        #IMPLIED
+  longdesc    %URI;          #IMPLIED
+  height      %Length;       #IMPLIED
+  width       %Length;       #IMPLIED
+  usemap      %URI;          #IMPLIED
+  ismap       (ismap)        #IMPLIED
+  >
+
+
+
+
+
+
+
+<!ELEMENT map ((%block; | form | %misc;)+ | area+)>
+<!ATTLIST map
+  %i18n;
+  %events;
+  id          ID             #REQUIRED
+  class       CDATA          #IMPLIED
+  style       %StyleSheet;   #IMPLIED
+  title       %Text;         #IMPLIED
+  name        CDATA          #IMPLIED
+  >
+
+<!ELEMENT area EMPTY>
+<!ATTLIST area
+  %attrs;
+  %focus;
+  shape       %Shape;        "rect"
+  coords      %Coords;       #IMPLIED
+  href        %URI;          #IMPLIED
+  alt         %Text;         #REQUIRED
+  target      %FrameTarget;  #IMPLIED
+  hreflang    %LanguageCode; #IMPLIED
+  media       CDATA          #IMPLIED
+  ping        %URI;          #IMPLIED
+  rel         %LinkTypes;    #IMPLIED
+  type        CDATA          #IMPLIED
+  >
+
+
+
+<!ELEMENT form %form.content;>   
+
+<!ATTLIST form
+  %attrs;
+  action      %URI;          #REQUIRED
+  method      (get|post)     "get"
+  name        NMTOKEN        #IMPLIED
+  enctype     %ContentType;  "application/x-www-form-urlencoded"
+  onsubmit    %Script;       #IMPLIED
+  accept-charset %Charsets;  #IMPLIED
+  target      %FrameTarget;  #IMPLIED
+  autocomplete (on|off)      #IMPLIED
+  novalidate   CDATA         #IMPLIED
+  oncontextmenu %Script;     #IMPLIED
+  onformchange  %Script;     #IMPLIED
+  onforminput   %Script;     #IMPLIED
+  onforminput   %Script;     #IMPLIED
+  oninput       %Script;     #IMPLIED
+  onforminput   %Script;     #IMPLIED
+  oninvalid     %Script;     #IMPLIED
+  >
+
+
+<!ELEMENT label %Inline;>
+<!ATTLIST label
+  %attrs;
+  for         IDREF          #IMPLIED
+  form        CDATA          #IMPLIED
+  >
+
+<!ENTITY % InputType
+  "(button | checkbox | color | date | datetime | datetime-local |
+    email | file | hidden | image | month | number |
+    password | radio | range | reset | submit |
+    tel | text | time | url | week)"
+   >
+
+<!ENTITY % formenctype "(application-x-www-form-urlencoded | multipart-form-data | text-plain)">
+
+<!ELEMENT input EMPTY>     
+<!ATTLIST input
+  %attrs;
+  %focus;
+  type        %InputType;    "text"
+  name        CDATA          #IMPLIED
+  value       CDATA          #IMPLIED
+  bind:value  (value)        #IMPLIED
+  checked     (checked)      #IMPLIED
+  disabled    (disabled)     #IMPLIED
+  readonly    (readonly)     #IMPLIED
+  set:checked     (set:checked)      #IMPLIED
+  set:disabled    (set:disabled)     #IMPLIED
+  set:readonly    (set:readonly)     #IMPLIED
+  maxlength   %Number;       #IMPLIED
+  src         %URI;          #IMPLIED
+  alt         CDATA          #IMPLIED
+  usemap      %URI;          #IMPLIED
+  onselect    %Script;       #IMPLIED
+  onchange    %Script;       #IMPLIED
+  accept      %ContentTypes; #IMPLIED
+  autocomplete  (on|off|name|honorific-prefix|given-name|additional-name|family-name|honorific-suffix|nickname|email|username|new-password|current-password|organization-title|organization|street-address|address-line1|address-line2|address-line3|address-level4|address-level3|address-level2|address-level1|country|country-name|postal-code|cc-name|cc-given-name|cc-additional-name|cc-family-name|cc-number|cc-exp|cc-exp-month|cc-exp-year|cc-csc|cc-type|transaction-currency|transaction-amount|language|bday|bday-day|bday-month|bday-year|sex|tel|tel-country-code|tel-national|tel-area-code|tel-local|tel-extension|impp|url|photo)          #IMPLIED
+  autofocus     CDATA          #IMPLIED
+  form          CDATA          #IMPLIED
+  formaction    %URI;          #IMPLIED
+  formemctype   %formenctype;  #IMPLIED
+  formmethod  (delete | get | post | put)          #IMPLIED
+  formvalidate CDATA           #IMPLIED
+  formtarget  (_blank | _self | _parent | _top)    #IMPLIED
+  height        %Pixels;       #IMPLIED
+  list          ID             #IMPLIED
+  max           %Number;       #IMPLIED
+  min           %Number;       #IMPLIED
+  multiple      CDATA          #IMPLIED
+  set:multiple  (set:multiple) #IMPLIED
+  pattern       CDATA          #IMPLIED
+  placeholder   CDATA          #IMPLIED
+  required      CDATA          #IMPLIED
+  set:required  (set:required) #IMPLIED
+  step          %Number;       #IMPLIED
+  width         %Pixels;       #IMPLIED
+  set:focus     (set:focus)    #IMPLIED
+  >
+
+<!ELEMENT select (optgroup|option)+>  
+<!ATTLIST select
+  %attrs;
+  name        CDATA          #IMPLIED
+  multiple    (multiple)     #IMPLIED
+  disabled    (disabled)     #IMPLIED
+  set:multiple    (set:multiple)     #IMPLIED
+  set:disabled    (set:disabled)     #IMPLIED
+  tabindex    %Number;       #IMPLIED
+  onfocus     %Script;       #IMPLIED
+  onblur      %Script;       #IMPLIED
+  onchange    %Script;       #IMPLIED
+  on:change   CDATA          #IMPLIED
+
+  autofocus   (autofocus)    #IMPLIED
+  form        CDATA          #IMPLIED
+  >
+
+<!ELEMENT optgroup (option)+>   
+<!ATTLIST optgroup
+  %attrs;
+  disabled    (disabled)     #IMPLIED
+  label       %Text;         #REQUIRED
+  >
+
+<!ELEMENT option (#PCDATA)>     
+<!ATTLIST option
+  %attrs;
+  selected    (selected)     #IMPLIED
+  disabled    (disabled)     #IMPLIED
+  label       %Text;         #IMPLIED
+  value       CDATA          #IMPLIED
+  >
+
+<!ELEMENT textarea (#PCDATA)>     
+<!ATTLIST textarea
+  %attrs;
+  %focus;
+  name        CDATA          #IMPLIED
+  rows        %Number;       #REQUIRED
+  cols        %Number;       #REQUIRED
+  disabled    (disabled)     #IMPLIED
+  readonly    (readonly)     #IMPLIED
+  set:disabled    (set:disabled)     #IMPLIED
+  set:readonly    (set:readonly)     #IMPLIED
+  onselect    %Script;       #IMPLIED
+  onchange    %Script;       #IMPLIED
+  on:change   CDATA          #IMPLIED
+
+  autofocus     CDATA          #IMPLIED
+  cols          %Number;       #IMPLIED
+  form          CDATA          #IMPLIED
+  maxlength     %Number;       #IMPLIED
+  placeholder   CDATA          #IMPLIED
+  required      CDATA          #IMPLIED
+  set:required  (set:required) #IMPLIED
+  wrap          (hard | soft)  "soft"
+  >
+
+
+<!ELEMENT fieldset (#PCDATA | legend | %block; | form | %inline; | %misc;)*>
+<!ATTLIST fieldset
+  %attrs;
+  
+  disabled    CDATA          #IMPLIED
+  form        CDATA          #IMPLIED
+  name        CDATA          #IMPLIED
+  >
+
+<!ENTITY % LAlign "(top|bottom|left|right)">
+
+<!ELEMENT legend %Inline;>     
+<!ATTLIST legend
+  %attrs;
+  accesskey   %Character;    #IMPLIED
+  >
+
+ 
+<!ELEMENT button %button.content;>  
+<!ATTLIST button
+  %attrs;
+  %focus;
+  name        CDATA          #IMPLIED
+  value       CDATA          #IMPLIED
+  type        (button|submit|reset) "submit"
+  disabled    (disabled)     #IMPLIED
+  set:disabled (set:disabled) #IMPLIED
+
+  autofocus   CDATA          #IMPLIED
+  form        CDATA          #IMPLIED
+  formaction  %URI;          #IMPLIED
+  formemctype CDATA          #IMPLIED
+  formmethod  (delete | get | post | put)          #IMPLIED
+  formvalidate CDATA          #IMPLIED
+  formtarget  (_blank | _self | _parent | _top)    #IMPLIED
+  >
+
+
+
+
+
+<!ELEMENT table
+     (caption?, (col*|colgroup*), thead?, tfoot?, (tbody+|tr+))>
+<!ELEMENT caption  %Inline;>
+<!ELEMENT thead    (tr)+>
+<!ELEMENT tfoot    (tr)+>
+<!ELEMENT tbody    (tr)+>
+<!ELEMENT colgroup (col)*>
+<!ELEMENT col      EMPTY>
+<!ELEMENT tr       (th|td)+>
+<!ELEMENT th       %Flow;>
+<!ELEMENT td       %Flow;>
+
+<!ATTLIST table
+  %attrs;
+  summary     %Text;         #IMPLIED
+  >
+
+<!ATTLIST caption
+  %attrs;
+  >
+
+
+<!ATTLIST colgroup
+  %attrs;
+  span        %Number;       "1"
+  >
+
+
+<!ATTLIST col
+  %attrs;
+  span        %Number;       "1"
+  >
+
+
+<!ATTLIST thead
+  %attrs;
+  >
+
+<!ATTLIST tfoot
+  %attrs;
+  >
+
+<!ATTLIST tbody
+  %attrs;
+  >
+
+<!ATTLIST tr
+  %attrs;
+  >
+
+
+<!ENTITY % Scope "(row|col|rowgroup|colgroup)">
+
+
+
+<!ATTLIST th
+  %attrs;
+  colspan     %Number;       "1"
+  headers     IDREFS         #IMPLIED
+  rowspan     %Number;       "1"
+  scope       %Scope;        #IMPLIED
+  >
+
+<!ATTLIST td
+  %attrs;
+  colspan     %Number;       "1"
+  headers     IDREFS         #IMPLIED
+  rowspan     %Number;       "1"
+  >
+
+
+
+
+
+<!ELEMENT article (#PCDATA)>
+<!ATTLIST article
+  %attrs;
+  cite      %URI;   #IMPLIED
+  pubdate   %Date;  #IMPLIED
+>
+
+<!ELEMENT aside (#PCDATA)>
+<!ATTLIST aside %attrs;>
+
+<!ELEMENT dialog (#PCDATA)>
+<!ATTLIST dialog %attrs;>
+
+<!ELEMENT figcaption EMPTY>
+<!ATTLIST figcaption %attrs;>
+
+<!ELEMENT figure (#PCDATA | figcaption)>
+<!ATTLIST figure %attrs;>
+
+<!ELEMENT footer (#PCDATA)>
+<!ATTLIST footer %attrs;>
+
+<!ELEMENT header (#PCDATA)>
+<!ATTLIST header %attrs;>
+
+<!ELEMENT hgroup (#PCDATA)>
+<!ATTLIST hgroup %attrs;>
+
+<!ELEMENT main (#PCDATA)>
+<!ATTLIST main %attrs;>
+
+<!ELEMENT nav (#PCDATA)>
+<!ATTLIST nav %attrs;>
+
+<!ELEMENT section (#PCDATA)>
+<!ATTLIST section
+  %attrs;
+  cite      %URI;   #IMPLIED
+>
+
+<!ELEMENT summary (#PCDATA)>
+<!ATTLIST summary %attrs; >
+
+
+
+
+<!ELEMENT audio EMPTY>
+<!ATTLIST audio
+  %attrs;
+  %html5mediaevents;
+  autoplay    CDATA   #IMPLIED
+  controls    CDATA   #IMPLIED
+  preload     CDATA    #IMPLIED
+  src         %URI;        #IMPLIED
+>
+
+<!ELEMENT source EMPTY>
+<!ATTLIST source
+  %attrs;
+  %html5mediaevents;
+  media    CDATA    #IMPLIED
+  src      %URI;    #IMPLIED
+  type     %Number; #IMPLIED
+>
+
+<!ELEMENT video EMPTY>
+<!ATTLIST video
+  %attrs;
+  %html5mediaevents;
+  autoplay    CDATA      #IMPLIED
+  controls    CDATA      #IMPLIED
+  height      %Pixels;   #IMPLIED
+  loop        CDATA      #IMPLIED
+  preload     CDATA      #IMPLIED
+  src         %URI;      #IMPLIED
+  width       %Pixels;   #IMPLIED
+>
+
+<!ELEMENT embed EMPTY>
+<!ATTLIST embed
+  %attrs;
+  %html5mediaevents;
+  height   %Pixels;   #IMPLIED
+  src      %URI;      #IMPLIED
+  type     CDATA      #IMPLIED
+  width    %Pixels;   #IMPLIED
+>
+
+<!ELEMENT canvas EMPTY>
+<!ATTLIST canvas
+  %attrs;
+  height   %Pixels;   #IMPLIED
+  width    %Pixels;   #IMPLIED
+>
+
+
+
+
+<!ELEMENT datetime (#PCDATA)>
+<!ATTLIST datetime %attrs;>
+
+<!ELEMENT datetime-local (#PCDATA)>
+<!ATTLIST datetime-local %attrs;>
+
+<!ELEMENT date (#PCDATA)>
+<!ATTLIST date %attrs;>
+
+<!ELEMENT month (#PCDATA)>
+<!ATTLIST month %attrs;>
+
+<!ELEMENT week (#PCDATA)>
+<!ATTLIST week %attrs;>
+
+<!ELEMENT time (#PCDATA)>
+<!ATTLIST time
+  %attrs;
+  datetime    %Date;   #IMPLIED
+>
+
+<!ELEMENT number (#PCDATA)>
+<!ATTLIST number %attrs;>
+
+<!ELEMENT range (#PCDATA)>
+<!ATTLIST range %attrs;>
+
+<!ELEMENT email (#PCDATA)>
+<!ATTLIST email %attrs;>
+
+<!ELEMENT url (#PCDATA)>
+<!ATTLIST url %attrs;>
+
+
+
+
+<!ELEMENT keygen EMPTY>
+<!ATTLIST keygen
+  %attrs;
+  autofocus   (disabled)   #IMPLIED
+  challenge   CDATA        #IMPLIED
+  disabled    CDATA        #IMPLIED
+  form        CDATA        #IMPLIED
+  keytype     (rsa)        #IMPLIED
+  name        CDATA        #IMPLIED
+>
+
+<!ELEMENT mark (#PCDATA)>
+<!ATTLIST mark %attrs;>
+
+<!ELEMENT meter EMPTY>
+<!ATTLIST meter
+  %attrs;
+  high     %Number;        #IMPLIED
+  low      %Number;        #IMPLIED
+  max      %Number;        "1"
+  min      %Number;        "0"
+  optimum  %Number;        #IMPLIED
+  value    %Number;        #IMPLIED
+>
+
+<!ELEMENT menu (#PCDATA | command)>
+<!ATTLIST menu
+  %attrs;
+  label       CDATA      #IMPLIED
+  type        (context|toolbar|list)  "list"
+>
+
+<!ELEMENT command EMPTY>
+<!ATTLIST command
+  %attrs;
+  checked     CDATA      #IMPLIED
+  disabled    CDATA      #IMPLIED
+  icon        %URI;      #IMPLIED
+  label       CDATA      #IMPLIED
+  radiogroup  CDATA      #IMPLIED
+  type       (checkbox|command|radio)  "command"
+>
+
+<!ELEMENT datagrid (#PCDATA)>
+<!ATTLIST datagrid %attrs;>
+
+<!ELEMENT datalist (#PCDATA)>
+<!ATTLIST datalist %attrs;>
+
+<!ELEMENT details (#PCDATA)>
+<!ATTLIST details
+  %attrs;
+  open   CDATA   #IMPLIED
+>
+
+<!ELEMENT datatemplate (#PCDATA)>
+<!ATTLIST datatemplate %attrs;>
+
+<!ELEMENT rule (#PCDATA)>
+<!ATTLIST rule %attrs;>
+
+<!ELEMENT nest (#PCDATA)>
+<!ATTLIST nest %attrs;>
+
+<!ELEMENT event-source (#PCDATA)>
+<!ATTLIST event-source %attrs;>
+
+<!ELEMENT output EMPTY>
+<!ATTLIST output
+  %attrs;
+  for    ID      #IMPLIED
+  form   CDATA   #IMPLIED
+  name   CDATA   #IMPLIED
+>
+
+<!ELEMENT progress (#PCDATA)>
+<!ATTLIST progress
+  %attrs;
+  max     %Number;   #IMPLIED
+  value   %Number;   #IMPLIED
+>
+
+<!ELEMENT ruby (rt+|rp+)>
+<!ELEMENT rt (#PCDATA | rp)>
+<!ELEMENT rp (#PCDATA)>
+
+<!ATTLIST ruby %attrs;>
+<!ATTLIST rt %attrs;>
+<!ATTLIST rp %attrs;>
+
+<!--COMPONENTS-->
+<!ENTITY % components "TextAreaField|InputPassword|CardForm|GridX|CheckField|SelectBox|NumberField|TimeField|InlineGroup|Taskbar|CellString|Main|bootstrap|MenuGroup|SVG|SysTray|MenuItem|InputText|DateTimeField|UserForm|DateField|SingleInput|TextField|CatalogSelect|CellNumber|EntityForm|EntityField|Button|ToolButton|ToolBox|DocumentList|CatalogList|InputBox|EntityTable|DataTable|Dialog|ToolSpace|UserList|MDI|GridR|Field|SideMenu|PopupMenu|Table|InputField|GridZ|Grid2|SelectItem">
+<!ELEMENT TextAreaField EMPTY>
+<!ELEMENT InputPassword EMPTY>
+<!ELEMENT CardForm EMPTY>
+<!ELEMENT GridX EMPTY>
+<!ELEMENT CheckField EMPTY>
+<!ELEMENT SelectBox EMPTY>
+<!ELEMENT NumberField EMPTY>
+<!ELEMENT TimeField EMPTY>
+<!ELEMENT InlineGroup EMPTY>
+<!ELEMENT Taskbar EMPTY>
+<!ELEMENT CellString EMPTY>
+<!ELEMENT Main EMPTY>
+<!ELEMENT bootstrap EMPTY>
+<!ELEMENT MenuGroup EMPTY>
+<!ELEMENT SVG EMPTY>
+<!ELEMENT SysTray EMPTY>
+<!ELEMENT MenuItem EMPTY>
+<!ELEMENT InputText EMPTY>
+<!ELEMENT DateTimeField EMPTY>
+<!ELEMENT UserForm EMPTY>
+<!ELEMENT DateField EMPTY>
+<!ELEMENT SingleInput EMPTY>
+<!ELEMENT TextField EMPTY>
+<!ELEMENT CatalogSelect EMPTY>
+<!ELEMENT CellNumber EMPTY>
+<!ELEMENT EntityForm EMPTY>
+<!ELEMENT EntityField EMPTY>
+<!ELEMENT Button EMPTY>
+<!ELEMENT ToolButton EMPTY>
+<!ELEMENT ToolBox EMPTY>
+<!ELEMENT DocumentList EMPTY>
+<!ELEMENT CatalogList EMPTY>
+<!ELEMENT InputBox EMPTY>
+<!ELEMENT EntityTable EMPTY>
+<!ELEMENT DataTable EMPTY>
+<!ELEMENT Dialog EMPTY>
+<!ELEMENT ToolSpace EMPTY>
+<!ELEMENT UserList EMPTY>
+<!ELEMENT MDI EMPTY>
+<!ELEMENT GridR EMPTY>
+<!ELEMENT Field EMPTY>
+<!ELEMENT SideMenu EMPTY>
+<!ELEMENT PopupMenu EMPTY>
+<!ELEMENT Table EMPTY>
+<!ELEMENT InputField EMPTY>
+<!ELEMENT GridZ EMPTY>
+<!ELEMENT Grid2 EMPTY>
+<!ELEMENT SelectItem EMPTY>

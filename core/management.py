@@ -78,6 +78,14 @@ class Main:
         expose_databases(self.app)
         print('Check OK')
 
+    def collect_dtd(self):
+        '''
+        collect html5.dtd schema for editor autocomplete and inspection
+        '''
+        from .components.update_dtd import update_dtd
+        update_dtd()
+        print('Done')
+
 
 class Migrate:
     """
