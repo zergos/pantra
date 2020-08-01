@@ -1,7 +1,6 @@
 
 
 
-
 <!ENTITY % ContentType "CDATA">
     
 
@@ -368,6 +367,7 @@
   type        CDATA          #FIXED "text/scss"
   media       %MediaDesc;    #IMPLIED
   scoped      (scoped)       #IMPLIED
+  global	  (global)		 #IMPLIED
   >
 
 
@@ -1221,52 +1221,52 @@
 <!ATTLIST rp %attrs;>
 
 <!--COMPONENTS-->
-<!ENTITY % components "TextAreaField|InputPassword|CardForm|GridX|CheckField|SelectBox|NumberField|TimeField|InlineGroup|Taskbar|CellString|Main|bootstrap|MenuGroup|SVG|SysTray|MenuItem|InputText|DateTimeField|UserForm|DateField|SingleInput|TextField|CatalogSelect|CellNumber|EntityForm|EntityField|Button|ToolButton|ToolBox|DocumentList|CatalogList|InputBox|EntityTable|DataTable|Dialog|ToolSpace|UserList|MDI|GridR|Field|SideMenu|PopupMenu|Table|InputField|GridZ|Grid2|SelectItem">
-<!ELEMENT TextAreaField EMPTY>
-<!ELEMENT InputPassword EMPTY>
-<!ELEMENT CardForm EMPTY>
-<!ELEMENT GridX EMPTY>
-<!ELEMENT CheckField EMPTY>
-<!ELEMENT SelectBox EMPTY>
-<!ELEMENT NumberField EMPTY>
-<!ELEMENT TimeField EMPTY>
-<!ELEMENT InlineGroup EMPTY>
-<!ELEMENT Taskbar EMPTY>
-<!ELEMENT CellString EMPTY>
-<!ELEMENT Main EMPTY>
-<!ELEMENT bootstrap EMPTY>
-<!ELEMENT MenuGroup EMPTY>
-<!ELEMENT SVG EMPTY>
-<!ELEMENT SysTray EMPTY>
-<!ELEMENT MenuItem EMPTY>
-<!ELEMENT InputText EMPTY>
-<!ELEMENT DateTimeField EMPTY>
+<!ENTITY % components "python|UserForm|Button|GridZ|CardForm|GridR|CatalogSelect|CheckField|GridX|Grid2|Dialog|Field|DateTimeField|UserList|NumberField|MDI|EntityTable|ToolBox|TimeField|SideMenu|SVG|bootstrap|DataTable|ToolSpace|CellString|PopupMenu|InlineGroup|EntityForm|InputBox|InputPassword|MenuItem|SysTray|InputField|Taskbar|Table|CatalogList|MenuGroup|SingleInput|InputText|DocumentList|TextAreaField|SelectItem|TextField|Main|SelectBox|ToolButton|EntityField|DateField|CellNumber">
 <!ELEMENT UserForm EMPTY>
-<!ELEMENT DateField EMPTY>
-<!ELEMENT SingleInput EMPTY>
-<!ELEMENT TextField EMPTY>
-<!ELEMENT CatalogSelect EMPTY>
-<!ELEMENT CellNumber EMPTY>
-<!ELEMENT EntityForm EMPTY>
-<!ELEMENT EntityField EMPTY>
 <!ELEMENT Button EMPTY>
-<!ELEMENT ToolButton EMPTY>
-<!ELEMENT ToolBox EMPTY>
-<!ELEMENT DocumentList EMPTY>
-<!ELEMENT CatalogList EMPTY>
-<!ELEMENT InputBox EMPTY>
-<!ELEMENT EntityTable EMPTY>
-<!ELEMENT DataTable EMPTY>
-<!ELEMENT Dialog EMPTY>
-<!ELEMENT ToolSpace EMPTY>
-<!ELEMENT UserList EMPTY>
-<!ELEMENT MDI EMPTY>
-<!ELEMENT GridR EMPTY>
-<!ELEMENT Field EMPTY>
-<!ELEMENT SideMenu EMPTY>
-<!ELEMENT PopupMenu EMPTY>
-<!ELEMENT Table EMPTY>
-<!ELEMENT InputField EMPTY>
 <!ELEMENT GridZ EMPTY>
+<!ELEMENT CardForm EMPTY>
+<!ELEMENT GridR EMPTY>
+<!ELEMENT CatalogSelect EMPTY>
+<!ELEMENT CheckField EMPTY>
+<!ELEMENT GridX EMPTY>
 <!ELEMENT Grid2 EMPTY>
+<!ELEMENT Dialog EMPTY>
+<!ELEMENT Field EMPTY>
+<!ELEMENT DateTimeField EMPTY>
+<!ELEMENT UserList EMPTY>
+<!ELEMENT NumberField EMPTY>
+<!ELEMENT MDI EMPTY>
+<!ELEMENT EntityTable EMPTY>
+<!ELEMENT ToolBox EMPTY>
+<!ELEMENT TimeField EMPTY>
+<!ELEMENT SideMenu EMPTY>
+<!ELEMENT SVG EMPTY>
+<!ELEMENT bootstrap EMPTY>
+<!ELEMENT DataTable EMPTY>
+<!ELEMENT ToolSpace EMPTY>
+<!ELEMENT CellString EMPTY>
+<!ELEMENT PopupMenu EMPTY>
+<!ELEMENT InlineGroup EMPTY>
+<!ELEMENT EntityForm EMPTY>
+<!ELEMENT InputBox EMPTY>
+<!ELEMENT InputPassword EMPTY>
+<!ELEMENT MenuItem EMPTY>
+<!ELEMENT SysTray EMPTY>
+<!ELEMENT InputField EMPTY>
+<!ELEMENT Taskbar EMPTY>
+<!ELEMENT Table EMPTY>
+<!ELEMENT CatalogList EMPTY>
+<!ELEMENT MenuGroup EMPTY>
+<!ELEMENT SingleInput EMPTY>
+<!ELEMENT InputText EMPTY>
+<!ELEMENT DocumentList EMPTY>
+<!ELEMENT TextAreaField EMPTY>
 <!ELEMENT SelectItem EMPTY>
+<!ELEMENT TextField EMPTY>
+<!ELEMENT Main EMPTY>
+<!ELEMENT SelectBox EMPTY>
+<!ELEMENT ToolButton EMPTY>
+<!ELEMENT EntityField EMPTY>
+<!ELEMENT DateField EMPTY>
+<!ELEMENT CellNumber EMPTY>
