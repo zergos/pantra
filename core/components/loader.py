@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
 __all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
-SPECIAL_ELEMENTS = 'slot|event|scope|react'.split('|')
+SPECIAL_ELEMENTS = 'slot|event|scope|react|component'.split('|')
 
 templates: typing.Dict[str, HTMLTemplate] = {}
 

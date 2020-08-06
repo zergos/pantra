@@ -1,12 +1,14 @@
-<ToolBox>
-    <ToolButton caption="#Refresh" action="refresh"/>
-    <ToolButton caption="#Add" action="add_object"/>
-    <ToolButton caption="#Delete" danger action="del_object"/>
-    <ToolSpace/>
-    <ToolButton caption="#Filter" action="set_filter"/>
-</ToolBox>
-<EntityTable cref:table entity="{entity}" not:editable selectable callback="{open_object}"/>
+<component>
+    <ToolBox>
+        <ToolButton caption="#Refresh" action="refresh"/>
+        <ToolButton caption="#Add" action="add_object"/>
+        <ToolButton caption="#Delete" danger action="del_object"/>
+        <ToolSpace/>
+        <ToolButton caption="#Filter" action="set_filter"/>
+    </ToolBox>
 
+    <EntityTable cref:table entity="{entity}" not:editable selectable callback="{open_object}"/>
+</component>
 <python>
 from core.models import dbinfo, expose_databases
 from pony.orm import db_session, make_proxy

@@ -397,7 +397,11 @@ class DefaultRenderer:
                     self.update(node)
 
         elif tag_name[0] == '@':
-            if tag_name == '@slot':
+            if tag_name == '@component':
+                for child in template.children:
+                    self.build_node(child, parent)
+
+            elif tag_name == '@slot':
                 slot: Slot = parent.context.slot
                 slot_template = None
                 if slot:

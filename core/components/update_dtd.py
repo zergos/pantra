@@ -1,19 +1,22 @@
 import os
 from ..defaults import APPS_PATH, COMPONENTS_PATH
 
+
 def collect(path, components_set):
     for root, dirs, files in os.walk(path):
         for file in files:  # type: str
             if file.endswith('html'):
                 base = os.path.basename(file)
-                name, _ = os.path.splitext(base)
-                components_set.add(name)
+                if base[0].isupper():
+                    name, _ = os.path.splitext(base)
+                    components_set.add(name)
 
 
 def update_dtd():
     components = set()
     collect(COMPONENTS_PATH, components)
     collect(APPS_PATH, components)
+    components = sorted(list(components))
 
     dtd = os.path.join(COMPONENTS_PATH, 'html5.dtd')
     with open(dtd, 'rt') as f:
@@ -24,8 +27,12 @@ def update_dtd():
         res.append(line)
         if line.startswith('<!--COMPONENTS-->'):
             res.append('<!ENTITY % components "python|{}">'.format('|'.join(components)))
+            res.append('<!ELEMENT python EMPTY>\n<!ATTLIST python use CDATA #IMPLIED>')
+            res.append('<!ELEMENT component %Flow;>')
+
             for c in components:
-                res.append(f'<!ELEMENT {c} EMPTY>')
+                res.append(f'<!ELEMENT {c} %Flow;>')
+                print(f'> {c}')
             break
 
     dest = '\n'.join(res)

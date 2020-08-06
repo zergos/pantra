@@ -1,24 +1,25 @@
-<Field consume>
-    <SingleInput
-            ref:input
-            consume="required,readonly"
-            on_change="parse_input on_change"
-            list="o{ctx.oid}"
-            value="{entity_to_text(value)}"
-            buttons="...,O"
-            action="button_action"
-    />
-    <datalist ref:lookups id="o{ctx.oid}">
-        {{#for item in lookup_items()}}
-        <option value="{item}"/>
-        {{/for}}
-    </datalist>
-</Field>
+<component>
+    <Field consume>
+        <SingleInput
+                ref:input
+                consume="required,readonly"
+                on_change="parse_input on_change"
+                list="o{ctx.oid}"
+                value="{entity_to_text(value)}"
+                buttons="...,O"
+                action="button_action"
+        />
+        <datalist ref:lookups id="o{ctx.oid}">
+            {{#for item in lookup_items()}}
+            <option value="{item}"/>
+            {{/for}}
+        </datalist>
+    </Field>
+</component>
 
 <python>
-from core.models import find_entity_info
 from components.Widgets import *
-from components.Catalog import *
+from components.Entities import *
 from pony.orm import make_proxy
 from pony.orm.core import EntityMeta, db_session
 from core.ctx import *
