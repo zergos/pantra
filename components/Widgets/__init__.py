@@ -3,14 +3,14 @@ from __future__ import annotations
 import typing
 import enum
 
-from core.components.context import Context
-from core.models.types import *
-from core.common import ADict, WebUnits
+from pantra.components.context import Context
+from pantra.models.types import *
+from pantra.common import ADict, WebUnits
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from core.models.runtime import AttrInfo
-    from core.components.context import AnyNode
+    from pantra.models.runtime import AttrInfo
+    from pantra.components.context import AnyNode
 
 
 class EntityType(enum.Enum):

@@ -1,13 +1,14 @@
-<ToolBox>
-    <ToolButton caption="#Select" action="select" default/>
-</ToolBox>
-<EntityTable cref:table entity="{entity}" not:editable selectable callback="{select_row}"/>
-
+<component>
+    <ToolBox>
+        <ToolButton caption="#Select" action="select" default/>
+    </ToolBox>
+    <EntityTable cref:table entity="{entity}" not:editable selectable callback="{select_row}"/>
+</component>
 <python>
 from pony.orm import db_session, make_proxy
 from pony.orm.core import EntityMeta
-from core.models import expose_databases, dbinfo
-from core.ctx import *
+from pantra.models import expose_databases, dbinfo
+from pantra.ctx import *
 
 db: str = 'db'
 name: str = ''

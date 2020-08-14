@@ -1,6 +1,15 @@
 var main;
 
 function start(new_local_id, new_tab_id) {
+    let chunks = location.pathname.split('/');
+    if (chunks.length === 2) {
+        let app_name = chunks[1];
+        let local_style = document.createElement('link');
+        local_style.setAttribute('rel', 'stylesheet');
+        local_style.setAttribute('href', `/css/${app_name}.local.css`)
+        document.head.append(local_style);
+    }
+
     let local_id = localStorage.getItem('local_id');
     if (!local_id){
         local_id = new_local_id;

@@ -1,9 +1,9 @@
 from __future__ import annotations
 import typing
-from core.common import ADict
+from pantra.common import ADict
 
 if typing.TYPE_CHECKING:
-    from core.components.context import Context, AnyNode
+    from pantra.components.context import Context, AnyNode
     from typing import *
 
 

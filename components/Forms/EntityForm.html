@@ -18,11 +18,11 @@
 <python>
 import dis
 from pony.orm.core import EntityMeta, EntityProxy, Entity, db_session, commit
-from core.common import WebUnits
-from core.models import find_entity_info, entity_name, get_entity
-from core.models.types import AnyEntity
+from pantra.common import WebUnits
+from pantra.models import find_entity_info, entity_name, get_entity
+from pantra.models.types import AnyEntity
 from components.Widgets import ValuesDict, make_widget
-from core.ctx import *
+from pantra.ctx import *
 
 entity: Optional[AnyEntity] = None
 caption: str = ''

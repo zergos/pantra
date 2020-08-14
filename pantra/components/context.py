@@ -8,21 +8,21 @@ from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
 
-from core.common import ADict
+from pantra.common import ADict
 
 from .loader import collect_template, HTMLTemplate
-from core.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
+from pantra.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
 
-from core.components.render import RenderNode, DefaultRenderer
-from core.components.watchdict import WatchDict, WatchDictActive
-from core.oid import get_node
-from core.defaults import *
+from pantra.components.render import RenderNode, DefaultRenderer
+from pantra.components.watchdict import WatchDict, WatchDictActive
+from pantra.oid import get_node
+from pantra.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from core.common import DynamicString
-    from core.components.render import ContextShot
-    from core.session import Session
+    from pantra.common import DynamicString
+    from pantra.components.render import ContextShot
+    from pantra.session import Session
 
 __all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'ReactNode', 'AnyNode']
 
@@ -169,6 +169,22 @@ class HTMLElement(RenderNode):
         self.data: ADict[str, Any] = ADict()
         self._set_focus = False
         self.value_type = None
+
+    @classmethod
+    def parse(cls, element: str, parent: RenderNode, text: str = '') -> Optional[HTMLElement]:
+        chunks = element.split(' ')
+        if not chunks:
+            return None
+        tag_name = chunks[0]
+        attributes = {}
+        for chunk in chunks[1:]:
+            if not chunk: continue
+            sides = chunk.split('=')
+            if len(sides) == 1:
+                attributes[sides[0]] = None
+            else:
+                attributes[sides[0]] = sides[1].strip('" \'')
+        return HTMLElement(tag_name, parent, attributes, text)
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         clone: HTMLElement = HTMLElement(self.tag_name, new_parent)

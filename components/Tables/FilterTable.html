@@ -1,0 +1,118 @@
+<component>
+    <div ref:filters class="filters">
+        {{#for filter in filters}}
+        <div class="filter">
+            <span>{{filter.column.title}}</span>
+            <span data:filter="{view.filter}" on:click="remove_filter">🗙</span>
+        </div>
+        {{#else}}
+        <div class="nofilter">#Not filtered</div>
+        {{/for}}
+        <div class="spacer"/>
+        <div class="configure" on:click="show_form">#Filters</div>
+    </div>
+    <div ref:container class="container hidden">
+        <div ref:form class="filters-form" on:render="render_form"/>
+        <ToolBox>
+            <ToolButton caption="#Apply" action="apply_filters"/>
+            <ToolButton caption="#Close" action="hide_form"/>
+        </ToolBox>
+    </div>
+</component>
+
+<style type="text/scss">
+    .filters {
+        display: flex;
+        flex-flow: row wrap;
+        height: 2em;
+        width: 100%;
+    }
+
+    .filter {
+        padding: 0.3em 1em;
+        border: 1px solid black;
+        border-radius: 3px;
+    }
+
+    .spacer {
+        flex-grow: 1;
+    }
+
+    .container {
+        width: 100%;
+    }
+
+    .filters-form {
+        display: grid;
+        grid-template-columns: 1rem minmax(10rem, max-content) 3rem minmax(10rem, max-content);
+        grid-auto-columns: minmax(10rem, max-content);
+        gap: 0.2rem 0.3rem;
+    }
+</style>
+
+<python>
+from models.runtime import AttrInfo
+from pantra.models.types import *
+from components.Tables import Filter, FilterView
+from pantra.ctx import *
+
+filters: List[Filter] = []
+callback: Callable[[], None] = lambda: None
+
+filter_views: List[FilterView] = []
+
+OPERATORS = {
+    'numbers': ('=', '≠', '>', '<', '≥', '≤'),
+    'dates': ('between', ),
+    'strings': ('=', '≠', 'contains'),
+    'booleans': ('=', ),
+    'entities': ('=', '≠'),
+}
+
+if typing.TYPE_CHECKING:
+    _('contains')
+    _('between')
+
+def init():
+    if not filters:
+        return False
+
+    width = 8
+    for filter in filters:  # type: Filter
+        col = filter.column
+        attr = AttrInfo(name=col.name, type=col.type, is_id=False, is_prop=False, is_ref=False, title=col.title, width=width, blank=True, is_body=False, is_cid=False, readonly=False)
+        if col.type in (int, float, Decimal):
+            ops = OPERATORS['numbers']
+        elif col.type in (str, LongStr, Json):
+            ops = OPERATORS['strings']
+        elif col.type == bool:
+            ops = OPERATORS['booleans']
+        elif col.type in (date, datetime, time):
+            ops = OPERATORS['dates']
+        elif isinstance(col.type, EntityMeta):
+            ops = OPERATORS['entities']
+        else:
+            continue
+        filter_views.append(FilterView(filter, ops, attr, None))
+
+def render_form(node: HTMLElement):
+    for view in filter_views:  # type: Filter
+        node.render('FilterTableLine', {'view': view})
+
+def remove_filter(node: HTMLElement):
+    node.data.filter.enabled = False
+    refs.filters[0].update()
+    refs.form.update()
+    callback()
+
+def show_form(node):
+    refs.container.remove_class('hidden')
+
+def hide_form(node):
+    refs.container.add_class('hidden')
+
+def apply_filters(node):
+    hide_form(node)
+    callback()
+
+</python>

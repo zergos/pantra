@@ -1,4 +1,4 @@
-from core.ctx import *
+from pantra.ctx import *
 
 caption: str = ''
 required: bool = False

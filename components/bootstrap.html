@@ -9,12 +9,11 @@
     <script src="/js/serializer.js"></script>
     <script src="/js/events.js"></script>
     <script src="/js/ws_client.js"></script>
-    <script>var hostname = '{{hostname}}'; var session_id = '{{session_id}}';</script>
     <script src="/js/main.js"></script>
     <link rel="stylesheet" href="/css/normalize.css">
     <link rel="stylesheet" href="/css/basic.scss">
     <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/{{app}}.local.css">
+    <!--link rel="stylesheet" href="/css/{{app}}.local.css"-->
     <style>
         #online-bar {
             position: fixed;
@@ -40,7 +39,7 @@
     </style>
 </head>
 
-<body>
+<body onload="start('{{LOCAL_ID}}', '{{TAB_ID}}')">
 <div id="online-bar" style="display: none" title="Online"></div>
 <div id="display">
     <div class="init-title">

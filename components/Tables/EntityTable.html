@@ -1,12 +1,13 @@
-<Table consume/>
+<component>
+    <BaseTable consume/>
+</component>
 
 <python>
 from pony.orm.core import Query, Entity, db_session, desc, select, make_proxy, EntityMeta
-from core.models import query_info, find_entity_info
-from core.models.runtime import AttrInfo
-from core.common import WebUnits
+from pantra.models import query_info, find_entity_info
+from pantra.models.runtime import AttrInfo
 from components.Tables import Columns, ColumnInfo
-from core.ctx import *
+from pantra.ctx import *
 
 query: Optional[Query] = None
 entity: Entity

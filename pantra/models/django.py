@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 from dataclasses import dataclass
 
-from core.defaults import *
+from pantra.defaults import *
 
 from .parser import parse_xml
 

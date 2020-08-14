@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import typing
 
-from core.args import *
-from core.defaults import *
+from pantra.args import *
+from pantra.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -32,11 +32,11 @@ class Main:
 
     def run(self, host: str = '127.0.0.1', port: int = 8005):
         """
-        run core application on host and port
+        run pantra application on host and port
         :param host: local IP address to bind
         :param port: number of local port
         """
-        from core.main import run as run_main
+        from pantra.main import run as run_main
 
         run_main(host, port)
 
@@ -54,7 +54,7 @@ class Main:
         :param x: exclude default db initial block
         """
 
-        from core.models import expose_to_pony
+        from pantra.models import expose_to_pony
         expose_to_pony(self.app, not x)
         print('Done')
 
@@ -64,7 +64,7 @@ class Main:
         generate django code for debugging
         """
 
-        from core.models import expose_to_django
+        from pantra.models import expose_to_django
         expose_to_django(self.app)
         print('Done')
 
@@ -74,7 +74,7 @@ class Main:
         load and check models definition runtime
         """
 
-        from core.models import expose_databases
+        from pantra.models import expose_databases
         expose_databases(self.app)
         print('Check OK')
 
@@ -99,7 +99,7 @@ class Migrate:
     debug: bool = False
 
     def _call_django(self, *args):
-        from core.models import expose_to_django
+        from pantra.models import expose_to_django
 
         data_settings = expose_to_django(self.app)
 
@@ -195,7 +195,7 @@ class Schema:
     app: str = lambda: _detect_app()
 
     def _check_postgres(self) -> Optional[Database]:
-        from core.models import expose_databases, dbinfo
+        from pantra.models import expose_databases, dbinfo
 
         db = expose_databases(self.app)
         if not db:
@@ -300,7 +300,7 @@ class Locale:
             path = os.path.join(APPS_PATH, self.app)
         ini_name = os.path.join(path, 'babel.ini')
         with open(ini_name, 'wt') as f:
-            f.write('[extractors]\npython = core.trans:extract_python\nhtml = core.trans:extract_html\nxml = core.trans:extract_xml\n')
+            f.write('[extractors]\npython = pantra.trans:extract_python\nhtml = pantra.trans:extract_html\nxml = pantra.trans:extract_xml\n')
             f.write('[python: **.py]\n[html: **.html]\n[xml: **.xml]\n')
 
         pot_name = os.path.join(path, 'app.po')

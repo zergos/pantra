@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from core.components.loader import collect_template
+from pantra.components.loader import collect_template
 from pony.orm import db_session
-from core.models.types import EntityMeta, Entity, EntityProxy
+from pantra.models.types import EntityMeta, Entity, EntityProxy
 from components.Layout import *
-from core.ctx import *
+from pantra.ctx import *
 
 __all__ = ['render_catalog_list', 'render_catalog_form', 'render_catalog_select']
 

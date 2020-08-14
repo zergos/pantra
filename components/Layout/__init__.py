@@ -2,8 +2,8 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-    from core.components.context import Context
-    from core.session import Session
+    from pantra.components.context import Context
+    from pantra.session import Session
     from typing import *
 
 __all__ = ['add_window']

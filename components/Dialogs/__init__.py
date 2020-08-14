@@ -1,5 +1,5 @@
 from __future__ import annotations
-from core.ctx import *
+from pantra.ctx import *
 
 __all__ = ['make_dialog']
 

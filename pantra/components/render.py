@@ -5,15 +5,15 @@ import traceback
 from contextlib import contextmanager
 from types import CodeType
 
-from core.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
-from core.components.loader import collect_template, HTMLTemplate
-from core.compiler import compile_context_code, ContextInitFailed
-from core.session import Session, run_safe
-from core.components.controllers import process_click_referred
+from pantra.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
+from pantra.components.loader import collect_template, HTMLTemplate
+from pantra.compiler import compile_context_code, ContextInitFailed
+from pantra.session import Session, run_safe
+from pantra.components.controllers import process_click_referred
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from core.components.context import AnyNode, Context, HTMLElement, Condition, \
+    from pantra.components.context import AnyNode, Context, HTMLElement, Condition, \
         TextNode, Slot
     StrOrCode = Union[str, CodeType]
 
@@ -289,7 +289,7 @@ class DefaultRenderer:
         return False
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
-        import core.components.context as c
+        import pantra.components.context as c
         node: Optional[AnyNode] = None
 
         tag_name = template.tag_name
@@ -642,7 +642,7 @@ class DefaultRenderer:
             self.update_children(node)
 
     def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
-        from core.components.context import Context
+        from pantra.components.context import Context
         if not parent:
             parent = self.ctx
         c = Context(template, parent, locals=locals)

@@ -9,7 +9,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from babel.support import Translations
-from core.defaults import APPS_PATH, COMPONENTS_PATH
+from pantra.defaults import APPS_PATH, COMPONENTS_PATH
 from .locale import Locale
 
 if typing.TYPE_CHECKING:

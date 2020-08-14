@@ -19,7 +19,7 @@ code_base: typing.Dict[str, CodeType] = {}
 @lru_cache(None, False)
 def common_globals():
     globals = {}
-    exec('from core.imports import *', globals)
+    exec('from pantra.imports import *', globals)
     return globals
 
 

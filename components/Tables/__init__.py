@@ -4,13 +4,14 @@ import typing
 import numbers
 from dataclasses import dataclass, field
 
-from core.common import DynamicStyles
-from core.components.context import HTMLElement
-from core.components.loader import HTMLTemplate
+from pantra.common import DynamicStyles
+from pantra.components.context import HTMLElement
+from pantra.components.loader import HTMLTemplate
+from pantra.models.runtime import AttrInfo
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from core.components.context import Context
+    from pantra.components.context import Context
     MapsRows = List[List['ColumnMap']]
     Columns = Dict[str, 'ColumnInfo']
 else:
@@ -40,6 +41,21 @@ class ColumnMap:
     hspan: Union[int, str] = field(default='')
     vspan: Union[int, str] = field(default='')
 
+
+@dataclass
+class Filter:
+    column: ColumnInfo
+    operator: str = field(default_factory=str)
+    value: Any = field(default=None)
+    value2: Any = field(default=None)
+    enabled: bool = field(default=True)
+
+
+class FilterView(NamedTuple):
+    filter: Filter
+    operators: Tuple[str, ...]
+    attr: AttrInfo
+    widget: Optional[Context]
 
 def align_by_type(t) -> str:
     if t in (int, float):

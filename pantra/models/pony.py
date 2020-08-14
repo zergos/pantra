@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from collections import defaultdict
 
-from core.defaults import *
+from pantra.defaults import *
 from .parser import parse_xml
 from .runtime import EVENTS
 
@@ -155,13 +155,13 @@ from __future__ import annotations
 import typing'''.splitlines()
     if with_init:
         body.append('''
-from core.models import dbinfo, expose_databases
+from pantra.models import dbinfo, expose_databases
 
 __all__ = ['db']
 ''')
     body.append('''
 if typing.TYPE_CHECKING:
-    from core.models.types import *
+    from pantra.models.types import *
     from pony.orm import *
 ''')
 

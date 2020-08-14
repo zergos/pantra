@@ -9,17 +9,17 @@ import cssutils
 import sass
 from antlr4 import FileStream, CommonTokenStream, IllegalStateException
 from antlr4.error.ErrorListener import ErrorListener
-from core.common import UniNode, ADict
+from pantra.common import UniNode, ADict
 from cssutils.css import CSSMediaRule, CSSStyleRule
 
-from .grammar.BCDLexer import BCDLexer
-from .grammar.BCDParser import BCDParser
-from .grammar.BCDParserVisitor import BCDParserVisitor
+from .grammar.PMLLexer import PMLLexer
+from .grammar.PMLParser import PMLParser
+from .grammar.PMLParserVisitor import PMLParserVisitor
 
-from core.defaults import CSS_PATH, COMPONENTS_PATH
+from pantra.defaults import CSS_PATH, COMPONENTS_PATH
 
 if typing.TYPE_CHECKING:
-    from core.session import Session
+    from pantra.session import Session
     from typing import *
     from types import CodeType
 
@@ -46,7 +46,7 @@ class HTMLTemplate(UniNode):
         self.code: Optional[Union[CodeType, str]] = None
 
 
-class MyVisitor(BCDParserVisitor):
+class MyVisitor(PMLParserVisitor):
 
     def __init__(self, filename: str):
         name = os.path.splitext(os.path.basename(filename))[0]
@@ -56,12 +56,12 @@ class MyVisitor(BCDParserVisitor):
         self.current: typing.Optional[HTMLTemplate] = root
         self.cur_attr: typing.Optional[str] = None
 
-    def visitText(self, ctx: BCDParser.TextContext):
+    def visitText(self, ctx: PMLParser.TextContext):
         text = ctx.getText().strip().strip('\uFEFF')
         if text and self.current != self.root:
             HTMLTemplate('@text', parent=self.current, text=text)
 
-    def visitRawText(self, ctx: BCDParser.RawTextContext):
+    def visitRawText(self, ctx: PMLParser.RawTextContext):
         text = ctx.getText()
         if text.strip().strip('\uFEFF'):
             tag_name = self.current.tag_name
@@ -70,32 +70,32 @@ class MyVisitor(BCDParserVisitor):
                 text = '#\n' * (line_no - 1) + text
             self.current.text = text
 
-    def visitRawTag(self, ctx: BCDParser.RawTagContext):
+    def visitRawTag(self, ctx: PMLParser.RawTagContext):
         tag_name = '@' + ctx.getText().strip()[1:]
         self.current = HTMLTemplate(tag_name, parent=self.current)
         self.current.filename = self.root.filename
         # raw nodes goes first
         self.current.parent.children.insert(0, self.current.parent.children.pop())
 
-    def visitRawCloseTag(self, ctx: BCDParser.RawCloseTagContext):
+    def visitRawCloseTag(self, ctx: PMLParser.RawCloseTagContext):
         self.current = self.current.parent
 
-    def visitTagBegin(self, ctx: BCDParser.TagBeginContext):
+    def visitTagBegin(self, ctx: PMLParser.TagBeginContext):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
         self.current = HTMLTemplate(tag_name=tag_name, parent=self.current)
         # if not self.root: self.root = self.current
         self.visitChildren(ctx)
-        if ctx.children[-1].symbol.type == BCDLexer.SLASH_CLOSE or self.current.tag_name.lower() in VOID_ELEMENTS:
+        if ctx.children[-1].symbol.type == PMLLexer.SLASH_CLOSE or self.current.tag_name.lower() in VOID_ELEMENTS:
             self.current = self.current.parent
 
-    def visitAttrName(self, ctx: BCDParser.AttrNameContext):
+    def visitAttrName(self, ctx: PMLParser.AttrNameContext):
         self.cur_attr = ctx.getText()
         if self.cur_attr != 'class':
             self.current.attributes[self.cur_attr] = None
 
-    def visitAttrValue(self, ctx: BCDParser.AttrValueContext):
+    def visitAttrValue(self, ctx: PMLParser.AttrValueContext):
         text = ctx.getText().strip('"\'')
         if '{' in text:
             if text.startswith('{'):
@@ -111,14 +111,14 @@ class MyVisitor(BCDParserVisitor):
             value = text
         self.current.attributes[self.cur_attr] = value
 
-    def visitRawName(self, ctx:BCDParser.RawNameContext):
+    def visitRawName(self, ctx:PMLParser.RawNameContext):
         self.cur_attr = ctx.getText()
         self.current.attributes[self.cur_attr] = None
 
-    def visitRawValue(self, ctx:BCDParser.RawValueContext):
+    def visitRawValue(self, ctx:PMLParser.RawValueContext):
         self.current.attributes[self.cur_attr] = ctx.getText()
 
-    def visitTagEnd(self, ctx: BCDParser.TagEndContext):
+    def visitTagEnd(self, ctx: PMLParser.TagEndContext):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
@@ -132,7 +132,7 @@ class MyVisitor(BCDParserVisitor):
             raise IllegalStateException(f"close tag don't match {tag_name}")
         self.current = self.current.parent
 
-    def visitMacroCommand(self, ctx: BCDParser.MacroCommandContext):
+    def visitMacroCommand(self, ctx: PMLParser.MacroCommandContext):
         command = ctx.getText()
 
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
@@ -161,7 +161,7 @@ class MyVisitor(BCDParserVisitor):
             self.current = HTMLTemplate('#set', parent=self.current)
             self.current.macro = macro
 
-    def visitMacroEnd(self, ctx: BCDParser.MacroEndContext):
+    def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
         match = False
         while self.current:
@@ -173,7 +173,7 @@ class MyVisitor(BCDParserVisitor):
             raise IllegalStateException(f"macro close tag don't match {macro_tag}")
         self.current = self.current.parent
 
-    def visitInlineMacro(self, ctx: BCDParser.InlineMacroContext):
+    def visitInlineMacro(self, ctx: PMLParser.InlineMacroContext):
         macro = HTMLTemplate('@macro', parent=self.current)
         text = ctx.children[1].getText()
         code = compile(text, '<macro>', 'eval')
@@ -195,9 +195,9 @@ class ErrorVisitor(ErrorListener):
 
 def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.Optional[HTMLTemplate]:
     in_stream = FileStream(filename, encoding='utf-8')
-    lexer = BCDLexer(in_stream)
+    lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
-    parser = BCDParser(stream)
+    parser = PMLParser(stream)
     parser.removeErrorListeners()
     parser.addErrorListener(ErrorVisitor(filename, error_callback))
     tree = parser.process()
@@ -244,7 +244,7 @@ def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
     return template
 
 
-class StyleVisitor(BCDParserVisitor):
+class StyleVisitor(PMLParserVisitor):
     parser = cssutils.CSSParser(validate=False, raiseExceptions=True)
 
     def __init__(self, class_name: str):
@@ -253,7 +253,7 @@ class StyleVisitor(BCDParserVisitor):
         self.in_style = False
         self.global_mode = False
 
-    def visitRawText(self, ctx: BCDParser.RawTextContext):
+    def visitRawText(self, ctx: PMLParser.RawTextContext):
         if not self.in_style:
             return
 
@@ -338,17 +338,17 @@ class StyleVisitor(BCDParserVisitor):
             # recover css text with injections
             self.styles.append(str(sheet.cssText, 'utf8'))
 
-    def visitRawName(self, ctx: BCDParser.RawNameContext):
+    def visitRawName(self, ctx: PMLParser.RawNameContext):
         name = ctx.getText()
         if name == 'global':
             self.global_mode = True
 
-    def visitRawTag(self, ctx: BCDParser.RawTagContext):
+    def visitRawTag(self, ctx: PMLParser.RawTagContext):
         if ctx.getText().strip()[1:] == 'style':
             self.in_style = True
             self.global_mode = False
 
-    def visitRawCloseTag(self, ctx: BCDParser.RawCloseTagContext):
+    def visitRawCloseTag(self, ctx: PMLParser.RawCloseTagContext):
         self.in_style = False
 
     def visitErrorNode(self, node):
@@ -357,9 +357,9 @@ class StyleVisitor(BCDParserVisitor):
 
 def load_styles(name: str, filename: str):
     in_stream = FileStream(filename, encoding='utf-8')
-    lexer = BCDLexer(in_stream)
+    lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
-    parser = BCDParser(stream)
+    parser = PMLParser(stream)
     tree = parser.process()
 
     visitor = StyleVisitor(name)

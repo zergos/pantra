@@ -3,13 +3,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import typing
 
-from core.oid import get_node
-from core.session import trace_errors, Session
-from core.workers import thread_worker
+from pantra.oid import get_node
+from pantra.session import trace_errors, Session
+from pantra.workers import thread_worker
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from core.components.context import Context, RenderNode, HTMLElement, AnyNode
+    from pantra.components.context import Context, RenderNode, HTMLElement, AnyNode
 
 __all__ = ['DragOptions', 'DragController']
 

@@ -1,85 +1,31 @@
-
-
+<!-- Based on https://github.com/Komodo/KomodoEdit/blob/master/contrib/catalogs/html5/html5.dtd -->
+<!-- Licensed under MOZILLA PUBLIC LICENSE Version 1.1 https://github.com/Komodo/KomodoEdit/blob/master/LICENSE.txt -->
 
 <!ENTITY % ContentType "CDATA">
-    
-
 <!ENTITY % ContentTypes "CDATA">
-    
-
 <!ENTITY % Charset "CDATA">
-    
-
 <!ENTITY % Charsets "CDATA">
-    
-
 <!ENTITY % LanguageCode "NMTOKEN">
-    
-
 <!ENTITY % Character "CDATA">
-    
-
 <!ENTITY % Number "CDATA">
-    
-
 <!ENTITY % Date "CDATA">
-    
-
 <!ENTITY % LinkTypes "(alternate | archives | author | bookmark | contact | external | first | help | icon | index | last | license | next | nofollow | noreferrer | pingback | prefetch | prev | search | stylesheet | sidebar | tag | up)">
-    
-
 <!ENTITY % MediaDesc "(all|braille|embossed|handheld|print|projection|screen|speech|tty|tv)">
-    
-
 <!ENTITY % URI "CDATA">
-    
-
 <!ENTITY % UriList "CDATA">
-    
-
 <!ENTITY % Datetime "CDATA">
-    
-
 <!ENTITY % Script "CDATA">
-    
-
 <!ENTITY % StyleSheet "CDATA">
-    
-
 <!ENTITY % Text "CDATA">
-    
-
 <!ENTITY % FrameTarget "(_blank | _parent | _self | _top)">
-    
-
 <!ENTITY % Length "CDATA">
-    
-
 <!ENTITY % MultiLength "CDATA">
-    
-
 <!ENTITY % Pixels "CDATA">
-    
-
 <!ENTITY % Boolean "(true|false)">
-
 <!ENTITY % OlType "(1 | a | A | i | I)">
-    
-
-
-
 <!ENTITY % Shape "(rect|circle|poly|default)">
-
 <!ENTITY % Coords "CDATA">
-    
-
-
 <!ENTITY % Color "CDATA">
-
-
-
-
-
 
 <!ENTITY % coreattrs
 	"id          ID             #IMPLIED
@@ -99,13 +45,11 @@
 	"
   >
 
-
 <!ENTITY % i18n
  "lang        %LanguageCode; #IMPLIED
   xml:lang    %LanguageCode; #IMPLIED
   dir         (ltr|rtl)      #IMPLIED"
   >
-
 
 <!ENTITY % events
  "onclick     %Script;       #IMPLIED
@@ -149,14 +93,12 @@
  "
   >
 
-
 <!ENTITY % focus
  "accesskey   %Character;    #IMPLIED
   tabindex    %Number;       #IMPLIED
   onfocus     %Script;       #IMPLIED
   onblur      %Script;       #IMPLIED"
   >
-
 
 <!ENTITY % html5attrs
  "contenteditable    %Boolean;     #IMPLIED
@@ -173,9 +115,6 @@
   contextmenu        ID            #IMPLIED
  "
   >
-
-
-
 
 <!ENTITY % html5mediaevents
  "onabort               %Script;      #IMPLIED  
@@ -204,15 +143,7 @@
  "
 >
 
-
-
-
-
-
-
 <!ENTITY % attrs "%coreattrs; %i18n; %events; %html5attrs;">
-
-
 
 <!ENTITY % special.extra
    "object | img | map | iframe">
@@ -238,18 +169,13 @@
                          time | number | range | email | url | menu |
                          datalist">
 
-
 <!ENTITY % misc.inline "ins | del | script">
-
 
 <!ENTITY % misc "noscript | %misc.inline;">
 
 <!ENTITY % inline "a | %special; | %fontstyle; | %phrase; | %inline.forms;">
 
-
 <!ENTITY % Inline "(#PCDATA | %inline; | %misc.inline;)*">
-
-
 
 <!ENTITY % heading "h1|h2|h3|h4|h5|h6">
 <!ENTITY % lists "ul | ol | dl">
@@ -265,36 +191,19 @@
 
 <!ENTITY % Flow "(#PCDATA | %block; | form | %inline; | %misc;)*">
 
-
-
-
-
-
-
-
 <!ENTITY % a.content
    "(#PCDATA | %special; | %fontstyle; | %phrase; | %inline.forms; | %misc.inline;)*">
-
-
 
 <!ENTITY % pre.content
    "(#PCDATA | a | %special.basic; | %fontstyle.basic; | %phrase.basic; |
 	   %inline.forms; | %misc.inline;)*">
 
-
-
 <!ENTITY % form.content "(#PCDATA | %block; | %inline; | %misc;)*">
-
-
 
 <!ENTITY % button.content
    "(#PCDATA | p | %heading; | div | %lists; | %blocktext; |
       table | datagrid | br | span | bdo | object | img | map |
       %fontstyle; | %phrase; | %misc;)*">
-
-
-
-
 
 <!ELEMENT html (head, body)>
 <!ATTLIST html
@@ -304,11 +213,7 @@
   manifest    %URI;          #IMPLIED
   >
 
-
-
 <!ENTITY % head.misc "(script|style|meta|link|object)*">
-
-
 
 <!ELEMENT head (%head.misc;,
      ((title, %head.misc;, (base, %head.misc;)?) |
@@ -320,14 +225,11 @@
   profile     %URI;          #IMPLIED
   >
 
-
 <!ELEMENT title (#PCDATA)>
 <!ATTLIST title 
   %i18n;
   id          ID             #IMPLIED
   >
-
-
 
 <!ELEMENT base EMPTY>
 <!ATTLIST base
@@ -335,7 +237,6 @@
   href        %URI;          #IMPLIED
   target      %FrameTarget;  #IMPLIED
   >
-
 
 <!ELEMENT meta EMPTY>
 <!ATTLIST meta
@@ -346,8 +247,6 @@
   content     CDATA          #REQUIRED
   charset     %Charset;      #IMPLIED
   >
-
-
 
 <!ELEMENT link EMPTY>
 <!ATTLIST link
@@ -370,7 +269,6 @@
   global	  (global)		 #IMPLIED
   >
 
-
 <!ELEMENT script (#PCDATA)>
 <!ATTLIST script
   id          ID             #IMPLIED
@@ -382,16 +280,10 @@
   async       (async)        #IMPLIED
   >
 
-
-
 <!ELEMENT noscript %Flow;>
 <!ATTLIST noscript
   %attrs;
   >
-
-
-
-
 
 <!ELEMENT iframe %Flow;>
 <!ATTLIST iframe
@@ -405,8 +297,6 @@
   seamless    CDATA          #IMPLIED
   srcdoc      CDATA          #IMPLIED
   >
-
-
 
 <!ELEMENT body %Flow;>
 <!ATTLIST body
@@ -436,16 +326,10 @@
   %attrs;
   >
 
-
-
 <!ELEMENT p %Inline;>
 <!ATTLIST p
   %attrs;
   >
-
-
-
-
 
 <!ELEMENT h1  %Inline;>
 <!ATTLIST h1
@@ -477,17 +361,10 @@
   %attrs;
   >
 
-
-
-
-
-
 <!ELEMENT ul (li)+>
 <!ATTLIST ul
   %attrs;
   >
-
-
 
 <!ELEMENT ol (li)+>
 <!ATTLIST ol
@@ -497,15 +374,11 @@
   reversed    (reversed)     #IMPLIED
   >
 
-
-
 <!ELEMENT li %Flow;>
 <!ATTLIST li
   %attrs;
   value       %Number;       #IMPLIED
   >
-
-
 
 <!ELEMENT dl (dt|dd)+>
 <!ATTLIST dl
@@ -522,41 +395,26 @@
   %attrs;
   >
 
-
-
-
-
 <!ELEMENT address (#PCDATA | %inline; | %misc.inline; | p)*>
 <!ATTLIST address
   %attrs;
   >
-
-
 
 <!ELEMENT hr EMPTY>
 <!ATTLIST hr
   %attrs;
   >
 
-
-
-
-
 <!ELEMENT pre %pre.content;>
 <!ATTLIST pre
   %attrs;
   >
-
-
 
 <!ELEMENT blockquote %Flow;>
 <!ATTLIST blockquote
   %attrs;
   cite        %URI;          #IMPLIED
   >
-
-
-
 
 <!ELEMENT ins %Flow;>
 <!ATTLIST ins
@@ -572,10 +430,6 @@
   datetime    %Datetime;     #IMPLIED
   >
 
-
-
-
-
 <!ELEMENT a %a.content;>
 <!ATTLIST a
   %attrs;
@@ -588,8 +442,6 @@
   ping        %URI;          #IMPLIED
   type        %ContentType;  #IMPLIED
   >
-
-
 
 <!ELEMENT span %Inline;> 
 <!ATTLIST span
@@ -660,9 +512,6 @@
 <!ELEMENT small %Inline;>   
 <!ATTLIST small %attrs;>
 
-
-
-
 <!ELEMENT object (#PCDATA | param | %block; | form | %inline; | %misc;)*>
 <!ATTLIST object
   %attrs;
@@ -677,17 +526,12 @@
   form        CDATA          #IMPLIED
   >
 
-
 <!ELEMENT param EMPTY>
 <!ATTLIST param
   id          ID             #IMPLIED
   name        CDATA          #REQUIRED
   value       CDATA          #IMPLIED
   >
-
-
-
-
 
 <!ELEMENT img EMPTY>
 <!ATTLIST img
@@ -702,12 +546,6 @@
   usemap      %URI;          #IMPLIED
   ismap       (ismap)        #IMPLIED
   >
-
-
-
-
-
-
 
 <!ELEMENT map ((%block; | form | %misc;)+ | area+)>
 <!ATTLIST map
@@ -735,8 +573,6 @@
   rel         %LinkTypes;    #IMPLIED
   type        CDATA          #IMPLIED
   >
-
-
 
 <!ELEMENT form %form.content;>   
 
@@ -784,7 +620,7 @@
   type        %InputType;    "text"
   name        CDATA          #IMPLIED
   value       CDATA          #IMPLIED
-  bind:value  (value)        #IMPLIED
+  bind:value  (bind:value)   #IMPLIED
   checked     (checked)      #IMPLIED
   disabled    (disabled)     #IMPLIED
   readonly    (readonly)     #IMPLIED
@@ -796,7 +632,9 @@
   alt         CDATA          #IMPLIED
   usemap      %URI;          #IMPLIED
   onselect    %Script;       #IMPLIED
+  on:select   CDATA          #IMPLIED
   onchange    %Script;       #IMPLIED
+  on:change   CDATA          #IMPLIED
   accept      %ContentTypes; #IMPLIED
   autocomplete  (on|off|name|honorific-prefix|given-name|additional-name|family-name|honorific-suffix|nickname|email|username|new-password|current-password|organization-title|organization|street-address|address-line1|address-line2|address-line3|address-level4|address-level3|address-level2|address-level1|country|country-name|postal-code|cc-name|cc-given-name|cc-additional-name|cc-family-name|cc-number|cc-exp|cc-exp-month|cc-exp-year|cc-csc|cc-type|transaction-currency|transaction-amount|language|bday|bday-day|bday-month|bday-year|sex|tel|tel-country-code|tel-national|tel-area-code|tel-local|tel-extension|impp|url|photo)          #IMPLIED
   autofocus     CDATA          #IMPLIED
@@ -834,6 +672,7 @@
   onblur      %Script;       #IMPLIED
   onchange    %Script;       #IMPLIED
   on:change   CDATA          #IMPLIED
+  on:select   CDATA			 #IMPLIED
 
   autofocus   (autofocus)    #IMPLIED
   form        CDATA          #IMPLIED
@@ -843,6 +682,7 @@
 <!ATTLIST optgroup
   %attrs;
   disabled    (disabled)     #IMPLIED
+  set:disabled (set:disabled) #IMPLIED
   label       %Text;         #REQUIRED
   >
 
@@ -850,7 +690,9 @@
 <!ATTLIST option
   %attrs;
   selected    (selected)     #IMPLIED
+  set:selected (set:selected) #IMPLIED
   disabled    (disabled)     #IMPLIED
+  set:disabled (set:disabled) #IMPLIED
   label       %Text;         #IMPLIED
   value       CDATA          #IMPLIED
   >
@@ -880,7 +722,6 @@
   wrap          (hard | soft)  "soft"
   >
 
-
 <!ELEMENT fieldset (#PCDATA | legend | %block; | form | %inline; | %misc;)*>
 <!ATTLIST fieldset
   %attrs;
@@ -898,7 +739,6 @@
   accesskey   %Character;    #IMPLIED
   >
 
- 
 <!ELEMENT button %button.content;>  
 <!ATTLIST button
   %attrs;
@@ -917,10 +757,6 @@
   formvalidate CDATA          #IMPLIED
   formtarget  (_blank | _self | _parent | _top)    #IMPLIED
   >
-
-
-
-
 
 <!ELEMENT table
      (caption?, (col*|colgroup*), thead?, tfoot?, (tbody+|tr+))>
@@ -972,10 +808,7 @@
   %attrs;
   >
 
-
 <!ENTITY % Scope "(row|col|rowgroup|colgroup)">
-
-
 
 <!ATTLIST th
   %attrs;
@@ -991,10 +824,6 @@
   headers     IDREFS         #IMPLIED
   rowspan     %Number;       "1"
   >
-
-
-
-
 
 <!ELEMENT article (#PCDATA)>
 <!ATTLIST article
@@ -1038,8 +867,6 @@
 
 <!ELEMENT summary (#PCDATA)>
 <!ATTLIST summary %attrs; >
-
-
 
 
 <!ELEMENT audio EMPTY>
@@ -1091,9 +918,6 @@
   width    %Pixels;   #IMPLIED
 >
 
-
-
-
 <!ELEMENT datetime (#PCDATA)>
 <!ATTLIST datetime %attrs;>
 
@@ -1126,9 +950,6 @@
 
 <!ELEMENT url (#PCDATA)>
 <!ATTLIST url %attrs;>
-
-
-
 
 <!ELEMENT keygen EMPTY>
 <!ATTLIST keygen

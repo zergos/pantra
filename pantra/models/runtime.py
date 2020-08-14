@@ -7,8 +7,8 @@ from dataclasses import dataclass, field as dc_field
 
 from pony import options as pony_options
 from pony.orm import Database, Optional, Required, Discriminator, Set, StrArray, FloatArray, IntArray
-from core.common import ADict, define_getter, define_setter
-from core.defaults import *
+from pantra.common import ADict, define_getter, define_setter
+from pantra.defaults import *
 from .types import *
 from .parser import parse_xml, expat
 

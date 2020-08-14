@@ -1,0 +1,28 @@
+<input type="checkbox" set:checked on:change="switch_filter">
+<div>{{label}}</div>
+<select on:select="change_op">
+    {{#for op in view.operators}}
+    <option value="{op}" set:selected="{op==view.filter.operator}">{{op}}</option>
+    {{/for}}
+</select>
+<div cref:widget on:render="render_widget"/>
+
+<python>
+from components.Tables import FilterView
+from components.Widgets import make_widget
+
+view: FilterView
+
+def render_widget(node):
+    view.widget = make_widget(node, view.attr, view.filter.value, on_change=change_value)
+
+def switch_filter(node):
+    view.filter.enabled = not view.filter.enabled
+
+def change_op(node):
+    view.filter.operator = node.value
+
+def change_value(value):
+    view.filter.value = value
+
+</python>
