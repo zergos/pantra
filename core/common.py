@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import ctypes
 from dataclasses import dataclass
 
 if typing.TYPE_CHECKING:
@@ -269,3 +270,10 @@ def define_setter(src, name='setter', locals = None):
     locals = locals or {}
     exec(f'def {name}(self, value): {src}', locals)
     return locals[name]
+
+
+def raise_exception_in_thread(thread_id):
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
+    if res > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+        print('Exception raise failure')
