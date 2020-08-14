@@ -26,18 +26,12 @@ routes = web.RouteTableDef()
 
 @routes.get(r'/{app:\w*}')
 async def get_main_page(request: Request):
-    session = await get_session(request)
-    body = bootstrap.replace('{{hostname}}', f'{request.host}/{request.match_info["app"]}')
-    session_id = session.get('id')
-    if not session_id:
-        session_id = Session.gen_session_id()
-        session['id'] = session_id
-    body = body.replace('{{session_id}}', session_id)
-    body = body.replace('{{app}}', request.match_info["app"])
+    body = bootstrap.replace('{{LOCAL_ID}}', Session.gen_session_id())
+    body = body.replace('{{TAB_ID}}', Session.gen_session_id())
     return web.Response(body=body, content_type='text/html')
 
 
-@routes.get(r'/{app:\w*}/ws/{session_id:\w+}')
+@routes.get(r'/{app:\w*}/ws/{local_id:\w+}/{session_id:\w+}')
 async def get_ws(request: Request):
     ws = web.WebSocketResponse(receive_timeout=SOCKET_TIMEOUT, max_msg_size=MAX_MESSAGE_SIZE)
     await ws.prepare(request)
@@ -167,8 +161,6 @@ async def shutdown(app):
 async def main(host, port):
     app = web.Application()
     app.add_routes(routes)
-
-    setup(app, SimpleCookieStorage(cookie_name='s'))
 
     app.on_startup.append(startup)
     app.on_shutdown.append(shutdown)
