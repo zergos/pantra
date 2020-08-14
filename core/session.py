@@ -6,6 +6,7 @@ import string
 import functools
 import traceback
 import typing
+import uuid
 from queue import Queue
 
 from .defaults import APPS_PATH, COMPONENTS_PATH
@@ -65,7 +66,7 @@ class Session:
 
     @staticmethod
     def gen_session_id():
-        return ''.join(random.choice(string.ascii_uppercase+string.digits) for _ in range(8))
+        return uuid.uuid4().hex
 
     def restart(self):
         from .components.render import ContextShot
