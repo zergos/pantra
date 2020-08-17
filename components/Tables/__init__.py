@@ -51,7 +51,7 @@ class Filter:
     enabled: bool = field(default=True)
 
 
-class FilterView(NamedTuple):
+class FilterView(typing.NamedTuple):
     filter: Filter
     operators: Tuple[str, ...]
     attr: AttrInfo

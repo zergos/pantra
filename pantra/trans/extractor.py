@@ -5,9 +5,9 @@ import ast
 from xml.parsers import expat
 
 from antlr4.error.ErrorListener import ErrorListener
-from ..components.grammar.BCDLexer import BCDLexer
-from ..components.grammar.BCDParser import BCDParser, InputStream, CommonTokenStream, IllegalStateException
-from ..components.grammar.BCDParserVisitor import BCDParserVisitor
+from ..components.grammar.PMLLexer import PMLLexer
+from ..components.grammar.PMLParser import PMLParser, InputStream, CommonTokenStream, IllegalStateException
+from ..components.grammar.PMLParserVisitor import PMLParserVisitor
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -118,18 +118,18 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
             yield node.lineno, func, messages, comments
 
 
-class MyVisitor(BCDParserVisitor):
+class MyVisitor(PMLParserVisitor):
     def __init__(self, args):
         self.in_python = False
         self.args = args
         self.res = []
 
-    def visitRawTag(self, ctx:BCDParser.RawTagContext):
+    def visitRawTag(self, ctx:PMLParser.RawTagContext):
         tag_name = ctx.getText().strip()[1:]
         if tag_name == 'python':
             self.in_python = True
 
-    def visitRawText(self, ctx:BCDParser.RawTextContext):
+    def visitRawText(self, ctx:PMLParser.RawTextContext):
         if self.in_python:
             text = ctx.getText()
             if text.strip().strip('\uFEFF'):
@@ -138,15 +138,15 @@ class MyVisitor(BCDParserVisitor):
                 for row in extract_python(text, *self.args):
                     self.res.append(row)
 
-    def visitRawCloseTag(self, ctx:BCDParser.RawCloseTagContext):
+    def visitRawCloseTag(self, ctx:PMLParser.RawCloseTagContext):
         self.in_python = False
 
-    def visitAttrValue(self, ctx:BCDParser.AttrValueContext):
+    def visitAttrValue(self, ctx:PMLParser.AttrValueContext):
         value = ctx.getText().strip('" \'')
         if value.startswith('#'):
             self.res.append((ctx.start.line, '_', value[1:], []))
 
-    def visitText(self, ctx:BCDParser.TextContext):
+    def visitText(self, ctx:PMLParser.TextContext):
         text = ctx.getText()
         if text.startswith('#'):
             self.res.append((ctx.start.line, '_', text[1:], []))
@@ -163,9 +163,9 @@ def extract_html(fileobj, keywords, comment_tags, options):
     """
     print(f'HTML> {fileobj.name}')
     in_stream = InputStream(fileobj.read().decode('utf-8'))
-    lexer = BCDLexer(in_stream)
+    lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
-    parser = BCDParser(stream)
+    parser = PMLParser(stream)
     parser.removeErrorListeners()
     parser.addErrorListener(ErrorVisitor())
     tree = parser.process()
