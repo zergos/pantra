@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-18 16:29+0300\n"
+"POT-Creation-Date: 2020-08-19 01:12+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -38,7 +38,6 @@ msgstr "Отмена"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:43
 #: D:/projects/bol/bwf/components/Forms/EntityForm.html:5
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:18
 msgid "Close"
 msgstr "Закрыть"
 
@@ -94,27 +93,31 @@ msgstr "Не могу добавить окно, неопределена пан
 msgid "Empty"
 msgstr "Пусто"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:9
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:10
 msgid "Not filtered"
 msgstr "Без фильтров"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:12
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:14
 msgid "Filters"
 msgstr "Фильтры"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:17
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:19
 msgid "Apply"
 msgstr "Применить"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:77
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:20
+msgid "Hide"
+msgstr "Скрыть"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:93
 msgid "contains"
 msgstr "содержит"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:78
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:94
 msgid "between"
 msgstr "между"
 
-#: D:/projects/bol/bwf/components/Widgets/Field.html:66
+#: D:/projects/bol/bwf/components/Widgets/Field.html:68
 msgid "field is empty"
 msgstr "поле не заполнено"
 
