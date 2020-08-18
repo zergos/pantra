@@ -3,15 +3,16 @@
 </div>
 
 <style type="text/scss">
-    $tool-color: rgba(#212529, 0.37);
+    @import "defaults";
 
     div {
         width: 100%;
-        height: 1.4rem;
+        //height: 2rem;
         display: flex;
         flex-wrap: nowrap;
         flex-direction: row;
+        align-items: center;
         background: linear-gradient(to right, $tool-color, transparent);
-        border-bottom: solid 1px $tool-color;
+        border: $tool-border;
     }
 </style>

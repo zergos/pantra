@@ -104,6 +104,16 @@ class Context(RenderNode):
         self.locals.stop_record()
         self.locals.__class__ = WatchDict
 
+    def call(self, action: str, *args, **kwargs):
+        if action not in self.locals:
+            return
+        method = self.locals[action]
+        if type(method) is str:
+            if self.parent:
+                self.parent.call(action, *args, **kwargs)
+        else:
+            method(*args, **kwargs)
+
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
             return self.children[item]
@@ -397,12 +407,13 @@ class SetNode(RenderNode):
 
 
 class ReactNode(RenderNode):
-    __slots__ = ['var_name', 'action']
+    __slots__ = ['var_name', 'action', 'value']
 
     def __init__(self, parent: RenderNode, var_name: str, action: str):
         super().__init__(parent, False)
         self.var_name = var_name
         self.action = action
+        self.value = None
 
     def __str__(self):
         return '>'

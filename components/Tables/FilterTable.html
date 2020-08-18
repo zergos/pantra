@@ -1,15 +1,17 @@
 <component>
     <div ref:filters class="filters">
-        {{#for filter in filters}}
-        <div class="filter">
-            <span>{{filter.column.title}}</span>
-            <span data:filter="{view.filter}" on:click="remove_filter">🗙</span>
+        <div style="display: contents">
+            {{#for filter in filters_enabled()}}
+                <div class="filter">
+                    <span>{{filter.column.title}}</span>
+                    <span class="close-mark" data:filter="{filter}" on:click="remove_filter">🗙</span>
+                </div>
+            {{#else}}
+                <div class="nofilter">#Not filtered</div>
+            {{/for}}
         </div>
-        {{#else}}
-        <div class="nofilter">#Not filtered</div>
-        {{/for}}
         <div class="spacer"/>
-        <div class="configure" on:click="show_form">#Filters</div>
+        <div class="filter configure" on:click="toggle_form">#Filters</div>
     </div>
     <div ref:container class="container hidden">
         <div ref:form class="filters-form" on:render="render_form"/>
@@ -21,25 +23,49 @@
 </component>
 
 <style type="text/scss">
+    @import "defaults";
+    @import "mixins";
+
     .filters {
         display: flex;
         flex-flow: row wrap;
-        height: 2em;
+        align-items: center;
+        min-height: 2em;
         width: 100%;
+        background: $header-background;
+        border: $common-border;
     }
 
     .filter {
         padding: 0.3em 1em;
-        border: 1px solid black;
+        border: $common-border;
         border-radius: 3px;
+        @include x-user-select();
+    }
+
+    .nofilter {
+        color: $color-passive;
+        padding: 0.3em 1em;
+        font-style: italic;
+    }
+
+    .configure {
+        cursor: pointer;
+        @include x-user-select();
     }
 
     .spacer {
         flex-grow: 1;
     }
 
+    .close-mark {
+        cursor: pointer;
+        @include x-user-select();
+    }
+
     .container {
         width: 100%;
+        background: $form-bg;
     }
 
     .filters-form {
@@ -47,27 +73,21 @@
         grid-template-columns: 1rem minmax(10rem, max-content) 3rem minmax(10rem, max-content);
         grid-auto-columns: minmax(10rem, max-content);
         gap: 0.2rem 0.3rem;
+        align-items: center;
+        padding: 0.3rem 1rem;
     }
 </style>
 
 <python>
 from models.runtime import AttrInfo
 from pantra.models.types import *
-from components.Tables import Filter, FilterView
+from components.Tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
 filters: List[Filter] = []
 callback: Callable[[], None] = lambda: None
 
 filter_views: List[FilterView] = []
-
-OPERATORS = {
-    'numbers': ('=', '≠', '>', '<', '≥', '≤'),
-    'dates': ('between', ),
-    'strings': ('=', '≠', 'contains'),
-    'booleans': ('=', ),
-    'entities': ('=', '≠'),
-}
 
 if typing.TYPE_CHECKING:
     _('contains')
@@ -95,24 +115,34 @@ def init():
             continue
         filter_views.append(FilterView(filter, ops, attr, None))
 
+def filters_enabled():
+    for filter in filters:
+        if filter.enabled:
+            yield filter
+
 def render_form(node: HTMLElement):
-    for view in filter_views:  # type: Filter
-        node.render('FilterTableLine', {'view': view})
+    if not node.children:
+        for view in filter_views:  # type: Filter
+            node.render('FilterTableLine', {'view': view})
+    else:
+        node.update_tree()
 
 def remove_filter(node: HTMLElement):
     node.data.filter.enabled = False
-    refs.filters[0].update()
-    refs.form.update()
+    loop = refs.filters.downto('@')
+    loop.update(True)
+    render_form(refs.form)
     callback()
 
-def show_form(node):
-    refs.container.remove_class('hidden')
+def toggle_form(node):
+    refs.container.toggle_class('hidden')
 
 def hide_form(node):
     refs.container.add_class('hidden')
 
 def apply_filters(node):
-    hide_form(node)
+    loop = refs.filters.downto('@')
+    loop.update(True)
     callback()
 
 </python>

@@ -1,5 +1,7 @@
 <label class:block class:required class:error>
-    <div class="cap" css:width="{caption_width}">{{caption}}</div>
+    {{#if caption}}
+        <div class="cap" css:width="{caption_width}">{{caption}}</div>
+    {{/if}}
     <div>
         <div class="message">{{error}}</div>
         <slot/>
@@ -14,7 +16,7 @@
         display: flex;
         flex-flow: nowrap row;
         align-items: flex-end;
-        padding-top: 0.35rem;
+        //padding-top: 0.35rem;
 
         &.block {
             flex-direction: column;

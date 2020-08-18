@@ -398,8 +398,15 @@ class DefaultRenderer:
 
         elif tag_name[0] == '@':
             if tag_name == '@component':
-                for child in template.children:
-                    self.build_node(child, parent)
+                if 'render' in template.attributes:
+                    renderer = template.attributes['render']
+                    if renderer not in self.ctx.locals:
+                        self.ctx.session.error(f'component renderer {renderer} not found')
+                        return None
+                    self.ctx.locals[renderer](parent)
+                else:
+                    for child in template.children:
+                        self.build_node(child, parent)
 
             elif tag_name == '@slot':
                 slot: Slot = parent.context.slot
@@ -633,10 +640,11 @@ class DefaultRenderer:
                 self.build_node(child, node)
             del self.ctx.locals[node.var_name]
 
+        '''
         elif typename(node) == 'ReactNode':
             if not recursive:
                 process_click_referred(self.ctx.session, node, node.action)
-            return
+            return'''
 
         if recursive:
             self.update_children(node)

@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
 __all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
-SPECIAL_ELEMENTS = 'slot|event|scope|react|component'.split('|')
+SPECIAL_ELEMENTS = 'slot|event|scope|react|component|'.split('|')
 
 templates: typing.Dict[str, HTMLTemplate] = {}
 
@@ -104,7 +104,7 @@ class MyVisitor(PMLParserVisitor):
                 else:
                     text = text.strip('{}')
                     text = f"({text} or '')"
-                    value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
+                    value = compile(text, f'<attribute:{self.cur_attr}>', 'eval')
             else:
                 value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
         else:
@@ -258,6 +258,7 @@ class StyleVisitor(PMLParserVisitor):
             return
 
         text = ctx.getText()
+        text = '\n' * (ctx.start.line-1) + text
         text = sass.compile(string=text, output_style='compact', include_paths=[CSS_PATH])
 
         if self.global_mode:

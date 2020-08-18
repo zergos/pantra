@@ -3,7 +3,7 @@
         <SingleInput
                 ref:input
                 consume="required,readonly"
-                on_change="parse_input on_change"
+                on_change="parse_input"
                 list="o{ctx.oid}"
                 value="{entity_to_text(value)}"
                 buttons="...,O"
@@ -52,6 +52,7 @@ def fill_value(node):
         return
     refs.input['value'] = entity_to_text(value)
     refs.input.update_tree()
+    ctx.call('on_change', ctx)
 
 def entity_to_text(v: Optional[EntityMeta]) -> str:
     if not v:
@@ -92,6 +93,7 @@ def parse_input(node):
         lookup_list = text_to_entities(v)
         if len(lookup_list) == 1:
             value = lookup_list[0]
+            ctx.call('on_change', ctx)
         refs.lookups.update_tree()
 
 def button_action(node):

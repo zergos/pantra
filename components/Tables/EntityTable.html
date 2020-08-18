@@ -1,22 +1,27 @@
 <component>
-    <BaseTable consume/>
+    {{#if filters}}
+    <FilterTable filters="{filters}" callback="{apply_filters}"/>
+    {{/if}}
+    <BaseTable ref:basetable consume/>
 </component>
 
 <python>
 from pony.orm.core import Query, Entity, db_session, desc, select, make_proxy, EntityMeta
 from pantra.models import query_info, find_entity_info
 from pantra.models.runtime import AttrInfo
-from components.Tables import Columns, ColumnInfo
+from components.Tables import Columns, ColumnInfo, Filter, OPER_MAP
 from pantra.ctx import *
 
 query: Optional[Query] = None
 entity: Entity
 col_id: str = 'id'
 
+original_query: Optional[Query] = None
 columns: Columns = {}
+filters: List[Filter] = []
 
 def init():
-    global query, columns
+    global query, columns, original_query
     # default query
     if query is None:
         info = find_entity_info(entity)
@@ -51,14 +56,17 @@ def init():
             col.style.width = WebUnits(attr.width, 'em')
         columns[name] = col
         if attr.is_ref:
-            columns[f'{name}$'] = ColumnInfo(name=name, type=attr.type, hidden=True)
+            columns[f'{name}_view'] = ColumnInfo(name=name, type=attr.type, hidden=True)
+        filters.append(Filter(col))
+
+    original_query = query
 
 @db_session
 def get_rows(order_col, order_dir):
     global columns
     if order_col:
         col = getattr(entity, order_col)
-        if order_dir<0:
+        if order_dir < 0:
             col = desc(col)
         q = query.order_by(col)
     else:
@@ -70,6 +78,23 @@ def get_rows(order_col, order_dir):
 def save_value(field: Context, value):
     col = field['column']
 
-    entity[field.scope.row_id].set(**{col.name: value})
+    setattr(entity[field.scope.row_id], col.name, value)
+
+def apply_filters():
+    global query
+    query = original_query
+    args = ','.join(col for col in columns)
+    with db_session:
+        for filter in filters:
+            if not filter.enabled:
+                continue
+            if filter.operator in OPER_MAP:
+                query = query.filter(f'lambda {args}: {filter.column.name} {OPER_MAP[filter.operator]} filter.value')
+            elif filter.operator == 'contains':
+                query = query.filter(f'lambda {args}: filter.value in {filter.column.name}')
+            elif filter.operator == 'between':
+                # TODO
+                pass
+    ctx['refresh']()
 
 </python>

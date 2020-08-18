@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Fruits App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-28 13:17+0300\n"
+"POT-Creation-Date: 2020-08-18 16:29+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -19,34 +19,6 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:2
-msgid "Refresh"
-msgstr "Обновить"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:3
-msgid "Add"
-msgstr "Добавить"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:4
-msgid "Delete"
-msgstr "Удалить"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogList.html:48
-msgid "Confirm deletion of {}"
-msgstr "Подтвердите удаление {}"
-
-#: D:/projects/bol/bwf/components/Catalog/CatalogSelect.html:2
-msgid "Select"
-msgstr "Выбрать"
-
-#: D:/projects/bol/bwf/components/Catalog/__init__.py:26
-msgid "Select: {}"
-msgstr "Выбор: {}"
-
-#: D:/projects/bol/bwf/components/Catalog/__init__.py:48
-msgid "New: {}"
-msgstr "Новый: {}"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "Yes"
@@ -66,8 +38,37 @@ msgstr "Отмена"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:43
 #: D:/projects/bol/bwf/components/Forms/EntityForm.html:5
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:18
 msgid "Close"
 msgstr "Закрыть"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:3
+msgid "Refresh"
+msgstr "Обновить"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:4
+msgid "Add"
+msgstr "Добавить"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:5
+msgid "Delete"
+msgstr "Удалить"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:49
+msgid "Confirm deletion of {}"
+msgstr "Подтвердите удаление {}"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogSelect.html:3
+msgid "Select"
+msgstr ""
+
+#: D:/projects/bol/bwf/components/Entities/__init__.py:34
+msgid "Select: {}"
+msgstr "Выбор: {}"
+
+#: D:/projects/bol/bwf/components/Entities/__init__.py:64
+msgid "New: {}"
+msgstr "Новый: {}"
 
 #: D:/projects/bol/bwf/components/Forms/EntityForm.html:4
 msgid "Save"
@@ -89,14 +90,31 @@ msgstr "Выйти"
 msgid "Can not add window, session has no taskbar"
 msgstr "Не могу добавить окно, неопределена панель задач"
 
-#: D:/projects/bol/bwf/components/Tables/Table.html:47
+#: D:/projects/bol/bwf/components/Tables/BaseTable.html:47
 msgid "Empty"
 msgstr "Пусто"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:9
+msgid "Not filtered"
+msgstr "Без фильтров"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:12
+msgid "Filters"
+msgstr "Фильтры"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:17
+msgid "Apply"
+msgstr "Применить"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:77
+msgid "contains"
+msgstr "содержит"
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:78
+msgid "between"
+msgstr "между"
 
 #: D:/projects/bol/bwf/components/Widgets/Field.html:66
 msgid "field is empty"
 msgstr "поле не заполнено"
-
-#~ msgid "New: {}"
-#~ msgstr "Новый: {}"
 

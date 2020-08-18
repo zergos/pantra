@@ -26,9 +26,7 @@ def update_dtd():
     for line in src.splitlines():
         res.append(line)
         if line.startswith('<!--COMPONENTS-->'):
-            res.append('<!ENTITY % components "python|{}">'.format('|'.join(components)))
-            res.append('<!ELEMENT python EMPTY>\n<!ATTLIST python use CDATA #IMPLIED>')
-            res.append('<!ELEMENT component %Flow;>')
+            res.append('<!ENTITY % components "{}">'.format('|'.join(components)))
 
             for c in components:
                 res.append(f'<!ELEMENT {c} %Flow;>')

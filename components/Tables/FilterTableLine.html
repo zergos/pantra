@@ -1,28 +1,37 @@
-<input type="checkbox" set:checked on:change="switch_filter">
-<div>{{label}}</div>
+<input ref:checkbox type="checkbox" set:checked="{view.filter.enabled}" on:change="switch_filter">
+<div>{{view.filter.column.title}}</div>
 <select on:select="change_op">
     {{#for op in view.operators}}
-    <option value="{op}" set:selected="{op==view.filter.operator}">{{op}}</option>
+    <option data:value="{op}" set:selected="{op==view.filter.operator}">{{_(op)}}</option>
     {{/for}}
 </select>
-<div cref:widget on:render="render_widget"/>
+<div class="field" on:render="render_widget"/>
+
+<style type="text/scss">
+    .field {
+        padding-top: 0;
+    }
+</style>
 
 <python>
 from components.Tables import FilterView
 from components.Widgets import make_widget
+from pantra.ctx import *
 
 view: FilterView
 
 def render_widget(node):
-    view.widget = make_widget(node, view.attr, view.filter.value, on_change=change_value)
+    view.widget = make_widget(node, view.attr, view.filter.value, on_change=change_value, caption="")
 
 def switch_filter(node):
     view.filter.enabled = not view.filter.enabled
 
 def change_op(node):
-    view.filter.operator = node.value
+    view.filter.operator = node.value.data.value
 
-def change_value(value):
-    view.filter.value = value
+def change_value(node):
+    view.filter.value = node.context['value']
+    view.filter.enabled = True
+    refs.checkbox.update(True)
 
 </python>

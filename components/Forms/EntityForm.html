@@ -1,14 +1,16 @@
-<form on:render="render" on:keyup="default_click">
-</form>
-<ToolBox>
-    <ToolButton caption="#Save" action="save" default/>
-    <ToolButton caption="#Close" action="close"/>
-</ToolBox>
+<component>
+    <form on:render="render" on:keyup="default_click"/>
+    <ToolBox>
+        <ToolButton caption="#Save" action="save" default/>
+        <ToolButton caption="#Close" action="close"/>
+    </ToolBox>
+</component>
 
 <style type="text/scss">
     @import "defaults";
 
     form {
+        line-height: 2em;
         border: $form-border;
         padding: $form-padding;
         background: $form-bg;

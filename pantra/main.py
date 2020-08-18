@@ -66,6 +66,7 @@ async def get_ws(request: Request):
                             if session.title:
                                 await session.send_title(session.title)
                         await session.recover_messages()
+                        await session.remind_errors()
 
                 elif command == 'CLICK':
                     process_click(data['method'], data['oid'])

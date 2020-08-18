@@ -1,5 +1,5 @@
 <Field consume>
-    <SingleInput consume="required,readonly,focus" cref:time type="time" step="1" on_change="parse_input on_change"/>
+    <SingleInput consume="required,readonly,focus" cref:time type="time" step="1" on_change="parse_input"/>
 </Field>
 
 <python>
@@ -13,5 +13,6 @@ def parse_input(node):
     value = refs.time.value
     value = datetime.utcfromtimestamp(value/1000).time() if value else time()
     refs.time['value'] = value
+    ctx.call('on_change', ctx)
 
 </python>

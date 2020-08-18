@@ -129,6 +129,8 @@ class UniNode:
             node = node.parent
         return None
 
+    def downto(self: TUniNode, predicate: Callable[[TUniNode], bool]) -> Optional[TUniNode]:
+        return next(self.select(predicate), None)
 
 class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']

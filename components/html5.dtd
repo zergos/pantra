@@ -186,7 +186,7 @@
     "p | %heading; | div | %lists; | %blocktext; | fieldset | table |
     header | footer | section | hgroup | main | nav | dialog | figure |
     datagrid | canvas | audio | video | source | embed | keygen |
-    progress | ruby | %components;">
+    progress | ruby | %special; | %components;">
 
 
 <!ENTITY % Flow "(#PCDATA | %block; | form | %inline; | %misc;)*">
@@ -1041,11 +1041,51 @@
 <!ATTLIST rt %attrs;>
 <!ATTLIST rp %attrs;>
 
-<!--COMPONENTS-->
-<!ENTITY % components "python|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityField|EntityForm|EntityTable|Field|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Table|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!--SPECIAL-->
+<!ENTITY % special "component|python|react|event|scope">
+
 <!ELEMENT python EMPTY>
 <!ATTLIST python use CDATA #IMPLIED>
 <!ELEMENT component %Flow;>
+<!ATTLIST component
+	render CDATA #IMPLIED
+>
+<!ELEMENT react EMPTY>
+<!ATTLIST react
+	to CDATA #REQUIRED
+	action CDATA #REQUIRED
+>
+<!ELEMENT event EMPTY>
+<!ATTLIST event
+	selector     CDATA          #REQUIRED
+    on:click     CDATA          #IMPLIED
+    on:dblclick  CDATA          #IMPLIED
+    on:mousedown CDATA          #IMPLIED
+    on:mouseup   CDATA          #IMPLIED
+    on:mouseover CDATA          #IMPLIED
+    on:mousemove CDATA          #IMPLIED
+    on:mouseout  CDATA          #IMPLIED
+    on:keypress  CDATA          #IMPLIED
+    on:keydown   CDATA          #IMPLIED
+    on:keyup     CDATA          #IMPLIED
+    on:drag        CDATA         #IMPLIED
+    on:dragend     CDATA         #IMPLIED
+    on:dragenter   CDATA         #IMPLIED
+    on:dragleave   CDATA         #IMPLIED
+    on:dragover    CDATA         #IMPLIED
+    on:dragstart   CDATA         #IMPLIED
+    on:drop        CDATA         #IMPLIED
+    on:mousewheel  CDATA         #IMPLIED
+    on:scroll      CDATA         #IMPLIED
+    on:select    CDATA          #IMPLIED
+    on:change    CDATA          #IMPLIED
+>
+<!ELEMENT scope EMPTY>
+
+
+<!--COMPONENTS-->
+<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityField|EntityForm|EntityTable|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!ELEMENT BaseTable %Flow;>
 <!ELEMENT Button %Flow;>
 <!ELEMENT CardForm %Flow;>
 <!ELEMENT CatalogList %Flow;>
@@ -1062,6 +1102,8 @@
 <!ELEMENT EntityForm %Flow;>
 <!ELEMENT EntityTable %Flow;>
 <!ELEMENT Field %Flow;>
+<!ELEMENT FilterTable %Flow;>
+<!ELEMENT FilterTableLine %Flow;>
 <!ELEMENT Grid2 %Flow;>
 <!ELEMENT GridR %Flow;>
 <!ELEMENT GridX %Flow;>
@@ -1083,7 +1125,6 @@
 <!ELEMENT SideMenu %Flow;>
 <!ELEMENT SingleInput %Flow;>
 <!ELEMENT SysTray %Flow;>
-<!ELEMENT Table %Flow;>
 <!ELEMENT Taskbar %Flow;>
 <!ELEMENT TextAreaField %Flow;>
 <!ELEMENT TextField %Flow;>

@@ -1,14 +1,17 @@
-<Field consume block>
-    <textarea
-        bind:value
-        set:required
-        set:readonly
-        css:width
-        cols="{cols}"
-        rows="{rows}"
-        maxlength="{maxlength}"
-    />
-</Field>
+<component>
+    <Field consume block>
+        <textarea
+            bind:value
+            set:required
+            set:readonly
+            css:width
+            cols="{cols}"
+            rows="{rows}"
+            maxlength="{maxlength}"
+        />
+    </Field>
+</component>
+<react to="value" action="on_change"/>
 
 <python>
 value: str = ''

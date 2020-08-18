@@ -21,6 +21,25 @@ else:
 __all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default', 'MapsRows', 'Columns', 'ColumnInfo']
 
 
+OPERATORS = {
+    'numbers': ('=', '≠', '>', '<', '≥', '≤'),
+    'dates': ('between', ),
+    'strings': ('=', '≠', 'contains'),
+    'booleans': ('=', ),
+    'entities': ('=', '≠'),
+}
+
+
+OPER_MAP = {
+    '=': '==',
+    '≠': '!=',
+    '>': '>',
+    '<': '<',
+    '≥': '>=',
+    '≤': '<=',
+}
+
+
 @dataclass
 class ColumnInfo:
     name: str = field(default_factory=str)
@@ -45,17 +64,19 @@ class ColumnMap:
 @dataclass
 class Filter:
     column: ColumnInfo
-    operator: str = field(default_factory=str)
+    operator: str = field(default='=')
     value: Any = field(default=None)
     value2: Any = field(default=None)
-    enabled: bool = field(default=True)
+    enabled: bool = field(default=False)
 
 
-class FilterView(typing.NamedTuple):
+@dataclass
+class FilterView:
     filter: Filter
     operators: Tuple[str, ...]
     attr: AttrInfo
     widget: Optional[Context]
+
 
 def align_by_type(t) -> str:
     if t in (int, float):
