@@ -11,12 +11,15 @@ if not venv:
 sys.path.append(os.path.dirname(venv))
 
 # setup env site-packages
-if os.name == 'nt':
+if sys.platform == "win32":
     venv = os.path.join(venv, 'Scripts')
 else:
     venv = os.path.join(venv, 'bin')
 activator = os.path.join(venv, 'activate_this.py')
 exec(open(activator).read(), {'__file__': activator})
+
+# reset module name from this file to package
+del sys.modules['pantra']
 
 # run management command
 from pantra.management import execute_from_command_line
