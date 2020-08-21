@@ -6,9 +6,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Fruits App \"system\" VERSION\n"
+"Project-Id-Version: Pantra App \"system\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-18 01:25+0300\n"
+"POT-Creation-Date: 2020-08-20 17:07+0300\n"
 "PO-Revision-Date: 2020-07-09 16:27+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"

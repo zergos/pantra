@@ -24,7 +24,7 @@ def _detect_app():
 
 class Main:
     """
-    Manage fruits
+    Manage Pantra
     :param app: app name
     """
 
@@ -309,7 +309,7 @@ class Locale:
         args.extend(['-F', ini_name])
         args.extend(['-o', pot_name])
         args.append('--sort-by-file')
-        args.append(f'--project=Fruits App "{self.app}"')
+        args.append(f'--project=Pantra App "{self.app}"')
         args.extend(['-c', 'NOTE'])
         if copyright:
             args.append(f'--copyright-holder={copyright}')

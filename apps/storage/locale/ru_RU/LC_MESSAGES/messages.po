@@ -6,9 +6,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Fruits App \"storage\" VERSION\n"
+"Project-Id-Version: Pantra App \"storage\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-07-26 20:16+0300\n"
+"POT-Creation-Date: 2020-08-20 17:06+0300\n"
 "PO-Revision-Date: 2020-06-29 11:37+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -21,6 +21,7 @@ msgstr ""
 "Generated-By: Babel 2.8.0\n"
 
 #: D:/projects/bol/bwf/apps/storage/Main.html:3
+#: D:/projects/bol/bwf/apps/storage/Main.html:32
 msgid "Storage management"
 msgstr "Управление складом"
 
@@ -43,22 +44,6 @@ msgstr "Продажи"
 #: D:/projects/bol/bwf/apps/storage/Main.html:16
 msgid "Incomes"
 msgstr "Приходы"
-
-#: D:/projects/bol/bwf/apps/storage/_StorageList.html:2
-msgid "Refresh"
-msgstr "Обновить"
-
-#: D:/projects/bol/bwf/apps/storage/_StorageList.html:3
-msgid "Add"
-msgstr "Добавить"
-
-#: D:/projects/bol/bwf/apps/storage/_StorageList.html:4
-msgid "Delete"
-msgstr "Удалить"
-
-#: D:/projects/bol/bwf/apps/storage/_StorageList.html:35
-msgid "Confirm deletion of {}"
-msgstr "Подтвердите удаление {}"
 
 #. entity
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:2
@@ -100,7 +85,9 @@ msgid "Goods"
 msgstr "Товары"
 
 #. prop of Good
+#. attr of PurchaseLine
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:5
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:14
 msgid "unit"
 msgstr "единица"
 
@@ -108,4 +95,57 @@ msgstr "единица"
 #: D:/projects/bol/bwf/apps/storage/data/models.xml:6
 msgid "weight"
 msgstr "вес"
+
+#. entity
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:9
+msgid "Purchase"
+msgid_plural "Purchases"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#. entity plural
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:9
+msgid "Purchases"
+msgstr ""
+
+#. attr of Purchase
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:10
+msgid "storage"
+msgstr ""
+
+#. entity
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:12
+msgid "PurchaseLine"
+msgid_plural "PurchaseLines"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#. entity plural
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:12
+msgid "PurchaseLines"
+msgstr ""
+
+#. attr of PurchaseLine
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:13
+msgid "good"
+msgstr ""
+
+#. attr of PurchaseLine
+#: D:/projects/bol/bwf/apps/storage/data/models.xml:15
+msgid "qty"
+msgstr ""
+
+#~ msgid "Refresh"
+#~ msgstr "Обновить"
+
+#~ msgid "Add"
+#~ msgstr "Добавить"
+
+#~ msgid "Delete"
+#~ msgstr "Удалить"
+
+#~ msgid "Confirm deletion of {}"
+#~ msgstr "Подтвердите удаление {}"
 
