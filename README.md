@@ -40,7 +40,7 @@ Component based Web framework with specific features:
 from apps.destiny.models import *
 from pantra.ctx import *
 
-chosen: str = 'Make a choice...'
+chosen: str = _('Make a choice...')
 
 @db_session
 def destiny_set():
@@ -55,13 +55,14 @@ def choose(node):
 # Why another framework?
 
 I need flexible, simple and rich tool to perform modern dynamic Web application.
-  - I want power of NodeJS, but prefer Python and I am Zen-follower
-  - I want to change the HTTP mass query conception to Web Socket's constant connection
-  - I want to manipulate solid chunks of business logic as components (MVC joined in one file)
-  - I want to deal with data most natural way, without SQL usage
-  - I want advantages of asynchronous programming, but get away coloring with `async`
+  - I want power of NodeJS, but based on Python language.
+  - I want to change the HTTP mass query conception to Web Socket's constant connection.
+  - I want to manipulate solid chunks of business logic as components (MVC joined in one file).
+  - I want to deal with data most natural way, without SQL usage.
+  - I want advantages of asynchronous programming, but get away coloring with `async`.
   - I want it made simple. Enough to teach newbies within shortest learning curve.
-  - I want ability to make it scalable and globally infinitely.  
+  - I want ability to make it scalable and globally usable.
+  - I need a perfect tool to build startups as fast as possible.
 
 # Installation
 
