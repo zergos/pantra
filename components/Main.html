@@ -1,32 +1,32 @@
 """
 <GridX fullscreen>
     <CardForm ref:form caption="Starting facility">
-        <SelectBox ref:app caption="Select app" blank wide required>
+        <SelectBox ref:app caption="#Select app" blank wide required>
             <SelectItem caption="system"/>
             {{#for app in get_apps()}}
             <SelectItem caption="{app}"/>
             {{/for}}
         </SelectBox>
-        <SelectBox ref:user caption="Select user" blank wide required>
+        <SelectBox ref:user caption="#Select user" blank wide required>
             {{#for user in get_users()}}
             <SelectItem caption="{user}"/>
             {{#else}}
-            <option disabled>no users available</option>
+            <option disabled>#no users available</option>
             {{/for}}
         </SelectBox>
         {{#if not get_users_count()}}
-        <InputBox caption="Create new admin user">
-            <InputText ref:login caption="Login" required/>
-            <InputPassword ref:passw caption="Password" required/>
-            <InputPassword ref:passw2 caption="Password again" required on:render="passw_render"/>
+        <InputBox caption="#Create new admin user">
+            <InputText ref:login caption="#Login" required/>
+            <InputPassword ref:passw caption="#Password" required/>
+            <InputPassword ref:passw2 caption="#Password again" required on:render="passw_render"/>
             <GridX>
-                <Button default action="create_first_admin" caption="Create and login"/>
+                <Button default action="create_first_admin" caption="#Create and login"/>
             </GridX>
         </InputBox>
         {{#else}}
-        <InputPassword ref:password caption="Password" required/>
+        <InputPassword ref:password caption="#Password" required/>
         <GridX>
-            <Button default action="login" caption="Login"/>
+            <Button default action="login" caption="#Login"/>
         </GridX>
         {{/if}}
     </CardForm>
@@ -40,7 +40,7 @@ from pantra.common import ADict
 from pantra.ctx import *
 
 def init():
-    session.set_title('Authorization')
+    session.set_title(_('Authorization'))
 
 @db_session
 def get_users_count():
@@ -55,7 +55,7 @@ def get_users():
         yield user.name
 
 def passw_render(node):
-    node.validate(lambda: refs.passw.value == refs.passw2.value, "Passwords don't match")
+    node.validate(lambda: refs.passw.value == refs.passw2.value, _("Passwords don''t match"))
 
 def create_first_admin(node):
     if 'passw' in refs and refs.form.is_valid():
@@ -69,10 +69,10 @@ def login(node):
     username = refs.user.value
     user = User.get(name=username)
     if not user:
-        refs.user.error = 'User not available'
+        refs.user.error = _('User not available')
         return
     if not user.check_password(refs.password.value):
-        refs.password.error = 'Wrong password'
+        refs.password.error = _('Wrong password')
         return
     session.user = ADict(user.to_dict())
     session.start_app(refs.app.value)

@@ -147,7 +147,7 @@ class DefaultRenderer:
         return s
 
     def build_string(self, source: StrOrCode, node: AnyNode) -> Optional[Union[str, DynamicString]]:
-        if not source:
+        if source is None:
             return None
         if typename(source) == 'code':
             return DynamicString(self.build_func(source, node))
@@ -155,7 +155,7 @@ class DefaultRenderer:
             return self.translate(source)
 
     def eval_string(self, source: StrOrCode, node: AnyNode) -> Any:
-        if not source:
+        if source is None:
             return None
 
         if typename(source) == 'code':
@@ -187,11 +187,13 @@ class DefaultRenderer:
                 name = attr.split(':')[1].strip()
                 self.ctx.refs[name] = node.locals
                 return True
+            """
             if attr.startswith('local:'):
                 name = attr.split(':')[1].strip()
                 # node.context.locals[name] = self.build_func(self.strip_quotes(value).strip('{}'), node)
                 node.context.locals[name] = self.trace_eval(self.ctx, value, node)
                 return True
+            """
             if attr.startswith('scope:'):
                 name = attr.split(':')[1].strip()
                 node.scope[name] = self.trace_eval(self.ctx, value, node)
@@ -344,7 +346,7 @@ class DefaultRenderer:
             with self.ctx.record_reactions(node):
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        data = self.eval_string(value, node) if value else True
+                        data = self.eval_string(value, node) if value is not None else True
                         node.locals[attr] = data
 
             try:

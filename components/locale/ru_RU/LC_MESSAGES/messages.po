@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-20 17:06+0300\n"
+"POT-Creation-Date: 2020-09-08 23:43+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -30,7 +30,7 @@ msgstr "Нет"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "OK"
-msgstr ""
+msgstr "ОК"
 
 #: D:/projects/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "Cancel"
@@ -59,7 +59,7 @@ msgstr "Подтвердите удаление {}"
 
 #: D:/projects/bol/bwf/components/Entities/CatalogSelect.html:3
 msgid "Select"
-msgstr ""
+msgstr "Выбрать"
 
 #: D:/projects/bol/bwf/components/Entities/__init__.py:34
 msgid "Select: {}"
@@ -72,6 +72,11 @@ msgstr "Новый: {}"
 #: D:/projects/bol/bwf/components/Forms/EntityForm.html:4
 msgid "Save"
 msgstr "Записать"
+
+#: D:/projects/bol/bwf/components/Forms/SelectBox.html:8
+#: D:/projects/bol/bwf/components/Tables/BaseTable.html:47
+msgid "Empty"
+msgstr "Пусто"
 
 #: D:/projects/bol/bwf/components/Layout/SysTray.html:5
 msgid "Restart"
@@ -89,9 +94,55 @@ msgstr "Выйти"
 msgid "Can not add window, session has no taskbar"
 msgstr "Не могу добавить окно, неопределена панель задач"
 
-#: D:/projects/bol/bwf/components/Tables/BaseTable.html:47
-msgid "Empty"
-msgstr "Пусто"
+#: D:/projects/bol/bwf/components/Main.html:4
+msgid "Select app"
+msgstr "Выбор приложения"
+
+#: D:/projects/bol/bwf/components/Main.html:10
+msgid "Select user"
+msgstr "Выбор пользователя"
+
+#: D:/projects/bol/bwf/components/Main.html:14
+msgid "no users available"
+msgstr "пользователи недоступны"
+
+#: D:/projects/bol/bwf/components/Main.html:18
+msgid "Create new admin user"
+msgstr "Создать нового администратора"
+
+#: D:/projects/bol/bwf/components/Main.html:19
+#: D:/projects/bol/bwf/components/Main.html:29
+msgid "Login"
+msgstr "Логин"
+
+#: D:/projects/bol/bwf/components/Main.html:20
+#: D:/projects/bol/bwf/components/Main.html:27
+msgid "Password"
+msgstr "Пароль"
+
+#: D:/projects/bol/bwf/components/Main.html:21
+msgid "Password again"
+msgstr "Пароль ещё раз"
+
+#: D:/projects/bol/bwf/components/Main.html:23
+msgid "Create and login"
+msgstr "Создать и войти"
+
+#: D:/projects/bol/bwf/components/Main.html:43
+msgid "Authorization"
+msgstr "Авторизация"
+
+#: D:/projects/bol/bwf/components/Main.html:58
+msgid "Passwords dont match"
+msgstr "Пароли не совпадают"
+
+#: D:/projects/bol/bwf/components/Main.html:72
+msgid "User not available"
+msgstr "Пользователь не найден"
+
+#: D:/projects/bol/bwf/components/Main.html:75
+msgid "Wrong password"
+msgstr "Неверный пароль"
 
 #: D:/projects/bol/bwf/components/Tables/FilterTable.html:10
 msgid "Not filtered"

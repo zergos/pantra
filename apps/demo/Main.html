@@ -1,0 +1,32 @@
+<h1>Choose your destiny</h1>
+<div class="list">
+{{#for destiny in destiny_set}}
+  <button type="button" on:click="choose" data:value="{destiny}">{{destiny}}</button>
+{{/for}}
+</div>
+<h2 class="verdict">{{chosen}}</h2>
+
+<style type="text/scss">
+.list {
+    display: flex;
+    flex-flow: row;
+
+    > button {
+        padding: 0.3rem 1rem;
+    }
+}
+.verdict {
+    font-weight: bold;
+    font-style: italic;
+}
+</style>
+
+<python>
+from pantra.ctx import *
+
+chosen: str = _('Make a choice...')
+destiny_set = ('Good', 'Evil', 'Rich', 'Sex')
+
+def choose(node):
+    ctx['chosen'] = node.data.value
+</python>

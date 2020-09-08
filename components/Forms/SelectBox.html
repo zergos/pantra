@@ -1,11 +1,11 @@
 <label ref:label class:inline class:block="{not inline}" class:error class:required>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select class:wide multiple="{multiple}" required="{required}" on:change="update_value action">
+    <select class:wide multiple="{multiple}" required="{required}" on:select="update_value action">
         {{#if blank}}
         <SelectItem caption="" selected/>
         {{/if}}
         <slot>
-            <option disabled>Empty</option>
+            <option disabled>#Empty</option>
         </slot>
     </select>
     <div ref:error class="message">{{error}}</div>

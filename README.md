@@ -19,7 +19,7 @@ Component based Web framework with specific features:
   <button type="button" on:click="choose" data:value="{destiny}">{{destiny}}</button>
 {{/for}}
 </div>
-<div class="verdict">{{chosen}}</div>
+<h2 class="verdict">{{chosen}}</h2>
 
 <style type="text/scss">
 .list {
@@ -37,15 +37,10 @@ Component based Web framework with specific features:
 </style>
 
 <python>
-from apps.destiny.models import *
 from pantra.ctx import *
 
 chosen: str = _('Make a choice...')
-
-@db_session
-def destiny_set():
-    for row in db.Destiny.select():
-        yield row.title
+destiny_set = ('Good', 'Evil', 'Rich', 'Sex')
 
 def choose(node):
     ctx['chosen'] = node.data.value
