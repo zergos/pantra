@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-09-08 23:43+0300\n"
+"POT-Creation-Date: 2020-09-11 19:19+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -53,7 +53,11 @@ msgstr "Добавить"
 msgid "Delete"
 msgstr "Удалить"
 
-#: D:/projects/bol/bwf/components/Entities/CatalogList.html:49
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:29
+msgid "entity {} not found"
+msgstr "сущность {} не найдена"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:52
 msgid "Confirm deletion of {}"
 msgstr "Подтвердите удаление {}"
 
@@ -78,6 +82,10 @@ msgstr "Записать"
 msgid "Empty"
 msgstr "Пусто"
 
+#: D:/projects/bol/bwf/components/Forms/inputs.py:22
+msgid "{} field is required"
+msgstr "поле {} обязательно"
+
 #: D:/projects/bol/bwf/components/Layout/SysTray.html:5
 msgid "Restart"
 msgstr "Перезагрузить"
@@ -93,6 +101,10 @@ msgstr "Выйти"
 #: D:/projects/bol/bwf/components/Layout/__init__.py:15
 msgid "Can not add window, session has no taskbar"
 msgstr "Не могу добавить окно, неопределена панель задач"
+
+#: D:/projects/bol/bwf/components/Main.html:3
+msgid "Starting facility"
+msgstr "Начальная установка"
 
 #: D:/projects/bol/bwf/components/Main.html:4
 msgid "Select app"
@@ -144,27 +156,31 @@ msgstr "Пользователь не найден"
 msgid "Wrong password"
 msgstr "Неверный пароль"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:10
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:5
+msgid "search..."
+msgstr "поиск..."
+
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:13
 msgid "Not filtered"
 msgstr "Без фильтров"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:14
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:17
 msgid "Filters"
 msgstr "Фильтры"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:19
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:22
 msgid "Apply"
 msgstr "Применить"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:20
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:23
 msgid "Hide"
 msgstr "Скрыть"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:93
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:98
 msgid "contains"
 msgstr "содержит"
 
-#: D:/projects/bol/bwf/components/Tables/FilterTable.html:94
+#: D:/projects/bol/bwf/components/Tables/FilterTable.html:99
 msgid "between"
 msgstr "между"
 

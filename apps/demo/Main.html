@@ -1,7 +1,7 @@
 <h1>Choose your destiny</h1>
 <div class="list">
 {{#for destiny in destiny_set}}
-  <button type="button" on:click="choose" data:value="{destiny}">{{destiny}}</button>
+  <button type="button" on:click="choose" data:value="@destiny">{{destiny}}</button>
 {{/for}}
 </div>
 <h2 class="verdict">{{chosen}}</h2>

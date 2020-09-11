@@ -78,21 +78,15 @@ class DragController(ABC):
 
 
 @thread_worker
+@trace_errors
 def process_drag_start(session: Session, method: str, oid: int, x: int, y: int, button: int):
     node: AnyNode = get_node(oid)
     if node is None: return
-    process_drag_referred(session, node, method, x, y, button)
 
-
-@trace_errors
-def process_drag_referred(session: Session, node: AnyNode, method: str, x: int, y: int, button: int):
     func = node[method]
-    if type(func) == str:
-        process_drag_referred.call(session, node.context.parent, method, x, y, button)
-    else:
-        session.state.drag: DragController = func(node)
-        if session.state.drag._mousedown(node, x, y, button):
-            session.send_message({'m': 'dm'})
+    session.state.drag: DragController = func(node)
+    if session.state.drag._mousedown(node, x, y, button):
+        session.send_message({'m': 'dm'})
 
 
 @thread_worker
@@ -108,24 +102,16 @@ def process_drag_stop(session: Session, x: int, y: int):
     delattr(session.state, "drag")
 
 
-def find_caller(node: AnyNode, method: str) -> Generator[Callable[[...], None]]:
-    def find_by_ctx(context: Context, method: str, check_action_ctx=False):
-        if ' ' in method:
-            for m in method.split(' '):
-                yield from find_by_ctx(context, m, check_action_ctx)
-            return
-        if method not in context.locals: return
-        func = context.locals[method]
-        if not func: return
-        if isinstance(func, str):
-            if check_action_ctx and node.action_context:
-                yield from find_by_ctx(node.action_context, func)
-            elif context.parent:
-                yield from find_by_ctx(context.parent.context, func)
-        else:
-            yield func
-
-    yield from find_by_ctx(node.context, method, True)
+@trace_errors
+def process_call(session: Session, node: AnyNode, method: str, *args):
+    for m in method.split(' '):
+        caller: Union[List[Callable[[...], None]], Callable[[...], None]] = node[m]
+        if caller:
+            if isinstance(caller, list):
+                for func in caller:
+                    func(*args)
+            else:
+                caller(*args)
 
 
 @thread_worker
@@ -133,13 +119,7 @@ def process_click(method: str, oid: int):
     node = get_node(oid)
     if node is None or not method: return
     context = node.context
-    process_click_referred(context.session, node, method)
-
-
-@trace_errors
-def process_click_referred(session: Session, node: AnyNode, method: str):
-    for func in find_caller(node, method):
-        func(node)
+    process_call(context.session, node, method, node)
 
 
 @thread_worker
@@ -148,7 +128,7 @@ def process_select(method: str, oid: int, opts: List[int]):
     if not node or not method: return
     opts = [get_node(i) for i in opts]
     node._value = len(opts) == 1 and opts[0] or opts
-    process_click_referred(node.context.session, node, method)
+    process_call(node.context.session, node, method, node)
 
 
 @thread_worker
@@ -163,10 +143,5 @@ def process_bind_value(oid: int, var_name: str, value: str):
 def process_key(method: str, oid: int, key: str):
     node = get_node(oid)
     if not node or not method: return
-    process_key_referred(node.context.session, node, method, key)
+    process_call(node.context.session, node, method, node, key)
 
-
-@trace_errors
-def process_key_referred(session: Session, node: AnyNode, method: str, key: str):
-    for func in find_caller(node, method):
-        func(node, key)

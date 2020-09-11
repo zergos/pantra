@@ -78,6 +78,9 @@ class Context(RenderNode):
             self.template: HTMLTemplate = template
         else:
             self.template: HTMLTemplate = collect_template(self.session, template)
+            if not self.template:
+                self.session.error(f'template {template} not found')
+                raise NameError
 
         self.render: DefaultRenderer = DefaultRenderer(self)
         self._restyle: bool = False
@@ -117,7 +120,7 @@ class Context(RenderNode):
     def __getitem__(self, item: Union[str, int]):
         if type(item) == int:
             return self.children[item]
-        return self.locals.get(item, EmptyCaller)
+        return self.locals.get(item, EmptyCaller())
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)

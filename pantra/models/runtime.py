@@ -257,7 +257,12 @@ def expose_models(app: str, app_info: Dict[str, DatabaseInfo] = None):
                 attr_info.is_cid = True
                 attr_info.readonly = True
             else:
-                field = Optional if attrs.get('required', 'False') == 'False' else Required
+                if attrs.get('required', 'False') == 'False':
+                    field = Optional
+                    attr_info.blank = True
+                else:
+                    field = Required
+                    attr_info.blank = False
             t = None
             type_name = ''
             kwargs = {}

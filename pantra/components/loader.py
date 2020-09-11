@@ -45,6 +45,9 @@ class HTMLTemplate(UniNode):
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
 
+    def __str__(self):
+        return self.tag_name
+
 
 class MyVisitor(PMLParserVisitor):
 

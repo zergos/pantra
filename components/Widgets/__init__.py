@@ -67,7 +67,10 @@ def make_widget(parent: AnyNode, attr: AttrInfo, value: Any = None, **kwargs) ->
         template = 'EntityField'
         locals['entity'] = attr.type
     else:
-        template = TEMPLATE_MAP[attr.type]
+        attr_type = attr.type
+        if attr_type is LongStr and kwargs.get('flat'):
+            attr_type = str
+        template = TEMPLATE_MAP[attr_type]
         if not template:
             return None
     c = Context(template, parent, locals=locals)

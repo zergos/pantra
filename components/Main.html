@@ -1,6 +1,6 @@
 """
 <GridX fullscreen>
-    <CardForm ref:form caption="Starting facility">
+    <CardForm ref:form caption="#Starting facility">
         <SelectBox ref:app caption="#Select app" blank wide required>
             <SelectItem caption="system"/>
             {{#for app in get_apps()}}
@@ -18,15 +18,15 @@
         <InputBox caption="#Create new admin user">
             <InputText ref:login caption="#Login" required/>
             <InputPassword ref:passw caption="#Password" required/>
-            <InputPassword ref:passw2 caption="#Password again" required on:render="passw_render"/>
+            <InputPassword ref:passw2 caption="#Password again" required on:render="@passw_render"/>
             <GridX>
-                <Button default action="create_first_admin" caption="#Create and login"/>
+                <Button default action="@create_first_admin" caption="#Create and login"/>
             </GridX>
         </InputBox>
         {{#else}}
         <InputPassword ref:password caption="#Password" required/>
         <GridX>
-            <Button default action="login" caption="#Login"/>
+            <Button default action="@login" caption="#Login"/>
         </GridX>
         {{/if}}
     </CardForm>
@@ -34,8 +34,8 @@
 
 <python>
 #"""
+from apps.system.data import *
 from pony.orm import db_session
-from db.models import User
 from pantra.common import ADict
 from pantra.ctx import *
 
@@ -44,30 +44,30 @@ def init():
 
 @db_session
 def get_users_count():
-    return User.select().count()
+    return db.User.select().count()
 
 def get_apps():
     return session.get_apps()
 
 @db_session
 def get_users():
-    for user in User.select():
+    for user in db.User.select():
         yield user.name
 
 def passw_render(node):
     node.validate(lambda: refs.passw.value == refs.passw2.value, _("Passwords don''t match"))
 
 def create_first_admin(node):
-    if 'passw' in refs and refs.form.is_valid():
+    if 'passw' in refs and refs.form['is_valid']():
         with db_session:
-            admin = User(name = refs.login.value, is_admin=True)
+            admin = db.User(name = refs.login.value, is_admin=True)
             admin.set_password(refs.passw.value)
         refs.form.update_tree()
 
 @db_session
 def login(node):
     username = refs.user.value
-    user = User.get(name=username)
+    user = db.User.get(name=username)
     if not user:
         refs.user.error = _('User not available')
         return

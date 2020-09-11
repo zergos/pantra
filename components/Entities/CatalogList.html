@@ -1,11 +1,11 @@
 <component>
     <ToolBox>
-        <ToolButton caption="#Refresh" action="refresh"/>
-        <ToolButton caption="#Add" action="add_object"/>
-        <ToolButton caption="#Delete" danger action="del_object"/>
+        <ToolButton caption="#Refresh" action="@refresh"/>
+        <ToolButton caption="#Add" action="@add_object"/>
+        <ToolButton caption="#Delete" danger action="@del_object"/>
     </ToolBox>
 
-    <EntityTable cref:table entity="{entity}" not:editable selectable callback="{open_object}"/>
+    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@open_object"/>
 </component>
 <python>
 from pantra.models import dbinfo, expose_databases
@@ -25,6 +25,9 @@ def init():
     if not name:
         return False
     expose_databases(session.app)
+    if name not in dbinfo[session.app][db].entities:
+        session.error(_('entity {name} not found'))
+        return False
     entity = dbinfo[session.app][db].entities[name].factory.cls
 
 def refresh(node=None):

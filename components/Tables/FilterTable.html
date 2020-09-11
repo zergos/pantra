@@ -1,6 +1,9 @@
 <component>
     <div ref:filters class="filters">
         <div style="display: contents">
+            {{#if search}}
+                <TextField placeholder="#search..." buttons="X,O" action="@search_action" enter_action="@search_default_action"/>
+            {{/if}}
             {{#for filter in filters_enabled()}}
                 <div class="filter">
                     <span>{{filter.column.title}}</span>
@@ -16,8 +19,8 @@
     <div ref:container class="container hidden">
         <div ref:form class="filters-form" on:render="render_form"/>
         <ToolBox>
-            <ToolButton caption="#Apply" action="apply_filters"/>
-            <ToolButton caption="#Hide" action="hide_form"/>
+            <ToolButton caption="#Apply" action="@apply_filters"/>
+            <ToolButton caption="#Hide" action="@hide_form"/>
         </ToolBox>
     </div>
 </component>
@@ -85,7 +88,9 @@ from components.Tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
 filters: List[Filter] = []
+search: bool = False
 callback: Callable[[], None] = lambda: None
+search_callback: Callable[[str], None] = lambda: None
 
 filter_views: List[FilterView] = []
 
@@ -129,7 +134,7 @@ def render_form(node: HTMLElement):
 
 def remove_filter(node: HTMLElement):
     node.data.filter.enabled = False
-    loop = refs.filters.downto('@')
+    loop = refs.filters.downto('@', 2)
     loop.update(True)
     render_form(refs.form)
     callback()
@@ -141,8 +146,18 @@ def hide_form(node):
     refs.container.add_class('hidden')
 
 def apply_filters(node):
-    loop = refs.filters.downto('@')
+    loop = refs.filters.downto('@', 2)
     loop.update(True)
     callback()
+
+def search_action(node: HTMLElement):
+    if node.data.code == 'X':
+        node['value'] = ''
+        search_callback('')
+    elif node.data.code == 'O':
+        search_callback(node['value'])
+
+def search_default_action(node: HTMLElement, key: str):
+    search_callback(node['value'])
 
 </python>

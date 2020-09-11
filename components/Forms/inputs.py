@@ -19,7 +19,7 @@ def is_valid():
             ctx['error'] = m
             return False
     if required and not value:
-        ctx['error'] = f'{caption} field is required'
+        ctx['error'] = _('{caption} field is required')
         return False
     ctx['error'] = ''
     return True

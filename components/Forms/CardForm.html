@@ -1,4 +1,3 @@
-"""
 <form class:with-header="caption">
     {{#if caption}}
     <div class="header">{{caption}}</div>
@@ -42,7 +41,6 @@
 </style>
 
 <python>
-#"""
 from pantra.ctx import *
 
 caption: str = ''
@@ -54,4 +52,4 @@ def is_valid():
         ok &= node['is_valid']()
     return ok
 
-#</python>
+</python>

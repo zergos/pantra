@@ -21,7 +21,7 @@ from pantra.ctx import *
 view: FilterView
 
 def render_widget(node):
-    view.widget = make_widget(node, view.attr, view.filter.value, on_change=change_value, caption="")
+    view.widget = make_widget(node, view.attr, view.filter.value, flat=True, on_change=change_value, caption="")
 
 def switch_filter(node):
     view.filter.enabled = not view.filter.enabled

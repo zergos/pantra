@@ -3,11 +3,11 @@
         <SingleInput
                 ref:input
                 consume="required,readonly"
-                on_change="parse_input"
+                on_change="@parse_input"
                 list="o{ctx.oid}"
                 value="{entity_to_text(value)}"
                 buttons="...,O"
-                action="button_action"
+                action="@button_action"
         />
         <datalist ref:lookups id="o{ctx.oid}">
             {{#for item in lookup_items()}}
@@ -63,7 +63,7 @@ def entity_to_text(v: Optional[EntityMeta]) -> str:
         elif entity_type == EntityType.DOCUMENT:
             return f'{_(v.classtype)} - {v.number} - {session.locale.datetime(v.date)}'
         else:
-            return str(v)
+            return str(v._get_object())
 
 def text_to_entities(t: str) -> List[EntityMeta]:
     res = []

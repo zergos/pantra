@@ -1,8 +1,8 @@
 <component>
     <ToolBox>
-        <ToolButton caption="#Select" action="select" default/>
+        <ToolButton caption="#Select" action="@select" default/>
     </ToolBox>
-    <EntityTable cref:table entity="{entity}" not:editable selectable callback="{select_row}"/>
+    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@select_row"/>
 </component>
 <python>
 from pony.orm import db_session, make_proxy

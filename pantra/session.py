@@ -192,7 +192,7 @@ class Session:
 def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)
     def res(*args, **kwargs):
-        if args[0] is None:
+        if type(args[0]) is not Session:
             return
         try:
             func(*args, **kwargs)

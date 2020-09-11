@@ -112,11 +112,12 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
         raise FileExistsError(file_name)
 
     actual_model: ModelInfo
+    model_name: str
     actual_fields: OrderedDict[str, FieldInfo]
     first_entity = True
 
     def start_element(name: str, attrs: dict):
-        nonlocal models, actual_model, actual_fields, first_entity
+        nonlocal models, actual_model, model_name, actual_fields, first_entity
 
         if name == 'entity':
             model_name = attrs['name']
@@ -167,6 +168,8 @@ def _django_collect_models(app: str, managed: bool) -> Tuple[Dict[str, str], str
                         else:
                             pars.insert(1, 'on_delete=models.SET_NULL')
                         pars.append(f"db_column='{attr_name}'")
+                        if 'reverse' in attrs:
+                            pars.append(f"related_name='{attrs['reverse']}'")
                 elif a == 'default':
                     if t in ('int', 'float', 'Decimal', 'Json', 'bool'):
                         pars.append(f'{a}={v}')

@@ -111,11 +111,14 @@ class UniNode:
             return str(self)
         return f'{self._parent.path()}/{self}'
 
-    def select(self: TUniNode, predicate: Callable[[TUniNode], bool]) -> Iterable[TUniNode]:
+    def select(self: TUniNode, predicate: Callable[[TUniNode], bool], depth: int = 0) -> Iterable[TUniNode]:
         for child in self._children:
             if predicate(child):  
-                yield child  
-            yield from child.select(predicate)  
+                yield child
+            if depth == 0:
+                yield from child.select(predicate, 0)
+            elif depth > 1:
+                yield from child.select(predicate, depth-1)
 
     def upto(self: TUniNode, predicate: Union[str, Callable[[TUniNode], bool]]) -> Optional[TUniNode]:
         node = self._parent
@@ -129,8 +132,8 @@ class UniNode:
             node = node.parent
         return None
 
-    def downto(self: TUniNode, predicate: Callable[[TUniNode], bool]) -> Optional[TUniNode]:
-        return next(self.select(predicate), None)
+    def downto(self: TUniNode, predicate: Callable[[TUniNode], bool], depth: int = 0) -> Optional[TUniNode]:
+        return next(self.select(predicate, depth), None)
 
 class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']

@@ -9,7 +9,6 @@ from pantra.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNo
 from pantra.components.loader import collect_template, HTMLTemplate
 from pantra.compiler import compile_context_code, ContextInitFailed
 from pantra.session import Session, run_safe
-from pantra.components.controllers import process_click_referred
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -21,7 +20,7 @@ __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'action_context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
+    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
 
     def __init__(self: AnyNode, parent: Optional[AnyNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
@@ -35,7 +34,6 @@ class RenderNode(UniqueNode):
             self.context: Context = self
         else:
             self.context = parent.context
-        self.action_context: Optional[Context] = None if not parent else parent.action_context
         self.name = ''
         self._rebind = False
 
@@ -99,13 +97,13 @@ class RenderNode(UniqueNode):
                     clone.append(sub)
         return clone
 
-    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]]) -> Generator[AnyNode]:
+    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = 0) -> Generator[AnyNode]:
         if isinstance(predicate, str):
-            yield from super().select(lambda node: str(node) == predicate)
+            yield from super().select(lambda node: str(node) == predicate, depth)
         elif isinstance(predicate, typing.Iterable):
-            yield from super().select(lambda node: str(node) in predicate)
+            yield from super().select(lambda node: str(node) in predicate, depth)
         else:
-            yield from super().select(predicate)
+            yield from super().select(predicate, depth)
 
     def set_scope(self, data: Union[Dict, str], value: Any = None):
         if isinstance(data, str):
@@ -142,6 +140,8 @@ class DefaultRenderer:
         return lambda: self.trace_eval(ctx, text, node)
 
     def translate(self, s):
+        if s.startswith('\\'):
+            return s[1:]
         if s.startswith('#'):
             return self.ctx.session.gettext(s[1:])
         return s
@@ -160,8 +160,14 @@ class DefaultRenderer:
 
         if typename(source) == 'code':
             return self.trace_eval(self.ctx, source, node)
-        else:
-            return self.translate(source)
+        if source.startswith('@'):
+            if ' ' in source:
+                res = []
+                for var in source[1:].split(' '):
+                    res.append(self.ctx[var])
+                return res
+            return self.ctx[source[1:]]
+        return self.translate(source)
 
     def build_bool(self, source: StrOrCode, node: AnyNode) -> Union[str, DynamicString]:
         if not source:
@@ -430,7 +436,6 @@ class DefaultRenderer:
                     save_ctx = self.ctx
                     save_ns = slot.ctx.ns_type
                     parent.context = slot.ctx
-                    parent.action_context = slot.ctx
                     self.ctx = slot.ctx
                     self.ctx.ns_type = save_ctx.ns_type
                     for child in slot_template.children:

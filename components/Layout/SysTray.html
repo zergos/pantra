@@ -2,10 +2,10 @@
     <div class="cap">{{caption}}</div>
     <div class="menu">
         <PopupMenu cref:menu>
-            <MenuItem caption="#Restart" action="restart"/>
+            <MenuItem caption="#Restart" action="@restart"/>
             <MenuGroup caption="#Switch App">
                 {{#for app in session.get_apps()}}
-                <MenuItem caption="{app}"/>
+                <MenuItem caption="{app}" action="@start_app"/>
                 {{/for}}
             </MenuGroup>
             <MenuItem caption="#Logout"/>
@@ -61,5 +61,8 @@ def show(node):
 
 def restart(node):
     session.restart()
+
+def start_app(node):
+    session.start_app(node['caption'])
 
 </python>

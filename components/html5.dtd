@@ -1117,6 +1117,9 @@
 <!ELEMENT Main %Flow;>
 <!ELEMENT MenuGroup %Flow;>
 <!ELEMENT MenuItem %Flow;>
+<!ATTLIST MenuItem
+	caption     CDATA          #REQUIRED
+>
 <!ELEMENT NumberField %Flow;>
 <!ELEMENT PopupMenu %Flow;>
 <!ELEMENT SVG %Flow;>

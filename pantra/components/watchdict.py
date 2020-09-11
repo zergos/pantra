@@ -1,7 +1,7 @@
 from __future__ import annotations
 import typing
 from pantra.common import ADict, typename
-from .controllers import process_click_referred
+from .controllers import process_call
 
 if typing.TYPE_CHECKING:
     from pantra.components.context import Context, AnyNode
@@ -32,7 +32,7 @@ class WatchDict(ADict):
             for node in frozenset(self._ctx.react_vars[key]):
                 if typename(node) == 'ReactNode':
                     node.value = value
-                    process_click_referred(self._ctx.session, node, node.action)
+                    process_call(self._ctx.session, node.context, node.action, node)
                 else:
                     node.update(True)
 

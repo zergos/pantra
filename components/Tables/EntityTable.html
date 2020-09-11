@@ -1,6 +1,6 @@
 <component>
     {{#if filters}}
-    <FilterTable filters="{filters}" callback="{apply_filters}"/>
+    <FilterTable filters="{filters}" search="search_fields" callback="@apply_filters" search_callback="@apply_search"/>
     {{/if}}
     <BaseTable ref:basetable consume/>
 </component>
@@ -9,6 +9,7 @@
 from pony.orm.core import Query, Entity, db_session, desc, select, make_proxy, EntityMeta
 from pantra.models import query_info, find_entity_info
 from pantra.models.runtime import AttrInfo
+from pantra.models.types import LongStr
 from components.Tables import Columns, ColumnInfo, Filter, OPER_MAP
 from pantra.ctx import *
 
@@ -19,6 +20,7 @@ col_id: str = 'id'
 original_query: Optional[Query] = None
 columns: Columns = {}
 filters: List[Filter] = []
+search_fields: List[str] = []
 
 def init():
     global query, columns, original_query
@@ -58,6 +60,8 @@ def init():
         if attr.is_ref:
             columns[f'{name}_view'] = ColumnInfo(name=name, type=attr.type, hidden=True)
         filters.append(Filter(col))
+        if attr.type in (str, LongStr):
+            search_fields.append(name)
 
     original_query = query
 
@@ -96,5 +100,8 @@ def apply_filters():
                 # TODO
                 pass
     ctx['refresh']()
+
+def apply_search(text: str):
+    session.log(text)
 
 </python>

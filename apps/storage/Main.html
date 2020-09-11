@@ -7,7 +7,7 @@
         <SideMenu>
             <MenuGroup caption="#Catalogs">
                 {{#for cat in catalogs}}
-                <MenuItem code="{cat}" action="open_catalog"/>
+                <MenuItem code="@cat" action="@open_catalog"/>
                 {{/for}}
             </MenuGroup>
             <MenuGroup caption="#Documents">
