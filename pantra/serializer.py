@@ -31,8 +31,9 @@ class HTMLElementSerializer(bsdf.Extension):
             res['$'] = v.context.template.name
         if v.value_type:
             res['type'] = v.value_type
-        if getattr(v, '_value', None) is not None:
-            res['v'] = v._value() if callable(v._value) else v._value
+        value = getattr(v, '_value', None)
+        if value is not None:
+            res['v'] = value
         return res
 
 

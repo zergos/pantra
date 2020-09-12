@@ -21,6 +21,7 @@ original_query: Optional[Query] = None
 columns: Columns = {}
 filters: List[Filter] = []
 search_fields: List[str] = []
+search_text: str = ''
 
 def init():
     global query, columns, original_query
@@ -99,9 +100,14 @@ def apply_filters():
             elif filter.operator == 'between':
                 # TODO
                 pass
+    if search_text:
+        ifs = ' or '.join(f'search_text in {field}' for field in search_fields)
+        query = query.filter(f'lambda {args}: {ifs}')
     ctx['refresh']()
 
 def apply_search(text: str):
-    session.log(text)
+    global search_text
+    search_text = text
+    apply_filters()
 
 </python>

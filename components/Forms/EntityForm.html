@@ -18,9 +18,7 @@
 </style>
 
 <python>
-import dis
-from pony.orm.core import EntityMeta, EntityProxy, Entity, db_session, commit
-from pantra.common import WebUnits
+from pony.orm.core import db_session, commit
 from pantra.models import find_entity_info, entity_name, get_entity
 from pantra.models.types import AnyEntity
 from components.Widgets import ValuesDict, make_widget

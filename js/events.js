@@ -130,13 +130,18 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
         if (is_new)
             addEvent(attr, node, value, oid);
         return true;
-    } else if (attr === 'bind:value') {
+    }
+    if (attr === 'bind:value') {
         if (is_new) {
             if (node.tagName === 'INPUT')
                 node.addEventListener('input', new ValueListener(value, oid));
             else
                 node.addEventListener('change',  new ValueListener(value, oid));
         }
+        return true;
+    }
+    if (['checked', 'required', 'disabled'].includes(attr)) {
+        node[attr] = !!value;
         return true;
     }
     return false;

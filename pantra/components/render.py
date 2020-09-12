@@ -243,9 +243,10 @@ class DefaultRenderer:
                 if attr == 'bind:value':
                     if value is None:
                         value = 'value'
-                    ctx = self.ctx
                     node.attributes[attr] = value
-                    node.value = lambda: ctx.locals.get(value)
+                    # ctx = self.ctx
+                    # node.value = lambda: ctx.locals.get(value)
+                    self.ctx.locals._record(value)
                     return True
                 if attr.startswith('set:'):
                     attr = attr.split(':')[1].strip()
@@ -512,6 +513,8 @@ class DefaultRenderer:
             for k, v in node.attributes.items():
                 if type(v) == DynamicString:
                     node.attributes[k] = v()
+                elif k == 'bind:value':
+                    node.value = self.ctx.locals[v]
             if type(node.classes) == DynamicString:
                 node.classes = node.classes()
             node.con_classes()

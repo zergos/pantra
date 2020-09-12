@@ -125,6 +125,9 @@ class Context(RenderNode):
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)
 
+    def set_quetly(self, key, value):
+        self.locals[key] = value
+
     def __str__(self):
         return f'${self.template.name}' + (f':{self.name}' if self.name else '')
 
@@ -317,6 +320,9 @@ class HTMLElement(RenderNode):
 
     def __setitem__(self, key, value):
         self.context[key] = value
+
+    def set_quetly(self, key, value):
+        self.context.set_quetly(key, value)
 
     def __str__(self):
         return self.tag_name + (f':{self.name}' if self.name else '')
