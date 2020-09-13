@@ -2,11 +2,11 @@ var main;
 
 function start(new_local_id, new_tab_id) {
     let chunks = location.pathname.split('/');
-    if (chunks.length === 2) {
+    if (chunks.length >= 2) {
         let app_name = chunks[1];
         let local_style = document.createElement('link');
         local_style.setAttribute('rel', 'stylesheet');
-        local_style.setAttribute('href', `/css/${app_name}.local.css`)
+        local_style.setAttribute('href', `/css/${app_name}.local.css`);
         document.head.append(local_style);
     }
 
@@ -110,7 +110,7 @@ function start(new_local_id, new_tab_id) {
                 let node = OID.node(obj.l);
                 send_message({C: 'VALID', oid: obj.l, validity: node.validity.valid});
         }
-    }
+    };
 
     send_message({C: 'REFRESH'});
 }

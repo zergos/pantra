@@ -121,7 +121,7 @@ const EventSerializer = {
 let fmt = {
     dateFormat: new Intl.DateTimeFormat(undefined, {dateStyle: 'short'}),
     timeFormat: new Intl.DateTimeFormat(undefined, {timeStyle: 'short'})
-}
+};
 
 const DateSerializer = {
     name: 'D',

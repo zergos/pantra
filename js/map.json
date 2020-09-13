@@ -1,0 +1,8 @@
+[
+	"bsdf.js",
+	"oid.js",
+	"serializer.js",
+	"events.js",
+	"ws_client.js",
+	"main.js"
+]

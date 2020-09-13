@@ -18,6 +18,7 @@ from .session import Session
 from .workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
 from .watchers import start_observer, stop_observer
 from .compiler import code_base
+from . import jsmap
 
 __all__ = ['run']
 
@@ -143,6 +144,16 @@ async def get_static_scss(request: Request):
         return web.Response(status=404)
     else:
         return web.Response(body=css, content_type='text/css')
+
+
+@routes.get(r'/js/'+jsmap.OUT_NAME)
+async def get_out_js(request: Request):
+    jsmap.make(JS_PATH)  # TODO: Cache it!
+    file_name = os.path.join(JS_PATH, jsmap.OUT_NAME)
+    with open(file_name, "rt", encoding='utf-8') as f:
+        text = f.read()
+    return web.Response(body=text, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
+
 
 routes.static('/js', os.path.join(BASE_PATH, 'js'), append_version=True)
 routes.static('/css', os.path.join(BASE_PATH, 'css'), append_version=True)
