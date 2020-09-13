@@ -5,7 +5,11 @@
         <ToolButton caption="#Delete" danger action="@del_object"/>
     </ToolBox>
 
-    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@open_object"/>
+    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@open_object">
+        <columns>
+            <slot name="columns"/>
+        </columns>
+    </EntityTable>
 </component>
 <python>
 from pantra.models import dbinfo, expose_databases
