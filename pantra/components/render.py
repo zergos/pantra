@@ -419,16 +419,13 @@ class DefaultRenderer:
 
             elif tag_name == '@slot':
                 slot: Slot = parent.context.slot
-                slot_template = None
                 if slot:
                     name = template.attributes.get('name')
                     if name:
                         name = self.build_string(name, parent)
-                        slot_template = slot[name]
-                    else:
-                        slot_template = slot.template
+                        slot = slot[name]
 
-                if not slot_template:
+                if not slot:
                     for child in template.children:
                         self.build_node(child, parent)
                 else:
@@ -439,7 +436,7 @@ class DefaultRenderer:
                     parent.context = slot.ctx
                     self.ctx = slot.ctx
                     self.ctx.ns_type = save_ctx.ns_type
-                    for child in slot_template.children:
+                    for child in slot.template.children:
                          self.build_node(child, parent)
                     self.ctx.ns_type = save_ns
                     parent.context = save_ctx

@@ -49,14 +49,17 @@ class MetricsData:
 
 
 class Slot(typing.NamedTuple):
-    ctx: 'Context'
+    ctx: Context
     template: HTMLTemplate
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: Union[str, int]) -> Union[Context, HTMLTemplate, Slot, None]:
         if type(name) == str:
             for child in self.template.children:
                 if child.tag_name == name:
-                    return child
+                    if 'reuse' in child.attributes and self.ctx.slot:
+                        return self.ctx.slot[name]
+                    else:
+                        return Slot(self.ctx, child)
         else:
             return super().__getitem__(name)
 
