@@ -30,10 +30,16 @@ class RenderNode(UniqueNode):
         self.render_this: bool = render_this
         if render_this:
             self.shot(self)
-        if typename(self) == 'Context':
-            self.context: Context = self
+        #if typename(self) == 'Context':
+        #    self.context: Context = self
+        #else:
+        if parent:
+            if typename(parent) == 'Context':
+                self.context = parent
+            else:
+                self.context = parent.context
         else:
-            self.context = parent.context
+            self.context: Context = self
         self.name = ''
         self._rebind = False
 
@@ -64,7 +70,7 @@ class RenderNode(UniqueNode):
 
     def remove(self, node=None):
         if node:
-            node.parent.context._cleanup_node(node)
+            node.context._cleanup_node(node)
             super().remove(node)
         else:
             self.empty()
@@ -287,11 +293,11 @@ class DefaultRenderer:
             if attr == 'consume':
                 if value is not None:
                     if value == '*':
-                        node.locals |= node.parent.context.locals
+                        node.locals |= node.context.locals
                     else:
                         for at in value.split(','):
                             at = at.strip()
-                            if at in node.parent.context.locals:
+                            if at in node.context.locals:
                                 node[at] = node.parent[at]
                 return True
 
@@ -341,9 +347,10 @@ class DefaultRenderer:
             node_template = collect_template(self.ctx.session, tag_name)
             if not node_template: return None
             node = c.Context(node_template, parent)
+            node.source_attributes = template.attributes
             if 'consume' in template.attributes and template.attributes['consume'] is None:
-                node.locals = parent.context.locals
-                node.refs = parent.context.refs
+                node.locals = node.context.locals
+                node.refs = node.context.refs
 
             # attach slots
             if template.children:
@@ -368,7 +375,7 @@ class DefaultRenderer:
 
         elif tag_name[0] == '$':
             node = self.ctx
-            node.context = node
+            #node.context = node
 
             for child in template.children:
                 self.build_node(child, node)
@@ -527,13 +534,12 @@ class DefaultRenderer:
             node.shot(node)
 
         elif typename(node) == 'Context':
-            '''
-            if node.children:
-                node.empty()
-            self.build_node(node.template, node)
-            return  # prevent repeated updates
-            # but now it only updates via update_tree
-            '''
+            if not recursive:
+                for attr, value in node.source_attributes.items():
+                    if typename(value) == 'code':
+                        data = self.eval_string(value, node) if value is not None else True
+                        node[attr] = data
+                return
 
         elif typename(node) == 'TextNode':
             if type(node.text) == DynamicString:

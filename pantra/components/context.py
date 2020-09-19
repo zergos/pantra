@@ -56,8 +56,8 @@ class Slot(typing.NamedTuple):
         if type(name) == str:
             for child in self.template.children:
                 if child.tag_name == name:
-                    if 'reuse' in child.attributes and self.ctx.slot:
-                        return self.ctx.slot[name]
+                    if 'reuse' in child.attributes:
+                        return self.ctx.slot[name] if self.ctx.slot else None
                     else:
                         return Slot(self.ctx, child)
         else:
@@ -65,7 +65,8 @@ class Slot(typing.NamedTuple):
 
 
 class Context(RenderNode):
-    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars', 'react_nodes']
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars',
+                 'react_nodes', 'source_attributes']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None, locals: Optional[Dict] = None):
         self.locals: WatchDict = WatchDict(self)
@@ -74,6 +75,7 @@ class Context(RenderNode):
         self._executed: bool = False
         self.refs: Dict[str, Union['Context', HTMLElement, WatchDict]] = ADict()
         self.slot: Optional[Slot] = None
+        self.source_attributes: Optional[Dict[str, Any]] = None
 
         super().__init__(parent=parent, render_this=False, shot=shot, session=session)
 
