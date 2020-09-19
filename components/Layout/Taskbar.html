@@ -164,6 +164,6 @@ def close(node=None):
     if windows[current].view:
         windows[current].view.remove()
     del windows[current]
-    refs.bars.update()
+    refs.bars.update(True)
 
 </python>
