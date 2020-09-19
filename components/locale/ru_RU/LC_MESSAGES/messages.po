@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-09-11 19:19+0300\n"
+"POT-Creation-Date: 2020-09-15 23:23+0300\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -50,14 +50,18 @@ msgid "Add"
 msgstr "Добавить"
 
 #: D:/projects/bol/bwf/components/Entities/CatalogList.html:5
+msgid "Copy"
+msgstr "Копировать"
+
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:6
 msgid "Delete"
 msgstr "Удалить"
 
-#: D:/projects/bol/bwf/components/Entities/CatalogList.html:29
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:35
 msgid "entity {} not found"
 msgstr "сущность {} не найдена"
 
-#: D:/projects/bol/bwf/components/Entities/CatalogList.html:52
+#: D:/projects/bol/bwf/components/Entities/CatalogList.html:58
 msgid "Confirm deletion of {}"
 msgstr "Подтвердите удаление {}"
 
@@ -78,7 +82,7 @@ msgid "Save"
 msgstr "Записать"
 
 #: D:/projects/bol/bwf/components/Forms/SelectBox.html:8
-#: D:/projects/bol/bwf/components/Tables/BaseTable.html:47
+#: D:/projects/bol/bwf/components/Tables/BaseTable.html:46
 msgid "Empty"
 msgstr "Пусто"
 

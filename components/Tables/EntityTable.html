@@ -83,7 +83,8 @@ def get_rows(order_col, order_dir):
 def save_value(field: Context, value):
     col = field['column']
 
-    setattr(entity[field.scope.row_id], col.name, value)
+    row_id = field.upto('tr').data.row_id
+    setattr(entity[row_id], col.name, value)
 
 def apply_filters():
     global query

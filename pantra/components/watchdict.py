@@ -36,6 +36,9 @@ class WatchDict(ADict):
                 else:
                     node.update(True)
 
+    def __str__(self):
+        return ','.join(self.keys())
+
 
 class WatchDictActive(WatchDict):
     def start_record(self, node: AnyNode):

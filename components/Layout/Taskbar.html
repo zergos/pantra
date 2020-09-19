@@ -146,6 +146,9 @@ def close(node=None):
     current = active
     if len(history) > 1:
         history.pop()
+        for i in history:
+            if i == active:
+                history.remove(i)
         switch_to(history.pop())
     else:
         keys = list(windows.keys())

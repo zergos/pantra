@@ -251,7 +251,7 @@ class DefaultRenderer:
                         value = 'value'
                     node.attributes[attr] = value
                     # ctx = self.ctx
-                    # node.value = lambda: ctx.locals.get(value)
+                    node.value = self.ctx.locals.get(value)
                     self.ctx.locals._record(value)
                     return True
                 if attr.startswith('set:'):
@@ -375,7 +375,6 @@ class DefaultRenderer:
 
         elif tag_name[0] == '$':
             node = self.ctx
-            #node.context = node
 
             for child in template.children:
                 self.build_node(child, node)

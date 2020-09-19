@@ -1,5 +1,5 @@
 <component>
-    <form on:render="render" on:keyup="default_click"/>
+    <form on:render="render" on:keyup:Enter="default_click"/>
     <ToolBox>
         <ToolButton caption="#Save" action="@save" default/>
         <ToolButton caption="#Close" action="@close"/>
@@ -36,16 +36,19 @@ def init():
 
 @db_session
 def render(node):
+    global values
     if not ctx.slot:
         attrs = find_entity_info(entity).attrs
         is_new = not get_entity(entity)
         max_len = round(max(len(title) for name, attr in attrs() for title in [_(attr.title)]) * 7)/10
+        predefined = dict(values)
+        values = ValuesDict()
         for attr_name, attr in attrs():
-            values[attr_name] = make_widget(node, attr, None if is_new else getattr(entity, attr_name), caption_width=WebUnits(max_len, 'em'))
+            values[attr_name] = make_widget(node, attr, predefined.get(attr_name) if is_new else getattr(entity, attr_name), caption_width=WebUnits(max_len, 'em'))
 
 
 def close(node=None):
-    ctx.scope.tasks.close()
+    session['taskbar'].close()
 
 
 def is_valid():
@@ -79,7 +82,6 @@ def save(node):
 
 
 def default_click(node, key):
-    if key == 'Enter':
-        save(None)
+    save(None)
 
 </python>

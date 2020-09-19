@@ -1,12 +1,14 @@
 import os
 import json
+import string
 from . import vlq
 
 MAP_CONFIG = 'map.json'
 OUT_NAME = 'all.js'
+sepa_tokens = string.ascii_letters + string.digits + '_$'
 
 
-def make(path: str = '.', with_content: bool = False):
+def make(path: str = '.', with_content: bool = False, keep_spaces: bool = False):
     with open(os.path.join(path, MAP_CONFIG), "rb") as f:
         src_names = json.load(f)
 
@@ -31,6 +33,7 @@ def make(path: str = '.', with_content: bool = False):
         sl = 0
         mode = 0  # 1 - block comment /**/, 2 - string
         quote_sym = None  # '', ""
+        last_sym = None
         for line in src.splitlines():
             sc = 0
             line_mapped = False
@@ -52,13 +55,19 @@ def make(path: str = '.', with_content: bool = False):
                         if line[sc] == '/':
                             break
 
-                    if line_started and sym in ' \t\r\n':
-                        continue
+                    if keep_spaces:
+                        if line_started and sym in ' \t\r\n':
+                            continue
+                        else:
+                            line_started = False
                     else:
-                        line_started = False
+                        if sym in ' \t\r\n':
+                            line_mapped = False
+                            continue
 
                     if not line_mapped:
-                        out += ' '
+                        if out and out[-1] in sepa_tokens and sym in sepa_tokens:
+                            out += ' '
                         dest['mappings'].append([len(out), src_idx, sl, sc-1])
                         line_mapped = True
                     out += sym
@@ -68,24 +77,19 @@ def make(path: str = '.', with_content: bool = False):
                         mode = 0
                         line_mapped = False
                         sc += 1
-                        continue
 
                 elif mode == 2:
                     out += sym
                     if sym == quote_sym:
                         if sc > 1 and line[sc-2] == '\\':
-                            pass
+                            continue
                         elif sc < len(line) and line[sc] == quote_sym:
                             out += quote_sym
                             sc += 1
                         else:
                             mode = 0
-                            continue
 
             sl += 1
-
-    #for map in dest['mappings']:
-    #    print(map)
 
     mappings = []
     prev = None
@@ -106,5 +110,8 @@ def make(path: str = '.', with_content: bool = False):
 
 
 if __name__ == '__main__':
-    make()
-    print('done')
+    if not os.path.exists(MAP_CONFIG):
+        print(f'define source files names list in {MAP_CONFIG} file')
+    else:
+        make()
+        print('done')

@@ -1,7 +1,7 @@
-<button type="button" on:click="action" class:danger class:default>{{caption}}</button>
+<button type="button" on:click="action" class:danger class:default set:disabled>{{caption}}</button>
 
 <style type="text/scss">
-    @import "mixins";
+    @import "basic";
 
     $color-norm: #fcfdc2;
     $color-danger: #fbd1c5;
@@ -20,6 +20,10 @@
         border-left: solid 1px;
         border-right: solid 1px;
         transition: background-color 0.15s ease-in-out;
+
+        &:disabled {
+            color: $color-passive;
+        }
 
         &:hover {
             background-color: lighten($color-norm, 10%);
@@ -44,4 +48,5 @@ caption: str = ''
 action: str = ''
 danger: bool = False
 default: bool = False
+disabled: bool = False
 </python>

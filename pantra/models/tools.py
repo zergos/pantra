@@ -49,9 +49,9 @@ def query_info(q: Query) -> Optional[Dict[str, AttrInfo]]:
                 name = re.search(query_info.re_as, col_name).group(1)
             else:
                 name = expr[0]
-            res[name] = AttrInfo(name=name, type=col_type, readonly=True)
+            res[name] = AttrInfo(name=name, type=col_type, title=name, readonly=True)
     return res
-query_info.re_as = re.compile(r'[\'"](.*?)[\'"]\s*\)$')
+query_info.re_as = re.compile(r'[\'"]([^\'"]*?)[\'"]\s*\)+$')
 
 
 def entity_name(ent):

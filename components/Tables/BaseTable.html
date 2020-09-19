@@ -35,8 +35,7 @@
         <tbody ref:tbody>
         {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id is not None else forloop.counter}}
             {{#for row in maps}}
-            <tr scope>
-                <scope row_id="{forloop.parent.index}"/>
+            <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
                 {{#for col in row}}
                 <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
                 {{/for}}
@@ -176,7 +175,8 @@ editable: bool = True
 resizable: bool = True
 sortable: bool = True
 selectable: bool = False
-callback: Callable[[Any], None] = lambda value: None
+callback: Callable[[Any], None] = EmptyCaller()
+on_select: Callable[[LoopNode], None] = EmptyCaller()
 
 columns: Columns
 
@@ -188,6 +188,7 @@ order_dir: int = 0
 order_node: Optional[AnyNode] = None
 
 active_row_id: Optional[int] = None
+active_row: Optional[Dict[str, Any]] = None
 active_row_node: Optional[LoopNode] = None
 active_col: Optional[str] = None
 active_col_cell: Optional[HTMLElement] = None
@@ -213,7 +214,7 @@ def init():
         maps.append(row)
     else:
         # predefined layout
-        maps = build_maps(ctx, cols_slot, columns)
+        maps = build_maps(ctx, cols_slot.template, columns)
         for row in maps:
             for col in row:
                 attrs = col.node.attributes
@@ -310,7 +311,7 @@ def get_widget(col_info: ColumnInfo):
 
 
 def select_cell(node: HTMLElement):
-    global active_row_id, active_row_node, active_col, active_col_cell
+    global active_row_id, active_row, active_row_node, active_col, active_col_cell
     if active_row_id is not None:
         for n in active_row_node:
             n.classes -= 'selected'
@@ -327,10 +328,14 @@ def select_cell(node: HTMLElement):
 
     row = node.parent.upto('@')
     active_row_node = row
+    active_row = None
     for n in row:
         n.classes += 'selected'
         ctx.shot(n)
-        active_row_id = n.scope.row_id
+        active_row_id = n.data.row_id
+        active_row = n.data.row
+
+    on_select(row)
 
 
 def enter_cell(node: HTMLElement):

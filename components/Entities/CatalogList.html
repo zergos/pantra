@@ -2,10 +2,12 @@
     <ToolBox>
         <ToolButton caption="#Refresh" action="@refresh"/>
         <ToolButton caption="#Add" action="@add_object"/>
+        <ToolButton caption="#Copy" action="@copy_object" disabled="{not copy_enabled}"/>
         <ToolButton caption="#Delete" danger action="@del_object"/>
     </ToolBox>
 
-    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@open_object">
+    <EntityTable cref:table consume="entity,query" not:editable selectable callback="@open_object" on_select="@row_selected">
+        <columns reuse/>
     </EntityTable>
 </component>
 <python>
@@ -16,20 +18,23 @@ from components.Entities import *
 from components.Dialogs import *
 from pantra.ctx import *
 
-db: str = 'db'
+db_name: str = 'db'
 name: str = ''
 
 entity: EntityMeta
+query: Any
+
+copy_enabled: bool = False
 
 def init():
     global entity
     if not name:
         return False
     expose_databases(session.app)
-    if name not in dbinfo[session.app][db].entities:
+    if name not in dbinfo[session.app][db_name].entities:
         session.error(_('entity {name} not found'))
         return False
-    entity = dbinfo[session.app][db].entities[name].factory.cls
+    entity = dbinfo[session.app][db_name].entities[name].factory.cls
 
 def refresh(node=None):
     refs.table.refresh(True)
@@ -56,5 +61,12 @@ def open_object(value):
     with db_session:
         ent = make_proxy(entity[value])
     render_catalog_form(session, ctx, ent)
+
+def row_selected(node):
+    ctx['copy_enabled'] = True
+
+def copy_object(node):
+    if refs.table.active_row:
+        render_catalog_form(session, ctx, entity, refs.table.active_row)
 
 </python>
