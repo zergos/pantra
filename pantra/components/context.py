@@ -167,7 +167,7 @@ class HTMLElement(RenderNode):
 
     def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
         if parent:
-            if type(parent) == NSElement:
+            if type(parent) is NSElement or type(parent) is Context and parent.ns_type:
                 instance = super().__new__(NSElement)
                 instance.ns_type = parent.ns_type
             elif parent.context.ns_type:

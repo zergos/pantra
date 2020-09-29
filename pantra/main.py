@@ -48,7 +48,7 @@ async def get_ws(request: Request):
     # token = request.match_info['token']
 
     try:
-        async for msg in ws:  # type: WSMessage
+        async for msg in ws:  # type WSMessage
             if msg.type == WSMsgType.BINARY:
                 data = serializer.decode(msg.data)
                 command = data['C']
@@ -89,14 +89,12 @@ async def get_ws(request: Request):
 
                 elif command == 'DD':
                     process_drag_start(session, data['method'], data['oid'], data['x'], data['y'], data['button'])
-                    #print('DD')
 
                 elif command == 'DM':
                     process_drag_move(session, data['x'], data['y'])
 
                 elif command == 'DU':
                     process_drag_stop(session, data['x'], data['y'])
-                    #print('DU')
 
                 elif command == 'VALID':
                     HTMLElement._set_validity(data['oid'], data['validity'])

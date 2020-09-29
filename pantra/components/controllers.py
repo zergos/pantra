@@ -135,7 +135,8 @@ def process_select(method: str, oid: int, opts: List[int]):
 def process_bind_value(oid: int, var_name: str, value: str):
     node: HTMLElement = get_node(oid)
     if not node: return
-    node.set_quetly(var_name, value)
+    #node.set_quetly(var_name, value)
+    node[var_name] = value
     node.value = value
 
 

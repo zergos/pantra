@@ -1,4 +1,4 @@
-import contrib.bsdf_lite as bsdf
+from .contrib import bsdf_lite as bsdf
 import typing
 from datetime import date, time, datetime, timezone
 
