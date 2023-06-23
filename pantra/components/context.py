@@ -61,7 +61,7 @@ class Slot(typing.NamedTuple):
                     else:
                         return Slot(self.ctx, child)
         else:
-            return super().__getitem__(name)
+            raise NotImplementedError('integer indexing')  # return super().__getitem__(name)
 
 
 class Context(RenderNode):

@@ -35,39 +35,42 @@
 <python>
 #"""
 from apps.system.data import *
-from pony.orm import db_session
 from pantra.common import ADict
 from pantra.ctx import *
+
 
 def init():
     session.set_title(_('Authorization'))
 
-@db_session
+
 def get_users_count():
-    return db.User.select().count()
+    return db.query(User).fetch_count()
+
 
 def get_apps():
     return session.get_apps()
 
-@db_session
+
 def get_users():
-    for user in db.User.select():
+    for user in db.query(User).select(name=lambda s: s.name).fetchall():
         yield user.name
+
 
 def passw_render(node):
     node.validate(lambda: refs.passw.value == refs.passw2.value, _("Passwords don''t match"))
 
+
 def create_first_admin(node):
     if 'passw' in refs and refs.form['is_valid']():
-        with db_session:
-            admin = db.User(name = refs.login.value, is_admin=True)
-            admin.set_password(refs.passw.value)
+        admin = User(name=refs.login['value'], password='', is_admin=True)
+        admin.set_password(refs.passw['value'])
+        db.insert(admin)
         refs.form.update_tree()
 
-@db_session
+
 def login(node):
     username = refs.user.value
-    user = db.User.get(name=username)
+    user = db.query(User).filter(lambda s: s.name == username).fetchone()
     if not user:
         refs.user.error = _('User not available')
         return

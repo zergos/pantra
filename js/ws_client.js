@@ -23,7 +23,6 @@ class WSClient {
 			this.instance.binaryType = "arraybuffer";
 			this.instance.onopen = () => this.onopen();
 			this.instance.onmessage = (message) => this.onmessage(message.data);
-			this.instance.onerror = (e) => this.onerror(e);
 			this.instance.onclose = (e) => this.onclose(e);
 		}
 	}
@@ -63,10 +62,6 @@ class WSClient {
 			default:
 				console.error(`WSClient: unrecoverable error ${e.code}`);
 		}
-	}
-	onerror(e) {
-		this.connected = false;
-		this.refresh();
 	}
 	onmessage(data) {
 		console.log('message coming ' + data);

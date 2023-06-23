@@ -1,4 +1,4 @@
-let _serializer_debug = true;
+let _serializer_debug = false;
 let content_filled = false;
 
 let namespaces = {

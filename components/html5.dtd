@@ -1084,7 +1084,7 @@
 
 
 <!--COMPONENTS-->
-<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityField|EntityForm|EntityTable|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityField|EntityForm|EntityTable|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
 <!ELEMENT BaseTable %Flow;>
 <!ELEMENT Button %Flow;>
 <!ELEMENT CardForm %Flow;>
@@ -1117,11 +1117,10 @@
 <!ELEMENT Main %Flow;>
 <!ELEMENT MenuGroup %Flow;>
 <!ELEMENT MenuItem %Flow;>
-<!ATTLIST MenuItem
-	caption     CDATA          #REQUIRED
->
 <!ELEMENT NumberField %Flow;>
 <!ELEMENT PopupMenu %Flow;>
+<!ELEMENT QuestionForm %Flow;>
+<!ELEMENT QuestionList %Flow;>
 <!ELEMENT SVG %Flow;>
 <!ELEMENT SelectBox %Flow;>
 <!ELEMENT SelectItem %Flow;>

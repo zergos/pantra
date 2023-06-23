@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing
 
 from pantra.args import *
@@ -7,8 +8,7 @@ from pantra.defaults import *
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pony.orm import Database
-
+    from quazy import *
 
 def _detect_app():
     path = os.getcwd()
@@ -47,37 +47,6 @@ class Main:
         for f in os.listdir(APPS_PATH):
             print(f)
 
-    @context_args('app')
-    def pony(self, x: bool = False):
-        """
-        generate pony code for type checker
-        :param x: exclude default db initial block
-        """
-
-        from pantra.models import expose_to_pony
-        expose_to_pony(self.app, not x)
-        print('Done')
-
-    @context_args('app')
-    def django(self):
-        """
-        generate django code for debugging
-        """
-
-        from pantra.models import expose_to_django
-        expose_to_django(self.app)
-        print('Done')
-
-    @context_args('app')
-    def check(self):
-        """
-        load and check models definition runtime
-        """
-
-        from pantra.models import expose_databases
-        expose_databases(self.app)
-        print('Check OK')
-
     def collect_dtd(self):
         '''
         collect html5.dtd schema for editor autocomplete and inspection
@@ -89,101 +58,136 @@ class Main:
 
 class Migrate:
     """
-    Work with database migrations via Django
+    Work with database changes/migrations
     :param app: app name (auto-detection by current directory)
-    :param noinput: tells Django to NOT prompt the user for input of any kind
-    :param debug: leave files 'model.py' and 'app.py' in app data path after call
     """
     app: str = lambda: _detect_app()
     noinput: bool = False
-    debug: bool = False
 
-    def _call_django(self, *args):
-        from pantra.models import expose_to_django
+    def _check_migrations(self) -> bool:
+        from pantra.models import expose_databases, dbinfo
+        from quazy.migrations import check_migrations
+        db = expose_databases(self.app)
 
-        data_settings = expose_to_django(self.app)
+        if not check_migrations(db):
+            print('Migrations not activated. Run with `migrate.activate` first.')
+            return False
 
-        import django
-        from django.conf import settings
-        from django.core.management import execute_from_command_line
+        return True
 
-        args = [*args]
-        args.insert(0, 'manage.py')
-        # os.environ.setdefault("DJANGO_SETTINGS_MODULE", '.'.join(['apps', self.app, 'data')
-        settings.configure(**data_settings)
-        django.setup()
-        execute_from_command_line(args)
-        if not self.debug:
-            os.remove(os.path.join(APPS_PATH, self.app, 'data', 'models.py'))
-            os.remove(os.path.join(APPS_PATH, self.app, 'data', 'app.py'))
+    def _expose_db(self) -> tuple[DBFactory, str] | tuple[None, None]:
+        from pantra.models import expose_databases, dbinfo
+        import importlib
 
-    @context_args('app', 'debug')
+        try:
+            data = importlib.import_module(f'apps.{self.app}.data')
+        except ModuleNotFoundError:
+            print('No `data` module in app')
+            return None, None
+
+        if not hasattr(data, 'db'):
+            print('No `db` attribute in `data` module of app')
+            return None, None
+
+        db = data.db
+        return db, dbinfo[self.app]['db'].schema
+
+
+    @context_args('app')
+    def activate(self):
+        """
+        activate migrations for current app and scheme
+        """
+        from quazy.migrations import activate_migrations
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+        activate_migrations(db)
+        print("Migrations activated.")
+
+    @context_args('app')
     def list(self):
         """
         list all migrations, ones marked with + are applied.
         """
-        self._call_django('showmigrations', self.app)
+        if not self._check_migrations():
+            return
 
-    @context_args('app', 'noinput', 'debug')
-    def make(self, dry: bool = False, merge: bool = False, empty: bool = False, name: str = None):
-        """
-        make new migration related to app model changes
-        :param dry: show what migrations would be made; don't actually write them
-        :param merge: enable fixing of migration conflicts
-        :param empty: create empty migration
-        :param name: use this name for migration file
-        """
-        args = ['makemigrations', self.app]
-        if dry: args.append('--dry-run')
-        if merge: args.append('--merge')
-        if empty: args.append('--empty')
-        if self.noinput: args.append('--noinput')
-        if name: args.extend(['-n', name])
-        self._call_django(*args)
+        from quazy.migrations import get_migrations
 
-    @context_args('app', 'noinput', 'debug')
-    def apply(self, name: str = None, fake: bool = False, fake_init: bool = False, plan: bool = False):
-        """
-        apply migrations to database
-        :param name: migration name ('zero' to rollback all)
-        :param fake: mark migrations as run without actually running them
-        :param fake_init: detect if tables already exist and fake-apply initial migrations if so
-        :param plan: shows a list of the migration actions that will be performed
-        """
-        args = ['migrate', self.app]
-        if name:
-            args.append(name)
-        if self.noinput: args.append('--noinput')
-        if fake: args.append('--fake')
-        if fake_init: args.append('--fake-initial')
-        if plan: args.append('--plan')
-        self._call_django(*args)
+        db, schema = self._expose_db()
+        if not db:
+            return
 
-    @context_args('app', 'debug')
-    def sql(self, migration: str, back: bool = False):
-        """
-        prints the SQL statements for the named migration
-        :param migration: migration name
-        :param back: creates SQL to unapply the migration, rather than to apply it
-        """
-        args = ['sqlmigrate', self.app, migration]
-        if back: args.append('--backwards')
-        self._call_django(*args)
+        all_migrations = get_migrations(db, schema)
 
-    @context_args('app', 'noinput', 'debug')
-    def squash(self, start_migration: str, end_migration: str, no_optimize: bool = False, name: str = None):
+        if all_migrations:
+            for m in all_migrations:
+                print('{}{} {:%x %X} {}'.format("*" if m[0] else " ", m[1], m[2], m[3]))
+        else:
+            print("No migrations yet. Run `migrate.apply` first.")
+
+    @context_args('app')
+    def show(self, rename: str = ""):
         """
-        squashes an existing set of migrations into a single new one (including start and end)
-        :param start_migration: start migration name
-        :param end_migration: end migration name
-        :param no_optimize: do not add a header comment to the new squashed
-        :param name: name of the new squashed migration
+        show current changes
+        :param rename: rename list in format `old_name1:new_name1 old_name2:new_name2 ...`
         """
-        args = ['squashmigrations', self.app, start_migration, end_migration]
-        if no_optimize: args.append('--no-optimize')
-        if self.noinput: args.append('--noinput')
-        if name: args.extend(['--squashed-name', name])
-        self._call_django(args)
+        if not self._check_migrations():
+            return
+
+        from quazy.migrations import get_changes
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+        commands, _ = get_changes(db, schema, [(line.strip(':')[0], line.strip(':')[1]) for line in rename.split(" ") if line])
+
+        if not commands:
+            print("No changes")
+            return
+
+        for i, command in enumerate(commands):
+            print(f'{i+1}. {command}')
+
+    @context_args('app')
+    def apply(self, rename: str = "", comments: str = "", debug: bool = False):
+        """
+        make migrations and apply changes to database
+        :param rename: rename list in format `old_name1:new_name1 old_name2:new_name2 ...`
+        :param comments: comments bound to changes
+        :param debug: show SQL statements
+        """
+        if not self._check_migrations():
+            return
+
+        if debug:
+            import logging
+
+            logger = logging.getLogger('psycopg')
+            logger.setLevel(logging.DEBUG)
+
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.DEBUG)
+
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            console_handler.setFormatter(formatter)
+
+            logger.addHandler(console_handler)
+
+        from quazy.migrations import get_changes, apply_changes
+        import importlib
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+        commands, new_tables = get_changes(db, schema, [(line.strip(':')[0], line.strip(':')[1]) for line in rename.split(" ") if line])
+        if not commands:
+            print("No changes")
+            return
+
+        apply_changes(db, schema, commands, new_tables, comments)
 
 
 class Schema:
@@ -194,14 +198,14 @@ class Schema:
 
     app: str = lambda: _detect_app()
 
-    def _check_postgres(self) -> Optional[Database]:
+    def _check_postgres(self) -> Optional[DBFactory]:
         from pantra.models import expose_databases, dbinfo
 
         db = expose_databases(self.app)
         if not db:
             print(f'default db does not configured for app {self.app}')
             return None
-        if dbinfo[self.app]['db'].factory.kwargs['provider'] != 'postgres':
+        if dbinfo[self.app]['db'].kwargs['provider'] != 'postgres':
             print(f'schemas available for postgres only')
             return None
         return db
@@ -211,17 +215,14 @@ class Schema:
         """
         print all schemas
         """
-        from pony.orm import db_session
-
         db = self._check_postgres()
         if not db:
             return
 
         print('Schemas list:')
-        with db_session():
-            res = db.select("select nspname from pg_catalog.pg_namespace where left(nspname, 3) != 'pg_'")
+        with db.select("select nspname from pg_catalog.pg_namespace where left(nspname, 3) != 'pg_'") as res:
             for line in res:
-                print('  ' + line)
+                print('  ' + line[0])
 
     @context_args('app')
     def add(self, name: str):
@@ -229,16 +230,12 @@ class Schema:
         add new schema
         :param name: schema name
         """
-        from pony.orm import db_session
-
         db = self._check_postgres()
         if not db:
             return
 
-        with db_session():
-            with db.get_connection().cursor() as cur:
-                cur.execute(f'create schema if not exists "{name}"')
-                print(cur.statusmessage)
+        with db.select(f'create schema if not exists "{name}"') as res:
+            print(res)
 
 
 class Locale:

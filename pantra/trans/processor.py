@@ -77,7 +77,7 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
     s = ''
     args = []
     for v in node.body.values:
-        if type(v) == ast.Str:
+        if type(v) == ast.Constant:
             s += v.s
         elif type(v) == ast.FormattedValue:
             s += '{'

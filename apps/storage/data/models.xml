@@ -9,7 +9,7 @@
     <entity name="Purchase" base="Document">
         <attr name="storage" type="Storage" required="True"/>
     </entity>
-    <entity name="PurchaseLine" base="Document">
+    <entity name="PurchaseLine" base="DocumentLine">
         <attr name="good" type="Good"/>
         <attr name="unit" type="Unit"/>
         <attr name="qty" type="float"/>

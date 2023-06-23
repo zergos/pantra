@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pantra.common import DynamicStyles
 from pantra.components.context import HTMLElement
 from pantra.components.loader import HTMLTemplate
-from pantra.models.runtime import AttrInfo
+#from pantra.models.runtime import AttrInfo
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -74,7 +74,7 @@ class Filter:
 class FilterView:
     filter: Filter
     operators: Tuple[str, ...]
-    attr: AttrInfo
+#    attr: AttrInfo
     widget: Optional[Context]
 
 

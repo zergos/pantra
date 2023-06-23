@@ -220,7 +220,7 @@ def init():
                 attrs = col.node.attributes
                 attrs.name = col.info.name
                 col.node.style = col.info.style | col.node.style
-                col.info.title = attrs.get('title', col.info.title)
+                col.info.title = attrs.get('title', col.info.title) or col.info.name
                 for opt in ('editable', 'resizable', 'sortable'):
                     if not globals()[opt]:
                         setattr(col.info, opt, False)
@@ -239,9 +239,9 @@ def fmt(value, info):
         return f'{value:%x %X}'
     if info.type == bool:
         return value and '☑' or '☐'
-    if isinstance(info.type, EntityMeta):
-        with db_session:
-            return str(value._get_object())
+    #if isinstance(info.type, EntityMeta):
+    #    with db_session:
+    #        return str(value._get_object())
     return str(value)
 
 def refresh(clear: bool = False):

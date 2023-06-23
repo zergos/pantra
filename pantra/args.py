@@ -15,10 +15,15 @@ if typing.TYPE_CHECKING:
 __all__ = ['ExposeToArgs', 'context_args', 'Empty']
 
 
-def context_args(*ctx):
+def context_args(*ctx, goes_first: bool = False):
     def processor(f):
         @wraps(f)
         def func(self, *args, **kwargs):
+            if goes_first:
+                for k, v in zip(ctx, args):
+                    setattr(self, k, v)
+                    del kwargs[k]
+                args = ()
             for k, v in list(kwargs.items()):
                 if k in ctx:
                     setattr(self, k, v)
@@ -96,7 +101,7 @@ class StringLocals(dict):
 
 
 class ExposeToArgs(dict):
-    instance: ClassVar
+    instance: Type
     doc: str
     params: Dict[str, ArgParam]
 
@@ -253,8 +258,8 @@ class ExposeToArgs(dict):
             except ArgsError as e:
                 print(str(e))
                 ExposeToArgs._print_help(self, path)
-            except:
-                traceback.print_exc(-1)
+            #except:
+            #    traceback.print_exc(-1)
 
     def execute(self, argv=None):
         if argv is None:
