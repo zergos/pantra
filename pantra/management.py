@@ -10,6 +10,7 @@ if typing.TYPE_CHECKING:
     from typing import *
     from quazy import *
 
+
 def _detect_app():
     path = os.getcwd()
     if path.startswith(APPS_PATH):
@@ -48,9 +49,9 @@ class Main:
             print(f)
 
     def collect_dtd(self):
-        '''
+        """
         collect html5.dtd schema for editor autocomplete and inspection
-        '''
+        """
         from .components.update_dtd import update_dtd
         update_dtd()
         print('Done')
@@ -91,7 +92,6 @@ class Migrate:
 
         db = data.db
         return db, dbinfo[self.app]['db'].schema
-
 
     @context_args('app')
     def activate(self):
