@@ -99,7 +99,7 @@ function start(new_local_id, new_tab_id) {
                 break;
 
             case 'app':
-                document.location = obj.l;
+                document.location.href = obj.l;
                 break;
 
             case 'title':

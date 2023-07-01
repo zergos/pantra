@@ -135,6 +135,7 @@ class UniNode:
     def downto(self: TUniNode, predicate: Callable[[TUniNode], bool], depth: int = 0) -> Optional[TUniNode]:
         return next(self.select(predicate, depth), None)
 
+
 class UniqueNode(UniNode):
     __slots__ = ['oid', '__weakref__']
 

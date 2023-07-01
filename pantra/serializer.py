@@ -32,6 +32,8 @@ class HTMLElementSerializer(bsdf.Extension):
         if v.value_type:
             res['type'] = v.value_type
         value = getattr(v, '_value', None)
+        if isinstance(value, HTMLElement):
+            value = value.oid
         if value is not None:
             res['v'] = value
         return res

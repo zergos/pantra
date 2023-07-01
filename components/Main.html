@@ -1,3 +1,4 @@
+# language=html
 """
 <GridX fullscreen>
     <CardForm ref:form caption="#Starting facility">
@@ -52,7 +53,7 @@ def get_apps():
 
 
 def get_users():
-    for user in db.query(User).select(name=lambda s: s.name).fetchall():
+    for user in db.query(User).select('name'):
         yield user.name
 
 
@@ -69,16 +70,15 @@ def create_first_admin(node):
 
 
 def login(node):
-    username = refs.user.value
+    username = refs.user['value']
     user = db.query(User).filter(lambda s: s.name == username).fetchone()
     if not user:
         refs.user.error = _('User not available')
         return
-    if not user.check_password(refs.password.value):
-        refs.password.error = _('Wrong password')
+    if not user.check_password(refs.password['value']):
+        refs.password['error'] = _('Wrong password')
         return
-    session.user = ADict(user.to_dict())
-    session.start_app(refs.app.value)
-
+    session.user = user
+    session.start_app(refs.app['value'])
 
 #</python>

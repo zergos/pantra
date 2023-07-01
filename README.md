@@ -55,7 +55,7 @@ I need flexible, simple and rich tool to perform modern dynamic Web application.
   - I want to manipulate solid chunks of business logic as components (MVC joined in one file).
   - I want to deal with data most natural way, without SQL usage.
   - I want advantages of asynchronous programming, but get away coloring with `async`.
-  - I want it made simple. Enough to teach newbies within shortest learning curve.
+  - I want it made simple. Enough to teach newbies within the shortest learning curve.
   - I want ability to make it scalable and globally usable.
   - I need a perfect tool to build startups as fast as possible.
 

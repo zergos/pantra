@@ -32,7 +32,7 @@ const HTMLElementSerializer = {
         if (!element) {
             let parent = OID.node(v.p);
             if (!parent) {
-                se_log(`element ${v.n} became new root node:`);
+                se_log(`element ${v.i} ${v.n} became new root node (${v.p} not found)`);
                 parent = root_node();
                 if (!content_filled) {
                     parent.innerText = '';
@@ -46,7 +46,7 @@ const HTMLElementSerializer = {
 
             //element.typical = true;
             OID.set(element, v.i);
-            se_log(`element ${v.i} ${v.n} created`);
+            se_log(`element ${v.i} ${v.n} created with parent ${v.p}`);
             parent.appendChild(element);
             is_new = true;
 

@@ -214,6 +214,15 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
     except SyntaxError as e:
         error_callback(f'{filename}> {e}')
         return None
+
+    # find external code file
+    code_filename = filename + '.py'
+    if os.path.exists(code_filename):
+        with open(code_filename, "rt", encoding='utf-8') as f:
+            HTMLTemplate("@python", visitor.root, text=f.read())
+            # raw nodes goes first
+            visitor.root.children.insert(0, visitor.root.children.pop())
+
     return visitor.root
 
 

@@ -116,6 +116,11 @@ class RenderNode(UniqueNode):
             data = {data: value}
         self.scope = ADict(self.scope) | data
 
+    def describe(self, indent: int = 0) -> str:
+        res = ' ' * indent + str(self) + ':' + str(self.oid)
+        for c in self.children:
+            res += '\n' + ' ' * indent + c.describe(indent + 2)
+        return res
 
 class DefaultRenderer:
     __slots__ = ['ctx']
