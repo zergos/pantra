@@ -1,10 +1,10 @@
-<EntityTable entity="{User}" not:editable>
+<DBQueryTable table="{User}" not:editable>
     <columns>
         <col name="name,email,created_at"/>
         <col name="is_admin" title="A" css:width="3em"/>
     </columns>
-</EntityTable>
+</DBQueryTable>
 
 <python>
-from db.models import User
+from apps.system.data import User
 </python>

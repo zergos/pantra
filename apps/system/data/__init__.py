@@ -1,22 +1,24 @@
 import uuid
 import hashlib
 
-from quazy import *
+from quazy.db import *
+from quazy.db_types import *
 
 _SCHEMA_ = "system"
 
 
 class User(DBTable):
+    _title_ = "user"
     name: str
-    password: Optional[str]
-    salt: Optional[str]
-    email: Optional[str]
+    password: str | None
+    salt: str | None
+    email: str | None
     created_at: datetime = DBField(default=datetime.now, ux=UX('created'))
     is_admin: bool = DBField(default=False, ux=UX('A', width=3))
     enabled: bool = DBField(default=False, ux=UX('E', width=3))
-    apps: Many['App']
+    apps: ManyToMany['App']
 
-    def __view__(self, s: DBScheme):
+    def _view(self, s):
         return s.name
 
     def set_password(self, password):
@@ -30,10 +32,10 @@ class User(DBTable):
 
 class App(DBTable):
     name: str
-    title: Optional[str]
-    users: Many[User]
+    title: str | None
+    users: ManyToMany[User]
 
-    def __view__(self, s: DBScheme):
+    def _view(self, s):
         return s.name
 
 
@@ -51,23 +53,26 @@ class Document(DBTable):
 class Catalog(DBTable):
     prefix: str = DBField(default="", ux=UX(width=2))
     number: int = DBField(ux=UX(width=6))
-    name: Optional[str]
+    name: str | None
     body: dict = DBField(body=True)
 
     def _before_update(self, db: DBFactory):
         if not self.number:
-            amount = db.query(Catalog).filter(lambda s: s.prefix == self.prefix).fetch_count()
-            if amount == 0:
+            check = db.query(Catalog).filter(prefix=self.prefix)
+            if not check.exists():
                 self.number = 1
             else:
-                max = db.query(Catalog).filter(lambda s: (s.prefix == self.prefix) & (s.id != self.id)).fetch_max()
+                max = db.query(Catalog)\
+                    .filter(prefix=self.prefix)\
+                    .exclude(pk=self)\
+                    .fetch_max('number')
                 self.number = max and max + 1 or 1
         else:
-            look_up = db.lookup(Catalog, prefix=self.prefix, number=self.number)
-            if look_up.id != self.id:
+            look_up = db.get(Catalog, prefix=self.prefix, number=self.number)
+            if look_up != self:
                 raise ValueError(f'Catalog number {self.number} is not unique')
 
 
-from pantra.models import expose_databases
-db = expose_databases('system')
+from pantra.models import expose_database
+db = expose_database('system')
 db.use_module()

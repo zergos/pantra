@@ -66,9 +66,9 @@ class Migrate:
     noinput: bool = False
 
     def _check_migrations(self) -> bool:
-        from pantra.models import expose_databases, dbinfo
+        from pantra.models import expose_database
         from quazy.migrations import check_migrations
-        db = expose_databases(self.app)
+        db = expose_database(self.app)
 
         if not check_migrations(db):
             print('Migrations not activated. Run with `migrate.activate` first.')
@@ -77,7 +77,7 @@ class Migrate:
         return True
 
     def _expose_db(self) -> tuple[DBFactory, str] | tuple[None, None]:
-        from pantra.models import expose_databases, dbinfo
+        from pantra.models import dbinfo
         import importlib
 
         try:
@@ -177,7 +177,6 @@ class Migrate:
             logger.addHandler(console_handler)
 
         from quazy.migrations import get_changes, apply_changes
-        import importlib
 
         db, schema = self._expose_db()
         if not db:
@@ -189,6 +188,77 @@ class Migrate:
 
         apply_changes(db, schema, commands, new_tables, comments)
 
+    @context_args('app')
+    def reset(self):
+        """
+        reset all migrations and delete `app` tables
+        """
+        if not self._check_migrations():
+            return
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+
+        from quazy.migrations import clear_migrations
+        clear_migrations(db, schema)
+
+        print('Done')
+
+    @context_args('app')
+    def drop(self):
+        """
+        drop all migration tables
+        """
+        if not self._check_migrations():
+            return
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+
+        from quazy.migrations import clear_migrations
+        clear_migrations(db)
+
+        print("Done")
+
+    @context_args('app')
+    def dump(self, directory: str):
+        """
+        dump all migrations to selected directory
+        :param directory:  to save migration dumps
+        """
+        from quazy.migrations import dump_changes
+
+        if not self._check_migrations():
+            return
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+
+        dump_changes(db, schema, directory)
+
+        print("done")
+
+    @context_args('app')
+    def stub(self):
+        """
+        generate stub file (pyi) for better code completion
+        """
+        from quazy.stub import gen_stub
+
+        db, schema = self._expose_db()
+        if not db:
+            return
+
+        file_name = sys.modules[f'apps.{self.app}.data'].__file__ + 'i'
+        with open(file_name, "wt") as f:
+            f.write(gen_stub(db, schema))
+            f.write('\ndb: DBFactory')
+
+        print("done")
+
 
 class Schema:
     """
@@ -199,9 +269,9 @@ class Schema:
     app: str = lambda: _detect_app()
 
     def _check_postgres(self) -> Optional[DBFactory]:
-        from pantra.models import expose_databases, dbinfo
+        from pantra.models import expose_database, dbinfo
 
-        db = expose_databases(self.app)
+        db = expose_database(self.app)
         if not db:
             print(f'default db does not configured for app {self.app}')
             return None
@@ -297,8 +367,8 @@ class Locale:
             path = os.path.join(APPS_PATH, self.app)
         ini_name = os.path.join(path, 'babel.ini')
         with open(ini_name, 'wt') as f:
-            f.write('[extractors]\npython = pantra.trans:extract_python\nhtml = pantra.trans:extract_html\nxml = pantra.trans:extract_xml\n')
-            f.write('[python: **.py]\n[html: **.html]\n[xml: **.xml]\n')
+            f.write('[extractors]\npython = pantra.trans:extract_python\nhtml = pantra.trans:extract_html\ndata = pantra.trans:extract_data\n')
+            f.write('[data: **/data/__init__.py]\n[python: **.py]\n[html: **.html]\n')
 
         pot_name = os.path.join(path, 'app.po')
 

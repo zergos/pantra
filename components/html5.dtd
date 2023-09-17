@@ -1084,7 +1084,7 @@
 
 
 <!--COMPONENTS-->
-<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityField|EntityForm|EntityTable|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DBField|DBQueryTable|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityForm|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
 <!ELEMENT BaseTable %Flow;>
 <!ELEMENT Button %Flow;>
 <!ELEMENT CardForm %Flow;>
@@ -1093,14 +1093,14 @@
 <!ELEMENT CellNumber %Flow;>
 <!ELEMENT CellString %Flow;>
 <!ELEMENT CheckField %Flow;>
+<!ELEMENT DBField %Flow;>
+<!ELEMENT DBQueryTable %Flow;>
 <!ELEMENT DataTable %Flow;>
 <!ELEMENT DateField %Flow;>
 <!ELEMENT DateTimeField %Flow;>
 <!ELEMENT Dialog %Flow;>
 <!ELEMENT DocumentList %Flow;>
-<!ELEMENT EntityField %Flow;>
 <!ELEMENT EntityForm %Flow;>
-<!ELEMENT EntityTable %Flow;>
 <!ELEMENT Field %Flow;>
 <!ELEMENT FilterTable %Flow;>
 <!ELEMENT FilterTableLine %Flow;>

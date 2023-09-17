@@ -5,7 +5,7 @@
                 consume="required,readonly"
                 on_change="@parse_input"
                 list="o{ctx.oid}"
-                value="{entity_to_text(value)}"
+                value="{item_to_text(value)}"
                 buttons="...,O"
                 action="@button_action"
         />
@@ -18,70 +18,49 @@
 </component>
 
 <python>
+from quazy import DBFactory
+from apps.system.data import Catalog, Document
 from components.Widgets import *
 from components.Entities import *
-from pony.orm import make_proxy
-from pony.orm.core import EntityMeta, db_session
 from pantra.ctx import *
 
-value: EntityMeta = None
-entity: Type[EntityMeta] = None
-entity_type: EntityType = None
+value: DBTable = None
+table: Type[DBTable] = None
+db: DBFactory = None
 
 lookup_min_chars = 3
 lookup_max_values = 10
 lookup_list: List = []
 
-def init():
-    global entity_type
-
-    if not entity:
-        return False
-
-    if not entity_type:
-        if entity._database_.Catalog in entity._all_bases_:
-            entity_type = EntityType.CATALOG
-        elif entity._database_.Document in entity._all_bases_:
-            entity_type = EntityType.DOCUMENT
-        else:
-            entity_type = EntityType.OTHER
-
-
 def fill_value(node):
     if value is None:
         return
-    refs.input['value'] = entity_to_text(value)
+    refs.input['value'] = item_to_text(value)
     refs.input.update_tree()
     ctx.call('on_change', ctx)
 
-def entity_to_text(v: Optional[EntityMeta]) -> str:
+def item_to_text(v: Optional[DBTable]) -> str:
     if not v:
         return ''
-    with db_session:
-        if entity_type == EntityType.CATALOG:
-            return v.name
-        elif entity_type == EntityType.DOCUMENT:
-            return f'{_(v.classtype)} - {v.number} - {session.locale.datetime(v.date)}'
-        else:
-            return str(v._get_object())
+    if isinstance(v, Document):
+        return f'{_(type(v).__name__)} - {v.number} - {session.locale.datetime(v.date)}'
+    else:
+        return str(v)
 
-def text_to_entities(t: str) -> List[EntityMeta]:
+def text_to_items(t: str) -> list[DBTable]:
     res = []
     if not t:
         return res
-    with db_session:
-        if entity_type == EntityType.CATALOG:
-            for o in entity.select(lambda o: o.name.startswith(t)):
-                res.append(make_proxy(o))
-        elif entity_type == EntityType.DOCUMENT:
-            for o in entity.select(lambda o: o.number.startswith(t)):
-                res.append(make_proxy(o))
+    if issubclass(table, Catalog):
+        res = db.query(table).filter(lambda o: o.name.startswith(t)).set_window(limit=20).fetchall()
+    elif issubclass(table, Document):
+        res = db.query(table).filter(lambda o: o.number.startswith(t)).set_window(limit=20).fetchall()
     return res
 
 def lookup_items():
     limit = lookup_max_values
     for item in lookup_list:
-        yield entity_to_text(item)
+        yield item_to_text(item)
         limit -= 1
         if not limit:
             break
@@ -90,7 +69,7 @@ def parse_input(node):
     global value, lookup_list
     v = refs.input['value']
     if len(v) >= lookup_min_chars:
-        lookup_list = text_to_entities(v)
+        lookup_list = text_to_items(v)
         if len(lookup_list) == 1:
             value = lookup_list[0]
             ctx.call('on_change', ctx)
@@ -98,8 +77,7 @@ def parse_input(node):
 
 def button_action(node):
     if node.data.code == '...':
-        entity_name = entity.__name__
-        render_catalog_select(session, entity_name, callback=select_value)
+        render_catalog_select(session, table.__name__, callback=select_value)
     elif node.data.code == 'O':
         if not value:
             return

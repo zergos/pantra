@@ -1,1 +1,1 @@
-from .runtime import expose_databases, dbinfo
+from .runtime import expose_database, dbinfo

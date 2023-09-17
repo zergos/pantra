@@ -1,0 +1,88 @@
+'''
+<component>
+    {{#if filters}}
+    <FilterTable filters="{filters}" search="search_fields" callback="@apply_filters" search_callback="@apply_search"/>
+    {{/if}}
+    <BaseTable ref:basetable consume/>
+</component>
+
+<python>
+#'''
+from quazy import DBQuery
+from components.Tables import Columns, ColumnInfo, Filter, OPER_MAP
+from apps.system.data import *
+from pantra.ctx import *
+
+query: DBQuery | None = None
+table: Type[DBTable]
+col_id: str = 'pk'
+
+original_query: DBQuery | None = None
+columns: Columns = {}
+filters: list[Filter] = []
+search_fields: list[str] = []
+search_text: str = ''
+
+def init():
+    global query, columns, original_query, col_id
+    # default query
+    if query is None:
+        query = db.query(table)
+    fields = query.describe()
+
+    if col_id == 'pk':
+        col_id = table.DB.pk.name
+
+    for field in fields:
+        col = ColumnInfo.from_ux(field.ux)
+        if col.width:
+            col.style.width = WebUnits(col.width, 'em')
+        columns[field.name] = col
+        #if field.ref:
+        #    columns[f'{field.name}_view'] = ColumnInfo(name=name, type=attr.type, hidden=True)
+        filters.append(Filter(col))
+        if field.type is str:
+            search_fields.append(field.name)
+
+    original_query = query
+
+def get_rows(order_col, order_dir):
+    global columns
+    if order_col:
+        q = query.copy().sort_by(order_dir, desc=order_col)
+    else:
+        q = query
+    with q.execute(as_dict=True) as rows:
+        yield from rows
+
+def save_value(field: Context, value):
+    col = field['column']
+
+    row_id = field.upto('tr').data.row_id
+    row = db.get(table.DB, row_id)
+    setattr(row, col.name, value)
+    db.update(row)
+
+def apply_filters():
+    global query
+    query = original_query.copy()
+    for filter in filters:
+        if not filter.enabled:
+            continue
+        if filter.operator in OPER_MAP:
+            query.filter(eval(f'lambda x: x.{filter.column.field.name} {OPER_MAP[filter.operator]} filter.value'))
+        elif filter.operator == 'contains':
+            query.filter(lambda x: getattr(x, filter.column.field.name) in filter.value)
+        elif filter.operator == 'between':
+            query.filter(lambda x: filter.value <= getattr(x, filter.column.field.name) <= filter.value2)
+    if search_text and search_fields:
+        ifs = ' or '.join(f'search_text in x.{field}' for field in search_fields)
+        query = query.filter(f'lambda x: {ifs}')
+    ctx['refresh']()
+
+def apply_search(text: str):
+    global search_text
+    search_text = text
+    apply_filters()
+
+#</python>

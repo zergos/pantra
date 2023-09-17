@@ -3,17 +3,17 @@ from __future__ import annotations
 import typing
 import enum
 
+from quazy import DBTable, UX
+from quazy.db_types import *
 from pantra.components.context import Context
-from pantra.models.types import *
 from pantra.common import ADict, WebUnits
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.models.runtime import AttrInfo
     from pantra.components.context import AnyNode
 
 
-class EntityType(enum.Enum):
+class DBFieldType(enum.Enum):
     CATALOG = enum.auto()
     DOCUMENT = enum.auto()
     OTHER = enum.auto()
@@ -43,34 +43,33 @@ TEMPLATE_MAP = {
     datetime: 'DateTimeField',
     timedelta: None,  # TODO
     bytes: None,
-    LongStr: 'TextAreaField',
-    Json: 'TextAreaField',
+    #LongStr: 'TextAreaField',
+    dict: 'TextAreaField',
     UUID: None,  # TODO
 }
 
 
-def make_widget(parent: AnyNode, attr: AttrInfo, value: Any = None, **kwargs) -> Optional[Context]:
+def make_widget(parent: AnyNode, ux: UX, value: Any = None, **kwargs) -> Optional[Context]:
     locals = ADict(
-        caption=parent.session.gettext(attr.title),
-        readonly=attr.readonly,
-        required=not attr.blank,
-        width='' if not attr.width else WebUnits(attr.width, 'em'),
-        in_body=hasattr(attr, 'body'),
+        caption=parent.session.gettext(ux.title),
+        readonly=ux.readonly,
+        required=not ux.blank,
+        width='' if not ux.width else WebUnits(ux.width, 'em'),
+        in_body=ux.field.prop,
     ) | kwargs
     if value is not None:
         locals['value'] = value
-    if attr.type == int:
+    if ux.field.type == int:
         locals['step'] = 1
-    if attr.name == 'name':
+    if ux.field.name == 'name':
         locals['focus'] = True
-    if isinstance(attr.type, EntityMeta):
-        template = 'EntityField'
-        locals['entity'] = attr.type
+    if isinstance(ux.field.type, DBTable):
+        template = 'DBField'
+        locals['table'] = ux.field.type
+    elif isinstance(ux.field.type, str) and ux.multiline:
+        template = 'TextAreaField'
     else:
-        attr_type = attr.type
-        if attr_type is LongStr and kwargs.get('flat'):
-            attr_type = str
-        template = TEMPLATE_MAP[attr_type]
+        template = TEMPLATE_MAP[ux.field.type]
         if not template:
             return None
     c = Context(template, parent, locals=locals)

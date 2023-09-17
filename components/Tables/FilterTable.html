@@ -82,8 +82,8 @@
 </style>
 
 <python>
-from models.runtime import AttrInfo
-from pantra.models.types import *
+from quazy import DBTable
+from quazy.db_types import *
 from components.Tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
@@ -105,20 +105,20 @@ def init():
     width = 8
     for filter in filters:  # type: Filter
         col = filter.column
-        attr = AttrInfo(name=col.name, type=col.type, is_id=False, is_prop=False, is_ref=False, title=col.title, width=width, blank=True, is_body=False, is_cid=False, readonly=False)
-        if col.type in (int, float, Decimal):
+        #attr = AttrInfo(name=col.name, type=col.type, is_id=False, is_prop=False, is_ref=False, title=col.title, width=width, blank=True, is_body=False, is_cid=False, readonly=False)
+        if col.field.type in (int, float, Decimal):
             ops = OPERATORS['numbers']
-        elif col.type in (str, LongStr, Json):
+        elif col.field.type in (str, dict):
             ops = OPERATORS['strings']
-        elif col.type == bool:
+        elif col.field.type == bool:
             ops = OPERATORS['booleans']
-        elif col.type in (date, datetime, time):
+        elif col.field.type in (date, datetime, time):
             ops = OPERATORS['dates']
-        elif isinstance(col.type, EntityMeta):
+        elif isinstance(col.field.type, DBTable):
             ops = OPERATORS['entities']
         else:
             continue
-        filter_views.append(FilterView(filter, ops, attr, None))
+        filter_views.append(FilterView(filter, ops, filter.column, None))
 
 def filters_enabled():
     for filter in filters:

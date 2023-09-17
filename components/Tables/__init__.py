@@ -4,15 +4,16 @@ import typing
 import numbers
 from dataclasses import dataclass, field
 
+from quazy import UX
+
 from pantra.common import DynamicStyles
 from pantra.components.context import HTMLElement
 from pantra.components.loader import HTMLTemplate
-#from pantra.models.runtime import AttrInfo
 
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.components.context import Context
-    MapsRows = List[List['ColumnMap']]
+    MapsRows = List[List['ColumnMap | None']]
     Columns = Dict[str, 'ColumnInfo']
 else:
     MapsRows = type
@@ -41,14 +42,15 @@ OPER_MAP = {
 
 
 @dataclass
-class ColumnInfo:
-    name: str = field(default_factory=str)
-    title: str = field(default_factory=str)
-    type: type = field(default=None)
-    editable: bool = field(default=True)
-    sortable: bool = field(default=True)
-    resizable: bool = field(default=True)
-    hidden: bool = field(default=False)
+class ColumnInfo(UX):
+    @classmethod
+    def from_ux(cls, ux: UX):
+        self = cls.__new__(cls, UX)
+        self.__dict__ = ux.__dict__.copy()
+        self.style = DynamicStyles()
+        self.widget = None
+        return self
+
     style: DynamicStyles = field(default_factory=DynamicStyles)
     widget: HTMLTemplate = field(default=None)
 
@@ -74,7 +76,7 @@ class Filter:
 class FilterView:
     filter: Filter
     operators: Tuple[str, ...]
-#    attr: AttrInfo
+    ux: UX
     widget: Optional[Context]
 
 
@@ -193,7 +195,7 @@ def collect_col_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], st
 
 
 def get_widget_default(col_info: ColumnInfo) -> str:
-    if issubclass(col_info.type, numbers.Number):
+    if issubclass(col_info.field.type, numbers.Number):
         return 'CellNumber'
     else:
         return 'CellString'

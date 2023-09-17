@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import importlib
+import os.path
 import typing
 import ast
+import re
 from xml.parsers import expat
 
 from antlr4.error.ErrorListener import ErrorListener
 from ..components.grammar.PMLLexer import PMLLexer
 from ..components.grammar.PMLParser import PMLParser, InputStream, CommonTokenStream, IllegalStateException
 from ..components.grammar.PMLParserVisitor import PMLParserVisitor
+from ..defaults import BASE_PATH
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -34,7 +38,7 @@ def drain_fstring(f):
 
 
 def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_tags: List[str], options: List[str]) -> Iterator[Tuple[int, str, List[str], List[str]]]:
-    """Extract messages from Python files.
+    """Extract messages from Python files. (borrowed from Babel)
 
     :param fileobj: the file-like object the messages should be extracted
                     from
@@ -206,3 +210,65 @@ def extract_xml(fileobj, keywords, comment_tags, options):
     res = []
     p.ParseFile(fileobj)
     yield from res
+
+def extract_data(fileobj, keywords, comment_tags, options):
+
+    from quazy import DBFactory, DBTable
+
+    if type(fileobj) == str:
+        raise NotImplementedError
+    else:
+        print(f'DATA > {fileobj.name}')
+        s = fileobj.read()
+        if type(s) is bytes:
+            s = str(s, 'utf8')
+
+    root = ast.parse(s)
+    lines = s.splitlines()
+
+    path = fileobj.name
+    path = os.path.relpath(path, BASE_PATH)
+    if path.endswith('__init__.py'):
+        path = path[:-len('/__init__.py')]
+    path = path.replace(os.sep, '.')
+    module = importlib.import_module(path)
+    db: DBFactory = module.db
+    all_tables = db.all_tables()
+
+    def warn(node, mes):
+        # seg = ast.get_source_segment()
+        print(f'    INFO:{node.lineno}:{node.col_offset + 1} {mes}:')
+        print(lines[node.lineno-1])
+        print(' '*(node.col_offset+0) + '^')
+
+    def plural(word):
+        # https://www.geeksforgeeks.org/python-program-to-convert-singular-to-plural/
+        if re.search('[sxz]$', word) or re.search('[^aeioudgkprt]h$', word):
+            return re.sub('$', 'es', word)
+        elif re.search('[aeiou]y$', word):
+            return re.sub('y$', 'ies', word)
+        else:
+            return word + 's'
+
+    for node in ast.walk(root):
+        if type(node) == ast.ClassDef:
+            yield node.lineno, 'ngettext', (node.name, plural(node.name)), ['entity']
+            yield node.lineno, '_', plural(node.name), ['entity plural']
+            table = next((table for table in all_tables if table.__name__ == node.name), None)
+            
+            if not table: continue
+            for subnode in ast.iter_child_nodes(node):
+                if type(subnode) == ast.AnnAssign \
+                        and type(subnode.target) == ast.Name \
+                        and type(subnode.target.ctx) == ast.Store:
+                    field_name = subnode.target.id
+                    if (field := table.DB.fields.get(field_name, None)) is not None:
+                        yield subnode.lineno, '_', field_name, [f'field `{field_name}` of `{table.__qualname__}`']
+                        if field.ux.title and field.ux.title != field_name:
+                            yield subnode.lineno, '_', field.ux.title, [f'field title `{field_name}` of `{table.__qualname__}`']
+                elif type(subnode) == ast.Assign \
+                        and type(subnode.targets[0]) == ast.Name \
+                        and subnode.targets[0].id == '_title_':
+                    title = subnode.value.s
+                    yield subnode.lineno, 'ngettext', (title, plural(title)), [f'title of `{table.__qualname__}`']
+                    yield subnode.lineno, '_', plural(title), [f'title of `{table.__qualname__}` plural']

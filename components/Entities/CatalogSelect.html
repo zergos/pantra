@@ -1,16 +1,14 @@
-<component>
+<component xmlns="http://www.w3.org/1999/html">
     <ToolBox>
         <ToolButton caption="#Select" action="@select" default/>
     </ToolBox>
-    <EntityTable cref:table entity="{entity}" not:editable selectable callback="@select_row"/>
+    <DBQueryTable cref:table entity="{entity}" not:editable selectable callback="@select_row"/>
 </component>
 <python>
-from pony.orm import db_session, make_proxy
-from pony.orm.core import EntityMeta
-from pantra.models import expose_databases, dbinfo
+from pantra.models import expose_database, dbinfo
 from pantra.ctx import *
 
-db: str = 'db'
+db_name: str = 'db'
 name: str = ''
 callback: Callable[[Any], None] = lambda value: None
 
@@ -20,8 +18,8 @@ def init():
     global entity
     if not name:
         return False
-    expose_databases(session.app)
-    entity = dbinfo[session.app][db].entities[name].factory.cls
+    expose_database(session.app, db_name)
+    entity = dbinfo[session.app][db_name].entities[name].factory.cls
 
 def select(node):
     select_row(refs.table.active_row_id)

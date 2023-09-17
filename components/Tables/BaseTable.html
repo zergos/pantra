@@ -17,7 +17,7 @@
                         <div>
                             <div class="cap">{{col_info.title}}</div>
                             {{#if col_info.sortable}}
-                            <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
+                            <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.field.name}"/>
                             {{/if}}
                             {{#if col_info.resizable}}
                             <div class="resizable" on:drag="DragResize"/>
@@ -37,7 +37,7 @@
             {{#for row in maps}}
             <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
                 {{#for col in row}}
-                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.field.name], col.info)}}</td>
                 {{/for}}
             </tr>
             {{/for}}
@@ -167,6 +167,7 @@
 <python>
 # """
 from datetime import datetime
+from quazy import DBTable
 from pantra.imports import *
 from components.Tables import *
 from pantra.ctx import *
@@ -218,9 +219,9 @@ def init():
         for row in maps:
             for col in row:
                 attrs = col.node.attributes
-                attrs.name = col.info.name
+                attrs.name = col.info.field.name
                 col.node.style = col.info.style | col.node.style
-                col.info.title = attrs.get('title', col.info.title) or col.info.name
+                col.info.title = attrs.get('title', col.info.title) or col.info.field.name
                 for opt in ('editable', 'resizable', 'sortable'):
                     if not globals()[opt]:
                         setattr(col.info, opt, False)
@@ -232,16 +233,13 @@ def init():
             HTMLElement('style', ctx, text=css)
 
 
-def fmt(value, info):
+def fmt(value, info: ColumnInfo):
     if value is None:
         return ''
-    if info.type == datetime:
+    if info.field.type == datetime:
         return f'{value:%x %X}'
-    if info.type == bool:
+    if info.field.type == bool:
         return value and '☑' or '☐'
-    #if isinstance(info.type, EntityMeta):
-    #    with db_session:
-    #        return str(value._get_object())
     return str(value)
 
 def refresh(clear: bool = False):
@@ -321,7 +319,7 @@ def select_cell(node: HTMLElement):
         ctx.shot(active_col_cell)
 
     col = node.data.col
-    active_col = col.name
+    active_col = col.field.name
     node.classes += 'selected'
     active_col_cell = node
     ctx.shot(node)
@@ -357,7 +355,7 @@ def remove_field(field: Context, value):
     field.parent.style -= 'padding'
     ctx.shot(field.parent)
     field.remove()
-    if order_col == field['column'].name:
+    if order_col == field['column'].field.name:
         refs.tbody.update_tree()
 
 #</python>
