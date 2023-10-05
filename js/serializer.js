@@ -6,7 +6,7 @@ let namespaces = {
     2: 'http://www.w3.org/2000/svg',
     3: 'http://www.w3.org/2001/xml-events',
     4: 'http://www.w3.org/1999/xlink',
-    5: 'http://www.w3.org/1998/Math/MathML'
+    5: 'http://www.w3.org/1998/Math/MathML',
 };
 
 function se_log(message) {
@@ -147,6 +147,43 @@ const TimeSerializer = {
     },
 };
 
+const ScriptSerializer = {
+    name: 's',
+    decode: function(s, v) {
+        if (!SCRIPTS.exists(v.u)) {
+            let script = document.createElement('script');
+            SCRIPTS.new(script, v.u);
+            document.getElementsByTagName("head")[0].appendChild(script);
+
+            for (let at in v.a) {
+                if (v.a[at])
+                    script.setAttribute(at, v.a[at]);
+            }
+
+            if (v.t) script.textContent = v.t;
+        }
+
+        let element =  OID.node(v.i);
+        if (!element) {
+            let parent = OID.node(v.p);
+            if (!parent) {
+                parent = root_node();
+                if (!content_filled) {
+                    parent.innerText = '';
+                    content_filled = true;
+                }
+            }
+            element = document.createElement('script');
+            OID.set(element, v.i);
+            parent.appendChild(element);
+        }
+
+        SCRIPTS.addref(v.u, v.i);
+        return element;
+    }
+};
+
+
 const serializer = new bsdf.BsdfSerializer(
-    [DateSerializer, TimeSerializer, HTMLElementSerializer, TextSerializer, EventSerializer]);
+    [DateSerializer, TimeSerializer, HTMLElementSerializer, TextSerializer, EventSerializer, ScriptSerializer]);
 

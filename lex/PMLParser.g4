@@ -32,7 +32,7 @@ macroCommand: COMMAND;
 inlineMacro : INLINE_MACRO COMMAND CLOSE_MACRO ;
 
 text        : TEXT ;
-rawBlock    : rawTag rawAttr* RAW_CLOSE rawText rawCloseTag ;
+rawBlock    : rawTag rawAttr* RAW_CLOSE rawText? rawCloseTag ;
 rawTag      : RAW_TAG ;
 rawAttr     : rawName (RAW_EQ rawValue)? ;
 rawName     : RAW_NAME ;

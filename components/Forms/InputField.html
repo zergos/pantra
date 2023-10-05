@@ -1,10 +1,12 @@
 <label class:inline class:block="{not inline}" class:required class:error>
     <span css:width="{caption_width}">{{caption}}</span>
-    <input type="{type}" bind:value placeholder="{placeholder}" required="{required}" set:disabled="readonly" css:width>
+    <input set:id set:name set:type bind:value set:placeholder set:required set:disabled="readonly" css:width>
     <div class="message">{{error}}</div>
 </label>
 
 <python use="inputs">
+id: str = ''
+name: str = ''
 inline: bool = False
 type: str = 'text'
 placeholder: str = ''

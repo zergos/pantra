@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import traceback
-from concurrent.futures import TimeoutError
 
 import sass
 from aiohttp import web, WSMessage, WSMsgType
@@ -10,7 +9,7 @@ from aiohttp_session import setup, SimpleCookieStorage, get_session
 
 from .components.context import HTMLElement
 from .components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
-    process_select, process_bind_value, process_key
+    process_select, process_bind_value, process_key, process_direct_call
 from .components.loader import collect_styles, templates
 from .serializer import serializer
 from .defaults import *
@@ -99,12 +98,17 @@ async def get_ws(request: Request):
                 elif command == 'VALID':
                     HTMLElement._set_validity(data['oid'], data['validity'])
 
+                elif command == 'CALL':
+                    process_direct_call(data['oid'], data['method'], data['args'])
+
             elif msg.type == WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
-    except TimeoutError:
+    except asyncio.exceptions.TimeoutError:
         pass
-    except Exception as e:
+    except asyncio.exceptions.CancelledError:
+        raise
+    except:
         session.ws = None
         await session.send_message({'m': 'e', 'l': traceback.format_exc()})
     session.ws = None
@@ -179,7 +183,7 @@ async def main(host, port):
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, host=host, port=port)
+    site = web.TCPSite(runner, host=host, port=port, shutdown_timeout=0)
     await site.start()
     # wait for finish signal
     print(f'Running wild at {host}:{port}')

@@ -10,7 +10,7 @@ CDATA       : '<![CDATA[' .*? ']]>' -> skip;
 DTD         : '<!' .*? '>' -> skip ;
 
 // tags with raw inner text
-RAW_TAG     : ('<style' | '<python') ' '* -> pushMode(RAW_BLOCK);
+RAW_TAG     : ('<style' | '<python' | '<script' ) ' '* -> pushMode(RAW_BLOCK);
 
 // open TAG
 OPEN_BEGIN  : '<' -> pushMode(TAG_PROPERTIES);
@@ -42,7 +42,7 @@ fragment
 DIGIT       : [0-9] ;
 fragment
 NameChar    : NameStartChar
-            | '-' | '.' | DIGIT
+            | '-' | '.' | DIGIT | COLON
             | '\u00B7'
             | '\u0300'..'\u036F'
             | '\u203F'..'\u2040'
@@ -79,6 +79,6 @@ RAW_WS      : [ \t\r\n] -> skip;
 
 mode RAW_TEXT_MODE;
 
-CLOSE_TAG   : ('</style>' | '</python>') -> popMode;
-RAW_TEXT    : (~[<] | [<] ~[/] | '</' ~[ps] | '</p' ~[y] | '</s' ~[t])+ ;
+CLOSE_TAG   : ('</style>' | '</python>' | '</script>') -> popMode;
+RAW_TEXT    : (~[<] | [<] ~[/] | '</' ~[ps] | '</p' ~[y] | '</s' ~[tc])+ ;
 //RAW_TEXT    : (~[<] | [<] ~[/] | '</' )+ ;

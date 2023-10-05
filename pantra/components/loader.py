@@ -25,17 +25,17 @@ if typing.TYPE_CHECKING:
 
 __all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
 
-VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr'.split('|')
-SPECIAL_ELEMENTS = 'slot|event|scope|react|component|'.split('|')
+VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
+SPECIAL_ELEMENTS = 'slot event scope react component '.split()
 
 templates: typing.Dict[str, HTMLTemplate] = {}
 
 
 class HTMLTemplate(UniNode):
     code_base: Dict[str, CodeType] = {}
-    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code')
+    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index')
 
-    def __init__(self, tag_name: str, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
+    def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
         self.attributes: Dict[str, Union[str, CodeType]] = attributes and ADict(attributes) or ADict()
@@ -44,6 +44,7 @@ class HTMLTemplate(UniNode):
         self.name: Optional[str] = None
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
+        self.index: int = index
 
     def __str__(self):
         return self.tag_name
@@ -53,16 +54,22 @@ class MyVisitor(PMLParserVisitor):
 
     def __init__(self, filename: str):
         name = os.path.splitext(os.path.basename(filename))[0]
-        root = HTMLTemplate(f'${name}')
+        root = HTMLTemplate(f'${name}', 0)
         root.filename = filename
         self.root: typing.Optional[HTMLTemplate] = root
         self.current: typing.Optional[HTMLTemplate] = root
         self.cur_attr: typing.Optional[str] = None
+        self._index = 0
+
+    @property
+    def index(self):
+        self._index += 1
+        return self._index
 
     def visitText(self, ctx: PMLParser.TextContext):
         text = ctx.getText().strip().strip('\uFEFF')
         if text and self.current != self.root:
-            HTMLTemplate('@text', parent=self.current, text=text)
+            HTMLTemplate('@text', self.index, parent=self.current, text=text)
 
     def visitRawText(self, ctx: PMLParser.RawTextContext):
         text = ctx.getText()
@@ -75,7 +82,7 @@ class MyVisitor(PMLParserVisitor):
 
     def visitRawTag(self, ctx: PMLParser.RawTagContext):
         tag_name = '@' + ctx.getText().strip()[1:]
-        self.current = HTMLTemplate(tag_name, parent=self.current)
+        self.current = HTMLTemplate(tag_name, self.index, parent=self.current)
         self.current.filename = self.root.filename
         # raw nodes goes first
         self.current.parent.children.insert(0, self.current.parent.children.pop())
@@ -87,7 +94,7 @@ class MyVisitor(PMLParserVisitor):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
-        self.current = HTMLTemplate(tag_name=tag_name, parent=self.current)
+        self.current = HTMLTemplate(tag_name, self.index, parent=self.current)
         # if not self.root: self.root = self.current
         self.visitChildren(ctx)
         if ctx.children[-1].symbol.type == PMLLexer.SLASH_CLOSE or self.current.tag_name.lower() in VOID_ELEMENTS:
@@ -109,6 +116,7 @@ class MyVisitor(PMLParserVisitor):
                     text = f"({text} or '')"
                     value = compile(text, f'<attribute:{self.cur_attr}>', 'eval')
             else:
+                text = text.replace('`{', '{').replace('}`', '}')
                 value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
         else:
             value = text
@@ -119,7 +127,7 @@ class MyVisitor(PMLParserVisitor):
         self.current.attributes[self.cur_attr] = None
 
     def visitRawValue(self, ctx:PMLParser.RawValueContext):
-        self.current.attributes[self.cur_attr] = ctx.getText()
+        self.current.attributes[self.cur_attr] = ctx.getText().strip('"\'')
 
     def visitTagEnd(self, ctx: PMLParser.TagEndContext):
         tag_name = ctx.children[1].getText()
@@ -148,20 +156,20 @@ class MyVisitor(PMLParserVisitor):
 
         # gen 'if' subtree
         if tag_name == 'if':
-            parent = HTMLTemplate('#if', self.current)
-            self.current = HTMLTemplate('#choice', parent=parent)
+            parent = HTMLTemplate('#if', self.index, self.current)
+            self.current = HTMLTemplate('#choice', self.index, parent=parent)
             self.current.macro = macro or "True"
         elif tag_name == 'for':
-            parent = HTMLTemplate('#for', self.current)
+            parent = HTMLTemplate('#for', self.index, self.current)
             parent.macro = macro
-            self.current = HTMLTemplate('#loop', parent=parent)
+            self.current = HTMLTemplate('#loop', self.index, parent=parent)
         elif tag_name == 'elif':
-            self.current = HTMLTemplate('#choice', parent=self.current.parent)
+            self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
             self.current.macro = macro or "True"
         elif tag_name == 'else':
-            self.current = HTMLTemplate('#else', parent=self.current.parent)
+            self.current = HTMLTemplate('#else', self.index, parent=self.current.parent)
         elif tag_name == 'set':
-            self.current = HTMLTemplate('#set', parent=self.current)
+            self.current = HTMLTemplate('#set', self.index, parent=self.current)
             self.current.macro = macro
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
@@ -177,7 +185,7 @@ class MyVisitor(PMLParserVisitor):
         self.current = self.current.parent
 
     def visitInlineMacro(self, ctx: PMLParser.InlineMacroContext):
-        macro = HTMLTemplate('@macro', parent=self.current)
+        macro = HTMLTemplate('@macro', self.index, parent=self.current)
         text = ctx.children[1].getText()
         code = compile(text, '<macro>', 'eval')
         macro.macro = code

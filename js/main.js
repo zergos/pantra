@@ -20,7 +20,8 @@ function start(new_local_id, new_tab_id) {
         tab_id = new_tab_id;
         sessionStorage.setItem('tab_id', tab_id);
     }
-    main = new WSClient(`ws://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
+    protocol = location.protocol === "http:"? "ws" : "wss";
+    main = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
     main.onrefresh = () => {
         send_message({'C': 'UP'})
     };
@@ -84,6 +85,12 @@ function start(new_local_id, new_tab_id) {
 
             case 'log':
                 console.log(obj.l);
+                break;
+
+            case 'call':
+                let functionName = obj.method;
+                if (typeof(window[functionName]) === "function")
+                    window[functionName].apply(null, obj.args);
                 break;
 
             case 'rst':
@@ -162,4 +169,8 @@ function process_bind_value(variable, oid, target) {
 
 function process_key(method, oid, key) {
     send_message({C: 'KEY', method: method, oid: oid, key: key});
+}
+
+function process_call(oid, method) {
+    send_message({C: 'CALL', oid: oid, method: method, args: [...arguments].slice(2)})
 }

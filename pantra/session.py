@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio.exceptions
 import os
 import functools
 import traceback
@@ -160,6 +161,9 @@ class Session:
 
     def log(self, message):
         self.send_message({'m': 'log', 'l': message})
+
+    def call(self, method: str, *args):
+        self.send_message({'m': 'call', 'method': method, 'args': args})
 
     @staticmethod
     def get_apps():

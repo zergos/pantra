@@ -105,13 +105,10 @@ def process_drag_stop(session: Session, x: int, y: int):
 @trace_errors
 def process_call(session: Session, node: AnyNode, method: str, *args):
     for m in method.split(' '):
-        caller: Union[List[Callable[[...], None]], Callable[[...], None]] = node[m]
-        if caller:
-            if isinstance(caller, list):
-                for func in caller:
-                    func(*args)
-            else:
-                caller(*args)
+        if callable(caller:=node[m]):
+            caller(*args)
+        else:
+            node[m] = args[0]
 
 
 @thread_worker
@@ -135,14 +132,21 @@ def process_select(method: str, oid: int, opts: List[int]):
 def process_bind_value(oid: int, var_name: str, value: str):
     node: HTMLElement = get_node(oid)
     if not node: return
-    #node.set_quetly(var_name, value)
-    node[var_name] = value
+    node.set_quietly(var_name, value)
+    #node[var_name] = value
     node.value = value
-
 
 @thread_worker
 def process_key(method: str, oid: int, key: str):
     node = get_node(oid)
     if not node or not method: return
     process_call(node.context.session, node, method, node, key)
+
+
+@thread_worker
+def process_direct_call(oid: int, method: str, args: list[Any]):
+    node = get_node(oid)
+    if not node or not method: return
+    if node.context.is_call_allowed(method):
+        process_call(node.context.session, node, method, args)
 

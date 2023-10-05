@@ -40,7 +40,7 @@ Component based Web framework with specific features:
 from pantra.ctx import *
 
 chosen: str = _('Make a choice...')
-destiny_set = ('Good', 'Evil', 'Rich', 'Sex')
+destiny_set = ('Good', 'Evil', 'Rich', 'Sexy')
 
 def choose(node):
     ctx['chosen'] = node.data.value

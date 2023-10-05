@@ -17,32 +17,33 @@ def typename(t):
     return type(t).__name__
 
 
-TADict = typing.TypeVar('TADict', bound='ADict')
+T1 = typing.TypeVar('T1')
+T2 = typing.TypeVar('T2')
 
 
-class ADict(dict):
+class ADict(dict, typing.Generic[T1, T2]):
     __setattr__ = dict.__setitem__  
     __delattr__ = dict.__delitem__  
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: T1) -> T2:
         try:
             return self[item]
         except KeyError:
             raise AttributeError
 
-    def __or__(self: TADict, other: Dict) -> TADict:
+    def __or__(self, other: ADict) -> Self:
         res = self.__class__(self)
         res.update(other)
         return res
 
-    def __sub__(self: TADict, other: Iterable) -> TADict:
+    def __sub__(self, other: Iterable) -> Self:
         res = self.__class__(self)
         for k in other:
             if k in res:
                 del res[k]
         return res
 
-    def __truediv__(self: TADict, other: Iterable) -> Tuple[TADict, TADict]:
+    def __truediv__(self, other: Iterable) -> Tuple[Self, Self]:
         res = self.__class__(self)
         res2 = self.__class__()
         for k in other:
@@ -52,24 +53,21 @@ class ADict(dict):
         return res, res2
 
 
-TUniNode = typing.TypeVar('TUniNode', bound='UniNode')
-
-
 class UniNode:
     __slots__ = ['_children', '_parent']
 
     def __init__(self, parent: Optional[UniNode] = None):
-        self._parent: Optional[UniNode] = parent
+        self._parent: UniNode | None = parent
         if parent:
             parent.append(self)
-        self._children: List[UniNode] = []
+        self._children: list[UniNode] = []
 
     @property
-    def parent(self: TUniNode) -> TUniNode:
+    def parent(self) -> Self:
         return self._parent  
 
     @parent.setter
-    def parent(self: TUniNode, parent: Optional[TUniNode]):
+    def parent(self, parent: Self | None):
         if self._parent:
             self._parent._children.remove(self)
         if parent:
@@ -77,13 +75,13 @@ class UniNode:
         self._parent = parent
 
     @property
-    def children(self: TUniNode) -> List[TUniNode]:
+    def children(self) -> list[Self]:
         return self._children  
 
-    def append(self: TUniNode, node: TUniNode):
+    def append(self, node: UniNode):
         self._children.append(node)
 
-    def remove(self: TUniNode, node: TUniNode):
+    def remove(self, node: UniNode):
         node.parent = None
 
     def clear(self):
@@ -97,13 +95,13 @@ class UniNode:
             return
         self._children.insert(to_i, self._children.pop(from_i))
 
-    def __contains__(self, item):
+    def __contains__(self, item: UniNode):
         return item in self._children
 
-    def __getitem__(self: TUniNode, item) -> TUniNode:
+    def __getitem__(self, item: int) -> Self:
         return self._children[item]
 
-    def __iter__(self: TUniNode) -> Iterable[TUniNode]:
+    def __iter__(self) -> Iterable[Self]:
         yield from self._children  
 
     def path(self) -> str:
@@ -111,16 +109,16 @@ class UniNode:
             return str(self)
         return f'{self._parent.path()}/{self}'
 
-    def select(self: TUniNode, predicate: Callable[[TUniNode], bool], depth: int = 0) -> Iterable[TUniNode]:
+    def select(self, predicate: Callable[[Self], bool], depth: int = 0) -> Generator[Self]:
         for child in self._children:
             if predicate(child):  
                 yield child
             if depth == 0:
-                yield from child.select(predicate, 0)
+                yield from child.select(predicate)
             elif depth > 1:
                 yield from child.select(predicate, depth-1)
 
-    def upto(self: TUniNode, predicate: Union[str, Callable[[TUniNode], bool]]) -> Optional[TUniNode]:
+    def upto(self, predicate: Union[str, Callable[[Self], bool]]) -> Optional[Self]:
         node = self._parent
         while node:
             if isinstance(predicate, str):
@@ -132,7 +130,7 @@ class UniNode:
             node = node.parent
         return None
 
-    def downto(self: TUniNode, predicate: Callable[[TUniNode], bool], depth: int = 0) -> Optional[TUniNode]:
+    def downto(self, predicate: Callable[[Self], bool], depth: int = 0) -> Optional[Self]:
         return next(self.select(predicate, depth), None)
 
 
@@ -193,7 +191,7 @@ class DynamicClasses(str):
 
 
 class DynamicStyles(ADict):
-    def __init__(self, style: Optional[Union[dict, str]] = None):
+    def __init__(self, style: dict | str | None = None):
         if style:
             if isinstance(style, dict):
                 super().__init__(style)
@@ -210,7 +208,7 @@ class DynamicStyles(ADict):
         return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items() if v not in ('', None))
 
     def __enter__(self):
-        return self
+        return self.copy()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
@@ -224,13 +222,13 @@ class DynamicStyles(ADict):
 class WebUnits(str):
     __slots__ = ['value', 'unit']
 
-    def __new__(cls, value: Union[int, float, str], unit: str = 'px'):
+    def __new__(cls, value: int | float | str, unit: str = 'px'):
         if type(value) != str:
             return super().__new__(cls, f'{value}{unit}')
         else:
             return super().__new__(cls, value)
 
-    def __init__(self, value: Union[int, float, str], unit: str = 'px'):
+    def __init__(self, value: int | float | str, unit: str = 'px'):
         if type(value) != str:
             self.value = value
             self.unit = unit
@@ -239,10 +237,10 @@ class WebUnits(str):
             self.value = int(value[:pos])
             self.unit = value[pos:]
 
-    def __add__(self, other: Union[int, float]):
+    def __add__(self, other: int | float):
         return WebUnits(self.value + other, self.unit)
 
-    def __sub__(self, other: Union[int, float]):
+    def __sub__(self, other: int | float):
         return WebUnits(self.value - other, self.unit)
 
     def __mul__(self, other):

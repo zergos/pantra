@@ -9,7 +9,7 @@
 <python>
 #'''
 from quazy import DBQuery
-from components.Tables import Columns, ColumnInfo, Filter, OPER_MAP
+from components.Tables import Columns, DBColumnInfo, Filter, OPER_MAP
 from apps.system.data import *
 from pantra.ctx import *
 
@@ -34,7 +34,7 @@ def init():
         col_id = table.DB.pk.name
 
     for field in fields:
-        col = ColumnInfo.from_ux(field.ux)
+        col = DBColumnInfo(field.ux)
         if col.width:
             col.style.width = WebUnits(col.width, 'em')
         columns[field.name] = col
@@ -49,7 +49,7 @@ def init():
 def get_rows(order_col, order_dir):
     global columns
     if order_col:
-        q = query.copy().sort_by(order_dir, desc=order_col)
+        q = query.copy().sort_by(order_col, desc=order_dir>0)
     else:
         q = query
     with q.execute(as_dict=True) as rows:

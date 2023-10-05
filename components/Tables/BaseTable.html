@@ -17,7 +17,7 @@
                         <div>
                             <div class="cap">{{col_info.title}}</div>
                             {{#if col_info.sortable}}
-                            <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.field.name}"/>
+                            <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
                             {{/if}}
                             {{#if col_info.resizable}}
                             <div class="resizable" on:drag="DragResize"/>
@@ -37,7 +37,7 @@
             {{#for row in maps}}
             <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
                 {{#for col in row}}
-                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.field.name], col.info)}}</td>
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
                 {{/for}}
             </tr>
             {{/for}}
@@ -167,7 +167,6 @@
 <python>
 # """
 from datetime import datetime
-from quazy import DBTable
 from pantra.imports import *
 from components.Tables import *
 from pantra.ctx import *
@@ -219,9 +218,9 @@ def init():
         for row in maps:
             for col in row:
                 attrs = col.node.attributes
-                attrs.name = col.info.field.name
+                attrs.name = col.info.name
                 col.node.style = col.info.style | col.node.style
-                col.info.title = attrs.get('title', col.info.title) or col.info.field.name
+                col.info.title = attrs.get('title', col.info.title) or col.info.name
                 for opt in ('editable', 'resizable', 'sortable'):
                     if not globals()[opt]:
                         setattr(col.info, opt, False)
@@ -236,9 +235,9 @@ def init():
 def fmt(value, info: ColumnInfo):
     if value is None:
         return ''
-    if info.field.type == datetime:
+    if info.type == datetime:
         return f'{value:%x %X}'
-    if info.field.type == bool:
+    if info.type == bool:
         return value and '☑' or '☐'
     return str(value)
 
@@ -319,7 +318,7 @@ def select_cell(node: HTMLElement):
         ctx.shot(active_col_cell)
 
     col = node.data.col
-    active_col = col.field.name
+    active_col = col.name
     node.classes += 'selected'
     active_col_cell = node
     ctx.shot(node)
@@ -355,7 +354,7 @@ def remove_field(field: Context, value):
     field.parent.style -= 'padding'
     ctx.shot(field.parent)
     field.remove()
-    if order_col == field['column'].field.name:
+    if order_col == field['column'].name:
         refs.tbody.update_tree()
 
 #</python>

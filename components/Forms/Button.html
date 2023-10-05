@@ -1,4 +1,4 @@
-<button type="button" on:click="action" class:default>{{caption}}</button>
+<button type="button" on:click="action" class:default set:disabled>{{caption}}</button>
 
 <style type="text/scss">
     @import "defaults";
@@ -28,6 +28,10 @@
         &.default {
             font-weight: bold;
         }
+
+        &:disabled {
+            background-color: grey;
+        }
     }
 </style>
 
@@ -35,4 +39,5 @@
 caption: str = ''
 default: bool = False
 action: str = ''
+disabled: bool = False
 </python>

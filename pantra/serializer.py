@@ -2,7 +2,7 @@ from .contrib import bsdf_lite as bsdf
 import typing
 from datetime import date, time, datetime, timezone
 
-from .components.context import HTMLElement, TextNode, EventNode, NSElement, AnyNode
+from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, AnyNode
 
 __all__ = ['serializer']
 
@@ -86,7 +86,17 @@ class TimeSerializer(bsdf.Extension):
         return datetime(1970, 1, 1, v.hour, v.minute, v.second, tzinfo=timezone.utc).timestamp()*1000
 
 
+class ScriptSerializer(bsdf.Extension):
+    name = 's'
+
+    def match(self, s, v):
+        return isinstance(v, ScriptNode)
+
+    def encode(self, s, v: ScriptNode):
+        return {'i': v.oid, 'u': v.uid, 'p': get_parent_oid(v), 'a': v.attributes, 't': v.text}
+
+
 serializer = bsdf.BsdfLiteSerializer([HTMLElementSerializer, TextSerializer, EventSerializer,
-                                      DateSerializer, TimeSerializer], compression='bz2')
+                                      DateSerializer, TimeSerializer, ScriptSerializer], compression='bz2')
 
 

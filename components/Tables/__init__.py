@@ -4,6 +4,8 @@ import typing
 import numbers
 from dataclasses import dataclass, field
 
+from types import SimpleNamespace
+
 from quazy import UX
 
 from pantra.common import DynamicStyles
@@ -19,7 +21,8 @@ else:
     MapsRows = type
     Columns = None
 
-__all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default', 'MapsRows', 'Columns', 'ColumnInfo']
+__all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default', 'MapsRows', 'Columns', 'ColumnInfo',
+           'DBColumnInfo', 'Filter', 'OPER_MAP']
 
 
 OPERATORS = {
@@ -43,33 +46,40 @@ OPER_MAP = {
 
 @dataclass
 class ColumnInfo(UX):
-    @classmethod
-    def from_ux(cls, ux: UX):
-        self = cls.__new__(cls, UX)
+    name: str = None
+    type: type = None
+    style: DynamicStyles = field(default_factory=DynamicStyles)
+    widget: HTMLTemplate | None = None
+
+class DBColumnInfo(ColumnInfo):
+    @property
+    def name(self):
+        return self.field.name
+
+    @property
+    def type(self):
+        return self.field.type
+
+    def __init__(self, ux: UX):
         self.__dict__ = ux.__dict__.copy()
         self.style = DynamicStyles()
         self.widget = None
-        return self
-
-    style: DynamicStyles = field(default_factory=DynamicStyles)
-    widget: HTMLTemplate = field(default=None)
-
 
 @dataclass
 class ColumnMap:
     info: ColumnInfo
-    node: HTMLElement = field(default=None)
-    hspan: Union[int, str] = field(default='')
-    vspan: Union[int, str] = field(default='')
+    node: HTMLElement = None
+    hspan: Union[int, str] = ''
+    vspan: Union[int, str] = ''
 
 
 @dataclass
 class Filter:
     column: ColumnInfo
-    operator: str = field(default='=')
-    value: Any = field(default=None)
-    value2: Any = field(default=None)
-    enabled: bool = field(default=False)
+    operator: str = '='
+    value: Any = None
+    value2: Any = None
+    enabled: bool = False
 
 
 @dataclass

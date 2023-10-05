@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import typing
 import traceback
 from contextlib import contextmanager
@@ -12,12 +13,12 @@ from pantra.session import Session, run_safe
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.components.context import AnyNode, Context, HTMLElement, Condition, \
-        TextNode, Slot
+    from pantra.components.context import AnyNode, Context, HTMLElement, Condition, TextNode, Slot
     StrOrCode = Union[str, CodeType]
 
 __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
+re_js_vars = re.compile(r"`?\{\{(.*?)\}\}`?")
 
 class RenderNode(UniqueNode):
     __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
@@ -173,10 +174,8 @@ class DefaultRenderer:
             return self.trace_eval(self.ctx, source, node)
         if source.startswith('@'):
             if ' ' in source:
-                res = []
-                for var in source[1:].split(' '):
-                    res.append(self.ctx[var])
-                return res
+                callers = [self.ctx[var] for var in source[1:].split(' ')]
+                return lambda *args: [caller(*args) for caller in callers]
             return self.ctx[source[1:]]
         return self.translate(source)
 
@@ -457,6 +456,14 @@ class DefaultRenderer:
                 if not self.ctx._executed:
                     self.ctx._executed = True
                     compile_context_code(self.ctx, template)
+
+            elif tag_name == '@script':
+                def subst(matchobj) -> str:
+                    expr = matchobj.group(1)
+                    return self.ctx.locals.get(expr, str(self.trace_eval(self.ctx, expr, self.ctx)))
+
+                text = re_js_vars.sub(subst, template.text) if template.text else ""
+                node = c.ScriptNode(parent, f'{self.ctx.template.name}_{template.index}', attributes=template.attributes.copy(), text=text)
 
             elif tag_name == '@style':
                 # styles collected elsewhere

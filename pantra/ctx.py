@@ -4,12 +4,12 @@ import typing
 from .common import WebUnits
 
 if typing.TYPE_CHECKING:
-    from .common import ADict
-    from .components.context import Context, HTMLElement, AnyNode
-    from .session import Session
+    from pantra.common import ADict
+    from pantra.components.context import Context, HTMLElement, AnyNode
+    from pantra.session import Session
     from typing import *
 
-    refs: ADict
+    refs: ADict[str, Context]
     ctx: Context
     session: Session
 

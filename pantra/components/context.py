@@ -24,9 +24,11 @@ if typing.TYPE_CHECKING:
     from pantra.components.render import ContextShot
     from pantra.session import Session
 
-__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'ReactNode', 'AnyNode']
+__all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode',
+           'EventNode', 'SetNode', 'ReactNode', 'ScriptNode', 'AnyNode']
 
-AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode', 'SetNode', 'ReactNode']
+AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode',
+            'SetNode', 'ReactNode', 'ScriptNode']
 
 
 class NSType(Enum):
@@ -35,6 +37,7 @@ class NSType(Enum):
     SVG_EV = auto()     # http://www.w3.org/2001/xml-events
     SVG_XLINK = auto()  # http://www.w3.org/1999/xlink
     MATH = auto()       # http://www.w3.org/1998/Math/MathML
+    FB = auto()         # http://www.facebook.com/2008/fbml
 
 
 @dataclass
@@ -66,7 +69,7 @@ class Slot(typing.NamedTuple):
 
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars',
-                 'react_nodes', 'source_attributes']
+                 'react_nodes', 'source_attributes', 'allowed_call']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None, locals: Optional[Dict] = None):
         self.locals: WatchDict = WatchDict(self)
@@ -76,6 +79,7 @@ class Context(RenderNode):
         self.refs: Dict[str, Union['Context', HTMLElement, WatchDict]] = ADict()
         self.slot: Optional[Slot] = None
         self.source_attributes: Optional[Dict[str, Any]] = None
+        self.allowed_call: set[str] = set()
 
         super().__init__(parent=parent, render_this=False, shot=shot, session=session)
 
@@ -123,18 +127,24 @@ class Context(RenderNode):
             method(*args, **kwargs)
 
     def __getitem__(self, item: Union[str, int]):
-        if type(item) == int:
+        if type(item) is int:
             return self.children[item]
         return self.locals.get(item, EmptyCaller())
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)
 
-    def set_quetly(self, key, value):
+    def set_quietly(self, key, value):
         self.locals[key] = value
 
     def __str__(self):
         return f'${self.template.name}' + (f':{self.name}' if self.name else '')
+
+    def allow_call(self, method: str):
+        self.allowed_call.add(method)
+
+    def is_call_allowed(self, method: str) -> bool:
+        return method in self.allowed_call or '*' in self.allowed_call
 
 
 class ConditionalClass(typing.NamedTuple):
@@ -326,8 +336,8 @@ class HTMLElement(RenderNode):
     def __setitem__(self, key, value):
         self.context[key] = value
 
-    def set_quetly(self, key, value):
-        self.context.set_quetly(key, value)
+    def set_quietly(self, key, value):
+        self.context.set_quietly(key, value)
 
     def __str__(self):
         return self.tag_name + (f':{self.name}' if self.name else '')
@@ -432,3 +442,15 @@ class ReactNode(RenderNode):
     def __str__(self):
         return '>'
 
+
+class ScriptNode(RenderNode):
+    __slots__ = ['uid', 'attributes', 'text']
+
+    def __init__(self, parent: RenderNode, uid: str, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
+        super().__init__(parent, True)
+        self.attributes: ADict[str, Any] = attributes and ADict(attributes) or ADict()
+        self.text: Union[DynamicString, str] = text
+        self.uid: str = uid
+
+    def __str__(self):
+        return 'script'
