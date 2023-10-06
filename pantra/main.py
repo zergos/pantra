@@ -1,11 +1,10 @@
 import asyncio
 import sys
 import traceback
+import mimetypes
 
 import sass
-from aiohttp import web, WSMessage, WSMsgType
-from aiohttp.web_request import Request
-from aiohttp_session import setup, SimpleCookieStorage, get_session
+from aiohttp import web, WSMessage, WSMsgType, streamer
 
 from .components.context import HTMLElement
 from .components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
@@ -25,14 +24,40 @@ routes = web.RouteTableDef()
 
 
 @routes.get(r'/{app:\w*}')
-async def get_main_page(request: Request):
+async def get_main_page(request: web.Request):
     body = bootstrap.replace('{{LOCAL_ID}}', Session.gen_session_id())
     body = body.replace('{{TAB_ID}}', Session.gen_session_id())
     return web.Response(body=body, content_type='text/html')
 
 
+@streamer
+async def file_sender(writer, file_path=None):
+    with open(file_path, 'rb') as f:
+        chunk = f.read(2 ** 16)
+        while chunk:
+            await writer.write(chunk)
+            chunk = f.read(2 ** 16)
+
+
+@routes.get(r'/{app:\w*}/m/{file:.+}')
+async def get_media(request: web.Request):
+    app = request.match_info['app']
+    if not app:
+        file_path = COMPONENTS_PATH
+    else:
+        file_path = APPS_PATH / app
+    file_path /= request.match_info['file']
+    if not file_path.exists():
+        return web.Response(body=f'File `{file_path.name}` not found', status=404)
+    headers = {
+        "Content-disposition": f"attachment; filename={file_path.name}",
+        "Content-type": mimetypes.guess_type(file_path)[0],
+    }
+    return web.Response(body=file_sender(file_path=str(file_path)), headers=headers)
+
+
 @routes.get(r'/{app:\w*}/ws/{local_id:\w+}/{session_id:\w+}')
-async def get_ws(request: Request):
+async def get_ws(request: web.Request):
     ws = web.WebSocketResponse(receive_timeout=SOCKET_TIMEOUT, max_msg_size=MAX_MESSAGE_SIZE)
     await ws.prepare(request)
 
@@ -118,13 +143,13 @@ async def get_ws(request: Request):
 
 # TODO: cache styles and join with file watcher
 @routes.get(r'/css/global.css')
-async def get_global_css(request: Request):
+async def get_global_css(request: web.Request):
     styles = collect_styles(COMPONENTS_PATH, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
 
 @routes.get(r'/css/{app:\w*}.local.css')
-async def get_local_css(request: Request):
+async def get_local_css(request: web.Request):
     app = request.match_info['app']
     if not app:
         return web.Response(content_type='text/css')
@@ -134,7 +159,7 @@ async def get_local_css(request: Request):
 
 
 @routes.get(r'/css/{name:.+?}.scss')
-async def get_static_scss(request: Request):
+async def get_static_scss(request: web.Request):
     file_name = request.match_info['name']
     try:
         file_name = CSS_PATH / file_name
@@ -148,7 +173,7 @@ async def get_static_scss(request: Request):
 
 
 @routes.get(r'/js/'+jsmap.OUT_NAME)
-async def get_out_js(request: Request):
+async def get_out_js(request: web.Request):
     jsmap.make(JS_PATH)  # TODO: Cache it!
     file_name = JS_PATH / jsmap.OUT_NAME
     text = file_name.read_text('utf-8')
@@ -201,7 +226,6 @@ def run(host=None, port=8005):
     bootstrap = (COMPONENTS_PATH / 'bootstrap.html').read_text()
 
     # patch incorrect default python mime-types
-    import mimetypes
     mimetypes.init()
     mimetypes.add_type('application/javascript', '.js')
 

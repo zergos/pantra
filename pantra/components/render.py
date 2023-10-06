@@ -268,6 +268,9 @@ class DefaultRenderer:
                     attr = attr.split(':')[1].strip()
                     node.data[attr] = self.eval_string(value, node)
                     return True
+                if attr == 'src:media':
+                    node.attributes['src'] = self.ctx.media(self.eval_string(value, node))
+                    return True
             else:
                 if attr == 'style':
                     if node.style:

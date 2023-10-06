@@ -30,7 +30,7 @@ const HTMLElementSerializer = {
         let element =  OID.node(v.i);
         let is_new = false;
         if (!element) {
-            let parent = OID.node(v.p);
+            parent = OID.node(v.p);
             if (!parent) {
                 se_log(`element ${v.i} ${v.n} became new root node (${v.p} not found)`);
                 parent = root_node();

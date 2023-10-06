@@ -146,6 +146,22 @@ class Context(RenderNode):
     def is_call_allowed(self, method: str) -> bool:
         return method in self.allowed_call or '*' in self.allowed_call
 
+    def media(self, file_name: str) -> str:
+        # check relative to component
+        path = Path(self.template.filename).parent / 'media' /  file_name
+        if not path.exists():
+            # relative to app
+            path = Path(self.session.app_path) / 'media' / file_name
+            if not path.exists():
+                # relative to components base
+                path = COMPONENTS_PATH / 'media' / file_name
+        if path.is_relative_to(APPS_PATH):
+            path = path.relative_to(APPS_PATH)
+            return '/'.join(['', path.parts[0], 'm', *path.parts[1:]])
+        elif path.is_relative_to(COMPONENTS_PATH):
+            path = path.relative_to(COMPONENTS_PATH)
+            return '/'.join(['', 'm', *path.parts])
+        raise FileExistsError(file_name)
 
 class ConditionalClass(typing.NamedTuple):
     condition: Callable[[], bool]

@@ -55,6 +55,9 @@ let SCRIPTS = {
         }
     },
     clear: function () {
+        for (let script of this.uid2script.values()) {
+            script.remove();
+        }
         this.uid2script.clear();
         this.oid2uid.clear();
         this.uid2oids.clear();
