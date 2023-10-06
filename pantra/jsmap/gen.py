@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import json
 import string
 from . import vlq
@@ -8,8 +8,8 @@ OUT_NAME = 'all.js'
 sepa_tokens = string.ascii_letters + string.digits + '_$'
 
 
-def make(path: str = '.', with_content: bool = False, keep_spaces: bool = False):
-    with open(os.path.join(path, MAP_CONFIG), "rb") as f:
+def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False):
+    with (path / MAP_CONFIG).open("rb") as f:
         src_names = json.load(f)
 
     dest = dict(
@@ -24,8 +24,7 @@ def make(path: str = '.', with_content: bool = False, keep_spaces: bool = False)
 
     out = ""
     for src_idx, src_name in enumerate(src_names):
-        with open(os.path.join(path, src_name), 'rt') as f:
-            src = f.read()
+        src = (path / src_name).read_text()
 
         if with_content:
             dest['sourcesContent'].append(src)
@@ -103,14 +102,13 @@ def make(path: str = '.', with_content: bool = False, keep_spaces: bool = False)
 
     dest['mappings'] = ','.join(mappings) + ';'
 
-    with open(os.path.join(path, OUT_NAME), 'wt') as f:
-        f.write(out)
-    with open(os.path.join(path, OUT_NAME)+'.map', 'wt') as f:
+    (path / OUT_NAME).write_text(out)
+    with (path / OUT_NAME).with_suffix('.map').open('wt') as f:
         json.dump(dest, f)
 
 
 if __name__ == '__main__':
-    if not os.path.exists(MAP_CONFIG):
+    if not Path(MAP_CONFIG).exists():
         print(f'define source files names list in {MAP_CONFIG} file')
     else:
         make()

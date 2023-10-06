@@ -295,8 +295,9 @@ BsdfSerializer.prototype.encode_object = function (f, value, extension_id) {
     var iext, ext;
 
     // We prefer to fail on undefined, instead of silently converting to null like JSON
-    // if (typeof value == 'undefined') { encode_type_id(f, 'v', extension_id); }
-    if (typeof value == 'undefined') { throw new TypeError("BSDF cannot encode undefined, use null instead."); }
+    // NOTE: not really, we don't need `undefined` to raise error here
+    if (typeof value == 'undefined') { encode_type_id(f, 'v', extension_id); }
+    //if (typeof value == 'undefined') { throw new TypeError("BSDF cannot encode undefined, use null instead."); }
     else if (value === null) { encode_type_id(f, 'v', extension_id); }
     else if (value === false) { encode_type_id(f, 'n', extension_id); }
     else if (value === true) { encode_type_id(f, 'y', extension_id); }

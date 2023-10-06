@@ -219,10 +219,6 @@ class DefaultRenderer:
             if attr == 'on:init':
                 run_safe(self.ctx.session, lambda: self.ctx[value](node))
                 return True
-        else:
-            if attr == 'scope':
-                node.scope = ADict(node.scope)
-                return True
 
         # HTMLElement's only
         if typename(node) == 'HTMLElement':
@@ -382,6 +378,9 @@ class DefaultRenderer:
 
             for child in template.children:
                 self.build_node(child, node)
+
+            if "on_render" in self.ctx.locals:
+                run_safe(self.ctx.session, self.ctx["on_render"])
 
         elif tag_name[0] == '#':
             if tag_name == '#if':

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import re
 import typing
-import traceback
 
 import cssutils
 import sass
@@ -53,7 +52,7 @@ class HTMLTemplate(UniNode):
 class MyVisitor(PMLParserVisitor):
 
     def __init__(self, filename: str):
-        name = os.path.splitext(os.path.basename(filename))[0]
+        name = Path(filename).stem
         root = HTMLTemplate(f'${name}', 0)
         root.filename = filename
         self.root: typing.Optional[HTMLTemplate] = root
@@ -225,28 +224,24 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
 
     # find external code file
     code_filename = filename + '.py'
-    if os.path.exists(code_filename):
-        with open(code_filename, "rt", encoding='utf-8') as f:
-            HTMLTemplate("@python", visitor.root, text=f.read())
-            # raw nodes goes first
-            visitor.root.children.insert(0, visitor.root.children.pop())
+    if (f:=Path(code_filename)).exists():
+        HTMLTemplate("@python", visitor.root, text=f.read_text(encoding='utf-8'))
+        # raw nodes goes first
+        visitor.root.children.insert(0, visitor.root.children.pop())
 
     return visitor.root
 
 
-def _search_component(path, name):
-    for root, dirs, files in os.walk(path):
-        for file in files:  # type: str
-            if file.endswith('html'):
-                if os.path.basename(file) == f'{name}.html':
-                    return os.path.join(root, file)
+def _search_component(path: Path, name: str) -> str | None:
+    for file in path.glob(f"**/{name}.html"):
+        return str(file)
     return None
 
 
-def collect_template(session: Session, name) -> typing.Optional[HTMLTemplate]:
+def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplate]:
     global templates
 
-    key = '/'.join([session.app_path, name])
+    key = '/'.join([session.app, name])
     if key in templates:
         return templates[key]
 
@@ -279,7 +274,7 @@ class StyleVisitor(PMLParserVisitor):
 
         text = ctx.getText()
         text = '\n' * (ctx.start.line-1) + text
-        text = sass.compile(string=text, output_style='compact', include_paths=[CSS_PATH])
+        text = sass.compile(string=text, output_style='compact', include_paths=[str(CSS_PATH)])
 
         if self.global_mode:
             self.styles.append(text)
@@ -388,20 +383,16 @@ def load_styles(name: str, filename: str):
     return '\n'.join(visitor.styles)
 
 
-def collect_styles(app_path, error_callback: typing.Callable[[str], None]) -> str:
+def collect_styles(app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
     styles = []
-    for root, dirs, files in os.walk(app_path):
-        for file in files:  # type: str
-            if file.endswith('html'):
-                name, ext = os.path.splitext(file)
-                path = os.path.join(root, file)
-                try:
-                    res = load_styles(name, path)
-                except Exception as e:
-                    error_callback(f'{path}> Style collector> {e}')
-                else:
-                    if res:
-                        styles.append(res)
+    for file in app_path.glob('**/*.html'):
+        try:
+            res = load_styles(file.stem, str(file))
+        except Exception as e:
+            error_callback(f'{file}> Style collector> {e}')
+        else:
+            if res:
+                styles.append(res)
 
     return '\n'.join(styles)
 

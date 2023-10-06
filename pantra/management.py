@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import sys
 import typing
 
@@ -12,13 +13,10 @@ if typing.TYPE_CHECKING:
 
 
 def _detect_app():
-    path = os.getcwd()
-    if path.startswith(APPS_PATH):
-        path = os.path.relpath(path, APPS_PATH)
-        while os.path.dirname(path):
-            path = os.path.dirname(path)
-        return path
-    if path.startswith(COMPONENTS_PATH):
+    path = Path.cwd()
+    if path.is_relative_to(APPS_PATH):
+        return path.relative_to(APPS_PATH).parents[-1]
+    if path.is_relative_to(COMPONENTS_PATH):
         return 'Core'
     return Empty
 
@@ -45,7 +43,7 @@ class Main:
         """
         list all apps
         """
-        for f in os.listdir(APPS_PATH):
+        for f in APPS_PATH.glob('*'):
             print(f)
 
     def collect_dtd(self):
@@ -320,13 +318,13 @@ class Locale:
 
     @staticmethod
     def _detect_locale():
-        path = os.getcwd()
-        if path.startswith(BASE_PATH):
-            path = os.path.relpath(path, BASE_PATH)
-            while os.path.dirname(path):
-                path, tail = os.path.split(path)
-                if os.path.basename(path) == 'locale':
-                    return tail
+        path = Path.cwd()
+        if path.is_relative_to(BASE_PATH):
+            path = path.relative_to(BASE_PATH)
+            while path.parent.name:
+                if path.parent.name == 'locale':
+                    return path.name
+                path = path.parent
         return Empty
 
     def list(self, filter: str = None):
@@ -364,13 +362,13 @@ class Locale:
         if self.app == 'Core':
             path = COMPONENTS_PATH
         else:
-            path = os.path.join(APPS_PATH, self.app)
-        ini_name = os.path.join(path, 'babel.ini')
-        with open(ini_name, 'wt') as f:
+            path = APPS_PATH / self.app
+        ini_name = path / 'babel.ini'
+        with ini_name.open("wt") as f:
             f.write('[extractors]\npython = pantra.trans:extract_python\nhtml = pantra.trans:extract_html\ndata = pantra.trans:extract_data\n')
             f.write('[data: **/data/__init__.py]\n[python: **.py]\n[html: **.html]\n')
 
-        pot_name = os.path.join(path, 'app.po')
+        pot_name = path / 'app.po'
 
         args = ['', '-q', 'extract']
         args.extend(['-F', ini_name])
@@ -387,20 +385,20 @@ class Locale:
         args.append(path)
         CommandLineInterface().run(args)
 
-        dest_name = os.path.join(path, 'locale', self.locale, 'LC_MESSAGES', 'messages.po')
-        if not os.path.exists(dest_name):
+        dest_name = path / 'locale' / self.locale / 'LC_MESSAGES' / 'messages.po'
+        if not dest_name.exists():
             args = ['', 'init']
         else:
             args = ['', 'update']
         args.extend(['-i', pot_name])
         args.extend(['-l', self.locale])
         # args.extend(['-D', self.app])
-        args.extend(['-d', os.path.join(path, 'locale')])
+        args.extend(['-d', path / 'locale'])
         CommandLineInterface().run(args)
 
         if not no_clear:
-            os.remove(ini_name)
-            os.remove(pot_name)
+            ini_name.unlink()
+            pot_name.unlink()
 
         if no_compile:
             return
@@ -409,7 +407,7 @@ class Locale:
         args.extend(['-i', dest_name])
         args.extend(['-l', self.locale])
         # args.extend(['-D', self.app])
-        args.extend(['-d', os.path.join(path, 'locale')])
+        args.extend(['-d', path / 'locale'])
         args.append('--statistics')
         CommandLineInterface().run(args)
 

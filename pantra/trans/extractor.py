@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
 import importlib
-import os.path
 import typing
 import ast
 import re
@@ -226,11 +226,10 @@ def extract_data(fileobj, keywords, comment_tags, options):
     root = ast.parse(s)
     lines = s.splitlines()
 
-    path = fileobj.name
-    path = os.path.relpath(path, BASE_PATH)
-    if path.endswith('__init__.py'):
-        path = path[:-len('/__init__.py')]
-    path = path.replace(os.sep, '.')
+    path = Path(fileobj.name)
+    if path.name == '__init__.py':
+        path = path.parent
+    path = '.'.join(path.relative_to(BASE_PATH).parts)
     module = importlib.import_module(path)
     db: DBFactory = module.db
     all_tables = db.all_tables()

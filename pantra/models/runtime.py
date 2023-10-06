@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import typing
-import os
 from dataclasses import dataclass, field as dc_field
 
 from quazy import DBFactory
@@ -33,8 +32,8 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
         else:
             return None
 
-    file_name = os.path.join(APPS_PATH, app, 'data', 'databases.xml')
-    if not os.path.exists(file_name):
+    file_name = APPS_PATH / app / 'data' / 'databases.xml'
+    if not file_name.exists():
         return None
 
     if app not in dbinfo:

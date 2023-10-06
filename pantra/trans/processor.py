@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import os
 import sys
 import typing
 import ast
 from dataclasses import dataclass, field
 from collections import defaultdict
 from functools import lru_cache
+from pathlib import Path
 
 from babel.support import Translations
 from pantra.defaults import APPS_PATH, COMPONENTS_PATH
@@ -33,11 +33,11 @@ def get_locale(lang: str) -> Locale:
 
 
 # TODO: make compatible with file watcher
-def get_translation(app_path: str, lang: Union[str, Iterable]) -> Translations:
+def get_translation(app_path: Path, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
-    trans = TranslationsExtra.load(os.path.join(COMPONENTS_PATH, 'locale'), lang_lst)
-    trans.merge(Translations.load(os.path.join(APPS_PATH, 'system', 'locale'), lang_lst))
-    trans.merge(Translations.load(os.path.join(app_path, 'locale'), lang_lst))
+    trans = TranslationsExtra.load(COMPONENTS_PATH / 'locale', lang_lst)
+    trans.merge(Translations.load(APPS_PATH / 'system'/ 'locale', lang_lst))
+    trans.merge(Translations.load(app_path / 'locale', lang_lst))
     return trans
 
 

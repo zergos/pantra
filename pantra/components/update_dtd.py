@@ -1,15 +1,11 @@
-import os
+from pathlib import Path
 from ..defaults import APPS_PATH, COMPONENTS_PATH
 
 
-def collect(path, components_set):
-    for root, dirs, files in os.walk(path):
-        for file in files:  # type: str
-            if file.endswith('html'):
-                base = os.path.basename(file)
-                if base[0].isupper():
-                    name, _ = os.path.splitext(base)
-                    components_set.add(name)
+def collect(path: Path, components_set: set):
+    for file in path.glob("**/*.html"):
+        if (name:=file.stem).isupper():
+            components_set.add(name)
 
 
 def update_dtd():
@@ -18,9 +14,8 @@ def update_dtd():
     collect(APPS_PATH, components)
     components = sorted(list(components))
 
-    dtd = os.path.join(COMPONENTS_PATH, 'html5.dtd')
-    with open(dtd, 'rt') as f:
-        src = f.read()
+    dtd = COMPONENTS_PATH / 'html5.dtd'
+    src = dtd.read_text()
 
     res = []
     for line in src.splitlines():
@@ -34,5 +29,4 @@ def update_dtd():
             break
 
     dest = '\n'.join(res)
-    with open(dtd, 'wt') as f:
-        f.write(dest)
+    dtd.write_text(dest)

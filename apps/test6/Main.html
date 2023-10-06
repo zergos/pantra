@@ -1,0 +1,41 @@
+<script type="text/javascript" >
+    function go(oid) {
+        let data = {
+            a: 1,
+            b: 2,
+            c: 3
+        };
+
+        process_call(oid, "call_from_client", data);
+    }
+
+    function callFromServer(data) {
+        console.log(data);
+    }
+</script>
+
+<button onclick="go(`{ctx.oid}`)">Call from client</button>
+<button on:click="go">Call from server</button>
+
+<style type="text/scss">
+    button {
+        padding: 0.3rem 1rem;
+    }
+</style>
+
+<python>
+from pantra.ctx import *
+
+def init():
+    ctx.allow_call('call_from_client')
+
+def call_from_client(data):
+    session.log(data)
+
+def go(node):
+    data = {
+        'hello': 'from server',
+    }
+    session.call("callFromServer", data)
+
+</python>

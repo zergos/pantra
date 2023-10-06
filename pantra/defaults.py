@@ -1,11 +1,11 @@
-import os
+from pathlib import Path
 
-BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COMPONENTS_PATH = os.path.join(BASE_PATH, 'components')
-PAGES_PATH = os.path.join(BASE_PATH, 'pages')
-CSS_PATH = os.path.join(BASE_PATH, 'css')
-JS_PATH = os.path.join(BASE_PATH, 'js')
-APPS_PATH = os.path.join(BASE_PATH, 'apps')
+BASE_PATH = Path(__file__).parent.parent
+COMPONENTS_PATH = BASE_PATH / 'components'
+PAGES_PATH = BASE_PATH / 'pages'
+CSS_PATH = BASE_PATH / 'css'
+JS_PATH = BASE_PATH / 'js'
+APPS_PATH = BASE_PATH / 'apps'
 
 MIN_TASK_THREADS = 2
 MAX_TASK_THREADS = 100

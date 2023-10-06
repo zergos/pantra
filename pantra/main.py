@@ -128,7 +128,7 @@ async def get_local_css(request: Request):
     app = request.match_info['app']
     if not app:
         return web.Response(content_type='text/css')
-    app_path = os.path.join(APPS_PATH, app)
+    app_path = APPS_PATH / app
     styles = collect_styles(app_path, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
@@ -137,10 +137,9 @@ async def get_local_css(request: Request):
 async def get_static_scss(request: Request):
     file_name = request.match_info['name']
     try:
-        file_name = os.path.join(CSS_PATH, file_name)
-        with open(file_name+'.scss', "rt", encoding='utf-8') as f:
-            text = f.read()
-        css = sass.compile(string=text, output_style='compact', include_paths=[CSS_PATH])
+        file_name = CSS_PATH / file_name
+        text = file_name.with_suffix('.scss').read_text(encoding='utf-8')
+        css = sass.compile(string=text, output_style='compact', include_paths=[str(CSS_PATH)])
     except Exception as e:
         Session.error_later(f'{file_name}.scss> {e}')
         return web.Response(status=404)
@@ -151,14 +150,13 @@ async def get_static_scss(request: Request):
 @routes.get(r'/js/'+jsmap.OUT_NAME)
 async def get_out_js(request: Request):
     jsmap.make(JS_PATH)  # TODO: Cache it!
-    file_name = os.path.join(JS_PATH, jsmap.OUT_NAME)
-    with open(file_name, "rt", encoding='utf-8') as f:
-        text = f.read()
+    file_name = JS_PATH / jsmap.OUT_NAME
+    text = file_name.read_text('utf-8')
     return web.Response(body=text, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
 
 
-routes.static('/js', os.path.join(BASE_PATH, 'js'), append_version=True)
-routes.static('/css', os.path.join(BASE_PATH, 'css'), append_version=True)
+routes.static('/js', BASE_PATH / 'js', append_version=True)
+routes.static('/css', BASE_PATH / 'css', append_version=True)
 
 
 async def startup(app):
@@ -196,12 +194,11 @@ async def main(host, port):
 
 def run(host=None, port=8005):
     global bootstrap
-    if not os.path.exists(os.path.join(COMPONENTS_PATH, 'bootstrap.html')):
+    if not (COMPONENTS_PATH / 'bootstrap.html').exists():
         print('File <bootstrap.html> not found')
         sys.exit(1)
 
-    with open(os.path.join(COMPONENTS_PATH, 'bootstrap.html'), 'rt') as f:
-        bootstrap = f.read()
+    bootstrap = (COMPONENTS_PATH / 'bootstrap.html').read_text()
 
     # patch incorrect default python mime-types
     import mimetypes

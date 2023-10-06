@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio.exceptions
-import os
 import functools
 import traceback
 import typing
@@ -13,6 +12,7 @@ from .common import ADict, UniNode
 from .compiler import exec_restart
 from .workers import async_worker
 from .trans import get_locale, get_translation, zgettext
+from .session_storage import SessionStorage
 
 if typing.TYPE_CHECKING:
     from aiohttp import web
@@ -24,7 +24,8 @@ class Session:
     sessions: Dict[str, 'Session'] = dict()
     pending_errors: Queue[str] = Queue()
 
-    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title', 'locale', 'translations']
+    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title',
+                 'locale', 'translations', 'storage']
 
     def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
         key = f'{session_id}/{app}'
@@ -37,6 +38,7 @@ class Session:
     def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: List):
         self.app: Optional[str] = app
         self.ws: web.WebSocketResponse = ws
+        self.storage: SessionStorage | None = None
         if not hasattr(self, "state"):
             self.state: ADict = ADict()
             self.just_connected: bool = True
@@ -61,7 +63,7 @@ class Session:
         if self.app == 'Core':
             return COMPONENTS_PATH
         else:
-            return os.path.join(APPS_PATH, self.app)
+            return APPS_PATH / self.app
 
     @staticmethod
     def gen_session_id():
@@ -167,7 +169,7 @@ class Session:
 
     @staticmethod
     def get_apps():
-        (_, dirs, _) = next(os.walk(APPS_PATH), (None, [], None))
+        dirs = list(APPS_PATH.glob("*"))
         return dirs
 
     def start_app(self, app):
@@ -189,6 +191,30 @@ class Session:
 
     def gettext(self, message: str, **kwargs) -> str:
         return zgettext(self.translations, message, **kwargs)
+
+    def set_storage(self, storage_cls: type[SessionStorage]):
+        self.storage = storage_cls(self)
+        self.storage.load()
+
+    def bind_state(self, name: str, dict_ref: dict, key: str = "value"):
+        if not self.storage:
+            return
+        self.storage.add_binding(name, dict_ref, key)
+
+    def bind_states(self, bindings: dict[str, dict | tuple[dict, str]]):
+        if not self.storage:
+            return
+        for k, v in bindings.items():
+            if type(v) is tuple:
+                self.bind_state(k, *v)
+            else:
+                self.bind_state(k, v)
+
+    def sync_storage(self):
+        if not self.storage:
+            return
+        self.storage.gather()
+        self.storage.dump()
 
 
 def trace_errors(func: Callable[[Session, ...], None]):

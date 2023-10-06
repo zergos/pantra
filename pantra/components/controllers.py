@@ -147,6 +147,6 @@ def process_key(method: str, oid: int, key: str):
 def process_direct_call(oid: int, method: str, args: list[Any]):
     node = get_node(oid)
     if not node or not method: return
-    if node.context.is_call_allowed(method):
+    if node.is_call_allowed(method):
         process_call(node.context.session, node, method, args)
 
