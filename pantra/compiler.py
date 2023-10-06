@@ -87,7 +87,7 @@ def compile_style(ctx: Context, template: HTMLTemplate) -> str:
     if template.code:
         return template.code
     try:
-        css = sass.compile(string=template.text, output_style='compressed', include_paths=[CSS_PATH])
+        css = sass.compile(string=template.text, output_style='compressed', include_paths=[str(CSS_PATH)])
     except Exception as e:
         css = ''
         ctx.session.error(f'{template.filename}.scss> {e}')
