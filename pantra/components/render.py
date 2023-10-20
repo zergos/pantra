@@ -5,6 +5,8 @@ import typing
 import traceback
 from contextlib import contextmanager
 from types import CodeType
+from queue import Queue
+import logging
 
 from pantra.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
 from pantra.components.loader import collect_template, HTMLTemplate
@@ -19,6 +21,7 @@ if typing.TYPE_CHECKING:
 __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
 re_js_vars = re.compile(r"`?\{\{(.*?)\}\}`?")
+logger = logging.getLogger("pantra.system")
 
 class RenderNode(UniqueNode):
     __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
@@ -217,7 +220,7 @@ class DefaultRenderer:
             if attr == 'on:render':
                 return True
             if attr == 'on:init':
-                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
                 return True
 
         # HTMLElement's only
@@ -344,7 +347,7 @@ class DefaultRenderer:
 
             if 'on:render' in template.attributes:
                 value = template.attributes['on:render']
-                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
 
         elif tag_name[0].isupper():
             node_template = collect_template(self.ctx.session, tag_name)
@@ -374,7 +377,7 @@ class DefaultRenderer:
 
             if 'on:render' in template.attributes:
                 value = template.attributes['on:render']
-                run_safe(self.ctx.session, lambda: self.ctx[value](node))
+                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
 
         elif tag_name[0] == '$':
             node = self.ctx
@@ -383,7 +386,7 @@ class DefaultRenderer:
                 self.build_node(child, node)
 
             if "on_render" in self.ctx.locals:
-                run_safe(self.ctx.session, self.ctx["on_render"])
+                run_safe(self.ctx.session, self.ctx["on_render"], dont_refresh=True)
 
         elif tag_name[0] == '#':
             if tag_name == '#if':
@@ -689,15 +692,20 @@ class ContextShot:
     __slots__ = ['updated', 'deleted', '_frozen', '_freeze_list', '_rebind']
 
     def __init__(self):
-        self.updated: List[AnyNode] = list()
-        self.deleted: Set[int] = set()
+        self.updated: Queue[AnyNode] = Queue()
+        self.deleted: Queue[int] = Queue()
         self._frozen = False
         self._rebind = False
         self._freeze_list = None
 
-    def reset(self):
-        self.updated.clear()
-        self.deleted.clear()
+    def pop(self) -> tuple[list[AnyNode], list[int]]:
+        updated = []
+        while not self.updated.empty():
+            updated.append(self.updated.get())
+        deleted = []
+        while not self.deleted.empty():
+            deleted.append(self.deleted.get())
+        return updated, deleted
 
     @contextmanager
     def freeze(self):
@@ -719,7 +727,7 @@ class ContextShot:
         if not self._frozen:
             if self._rebind:
                 node._rebind = True
-            self.updated.append(node)
+            self.updated.put(node)
         else:
             self._freeze_list.append(node)
 
@@ -728,5 +736,5 @@ class ContextShot:
         return self
 
     def __sub__(self, other):
-        self.deleted.add(other.oid)
+        self.deleted.put(other.oid)
         return self

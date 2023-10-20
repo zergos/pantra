@@ -4,6 +4,7 @@ import os
 import typing
 from functools import lru_cache, wraps
 import traceback
+import logging
 
 import sass
 from .common import ADict
@@ -14,7 +15,7 @@ if typing.TYPE_CHECKING:
     from .components.context import Context, HTMLTemplate
 
 code_base: typing.Dict[str, CodeType] = {}
-
+logger = logging.getLogger("pantra.system")
 
 @lru_cache(None, False)
 def common_globals():
@@ -60,7 +61,7 @@ def trace_exec(func):
 @trace_exec
 def compile_context_code(ctx: Context, template: HTMLTemplate):
     initial_locals = ADict(ctx.locals) - ['init', 'on_restart']
-    ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.gettext})
+    ctx.locals.update({'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.gettext, 'logger': logger})
     if 'use' in template.attributes:
         exec_includes(template.attributes.use.strip('" \''), template.filename, ctx.locals)
     if template.text is not None:

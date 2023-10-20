@@ -96,12 +96,15 @@ class HDragSplitter(DragController):
             return False
         self.source_width = refs.leftcol.metrics.width
         self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
+        logger.warning("Drag started")
         return True
 
     def move(self):
+        logger.warning("Drag move")
         self.drag_node.move(self.delta_x, 0)
 
     def stop(self):
+        logger.warning("Drag stop")
         self.drag_node.remove()
         width = self.source_width + self.x - self.from_x
         if width<100:

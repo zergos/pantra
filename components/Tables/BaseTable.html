@@ -15,7 +15,7 @@
                     {{#set col_info := col.info}}
                         {{#if col_info.resizable or col_info.sortable}}
                         <div>
-                            <div class="cap">{{col_info.title}}</div>
+                            <div class="cap">{{col_info.title or col_info.name}}</div>
                             {{#if col_info.sortable}}
                             <div class="sortable{get_order_class(this)}" on:click="do_sort" data:col="{col_info.name}"/>
                             {{/if}}
@@ -24,7 +24,7 @@
                             {{/if}}
                         </div>
                         {{#else}}
-                        {{col_info.title}}
+                        {{col_info.title or col_info.name}}
                         {{/if}}
                     {{/set}}
                 </th>
@@ -37,7 +37,7 @@
             {{#for row in maps}}
             <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
                 {{#for col in row}}
-                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow[col.info.name], col.info)}}</td>
+                <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow.get(col.info.name, None), col.info)}}</td>
                 {{/for}}
             </tr>
             {{/for}}
@@ -66,7 +66,7 @@
         &.container {
             overflow: auto;
             width: 100%;
-            max-height: 100vh;
+            /*max-height: 100vh;*/
         }
 
         table {
@@ -206,9 +206,9 @@ def init():
             if not col.hidden:
                 row.append(ColumnMap(info=col))
                 col.widget = collect_template(ctx.session, get_widget(col))
-        common_width = DynamicStyles(f'width: {100 / (len(row)-1)}%')
+        common_width = DynamicStyles(f'width: {100 / len(row):.2f}%')
         for col_name, col in columns.items():
-            if col_name != col_id:
+            #if col_name != col_id:
                 col_styles.append(common_width | col.style)
 
         maps.append(row)

@@ -113,7 +113,7 @@ def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLEl
             if caller:
                 view.set_scope('caller', caller)
 
-        refs.bars.update(True)
+        refs.bars.update_tree()
         new = True
     else:
         new = False

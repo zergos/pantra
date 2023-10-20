@@ -46,20 +46,10 @@ OPER_MAP = {
 
 @dataclass
 class ColumnInfo(UX):
-    name: str = None
-    type: type = None
     style: DynamicStyles = field(default_factory=DynamicStyles)
     widget: HTMLTemplate | None = None
 
 class DBColumnInfo(ColumnInfo):
-    @property
-    def name(self):
-        return self.field.name
-
-    @property
-    def type(self):
-        return self.field.type
-
     def __init__(self, ux: UX):
         self.__dict__ = ux.__dict__.copy()
         self.style = DynamicStyles()
@@ -205,7 +195,7 @@ def collect_col_styles(ctx: Context, maps: MapsRows) -> (List[DynamicStyles], st
 
 
 def get_widget_default(col_info: ColumnInfo) -> str:
-    if issubclass(col_info.field.type, numbers.Number):
+    if issubclass(col_info.type, numbers.Number):
         return 'CellNumber'
     else:
         return 'CellString'

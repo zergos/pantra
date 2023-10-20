@@ -55,21 +55,20 @@ def make_widget(parent: AnyNode, ux: UX, value: Any = None, **kwargs) -> Optiona
         readonly=ux.readonly,
         required=not ux.blank,
         width='' if not ux.width else WebUnits(ux.width, 'em'),
-        in_body=ux.field.prop,
     ) | kwargs
     if value is not None:
         locals['value'] = value
-    if ux.field.type == int:
+    if ux.type == int:
         locals['step'] = 1
-    if ux.field.name == 'name':
+    if ux.name == 'name':
         locals['focus'] = True
-    if isinstance(ux.field.type, DBTable):
+    if isinstance(ux.type, DBTable):
         template = 'DBField'
-        locals['table'] = ux.field.type
-    elif isinstance(ux.field.type, str) and ux.multiline:
+        locals['table'] = ux.type
+    elif isinstance(ux.type, str) and ux.multiline:
         template = 'TextAreaField'
     else:
-        template = TEMPLATE_MAP[ux.field.type]
+        template = TEMPLATE_MAP[ux.type]
         if not template:
             return None
     c = Context(template, parent, locals=locals)

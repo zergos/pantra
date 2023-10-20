@@ -5,13 +5,16 @@ import queue
 import functools
 import time
 from dataclasses import dataclass, field
+import logging
 
 from .common import raise_exception_in_thread
 from .defaults import *
 
-# Thread tasks
+logger = logging.getLogger('pantra.system')
 
-tasks: typing.Dict[int, 'WorkerStat'] = {}
+# Thread workers
+
+workers: typing.Dict[str, 'WorkerStat'] = {}
 
 
 @dataclass
@@ -26,47 +29,50 @@ task_queue: typing.Optional[queue.Queue] = None
 
 def task_processor():
     try:
-        ident = threading.currentThread().ident
-        if ident not in tasks:
-            tasks[ident] = WorkerStat()
+        ident = threading.current_thread().name
+        if ident not in workers:
+            workers[ident] = WorkerStat()
         while True:
             try:
                 func, args, kwargs = task_queue.get(timeout=5)
             except queue.Empty:
-                if tasks[ident].finish_flag:
-                    tasks[ident].finish_flag = -1
+                if workers[ident].finish_flag:
+                    workers[ident].finish_flag = -1
                     break
                 continue
             if func is None: break
-            tasks[ident].last_time = time.perf_counter()
-            tasks[ident].active = True
+            workers[ident].last_time = time.perf_counter()
+            workers[ident].active = True
             func(*args, **kwargs)
-            tasks[ident].last_time = time.perf_counter()
-            tasks[ident].active = False
+            workers[ident].last_time = time.perf_counter()
+            workers[ident].active = False
     except SystemExit:
-        print('thread timeout')
+        logger.error('thread timeout')
 
 
+@wipe_logger
 def stat_thread():
     while True:
         time.sleep(1)
         tick = time.perf_counter()
         last_tick = 0
-        for k, v in list(tasks.items()):  # type: int, WorkerStat
+        for k, v in list(workers.items()):  # type: str, WorkerStat
             if v.finish_flag != 0:
                 if v.finish_flag == -1:
-                    del tasks[k]
+                    del workers[k]
                 continue
             if v.active and tick - v.last_time > THREAD_TIMEOUT:
-                if len(tasks) > MIN_TASK_THREADS:
+                if len(workers) > MIN_TASK_THREADS:
+                    logger.warning(f"Thread removing `f{k}`")
                     raise_exception_in_thread(k)
-                    del tasks[k]
+                    del workers[k]
             elif not v.active and tick - v.last_time > KILL_THREAD_LAG:
                 v.finish_flag = 1
             if tick > last_tick:
                 last_tick = tick
         if not task_queue.empty() and last_tick and tick - last_tick > CREAT_THREAD_LAG:
-            threading.Thread(target=task_processor).start()
+            logger.warning(f'New thread creation X#{len(workers)}')
+            threading.Thread(target=task_processor, name=f'X#{len(workers)}').start()
 
 
 def thread_worker(func):
@@ -80,14 +86,14 @@ def start_task_workers():
     global task_queue
     task_queue = queue.Queue()
     for i in range(MIN_TASK_THREADS):
-        threading.Thread(target=task_processor).start()
+        threading.Thread(target=task_processor, name=f'#{i}').start()
 
 
 def stop_task_workers():
-    for i in range(len(tasks)):
+    for i in range(len(workers)):
         task_queue.put((None, None, None))
 
-# Async tasks
+# Async workers
 
 async_loop: typing.Optional[asyncio.BaseEventLoop] = None
 

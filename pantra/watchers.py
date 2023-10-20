@@ -1,15 +1,20 @@
+import hashlib
 import typing
-import os
-from datetime import datetime
-
+import logging
+import hashlib
+from pathlib import Path
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from .defaults import APPS_PATH, COMPONENTS_PATH
+from .defaults import APPS_PATH, COMPONENTS_PATH, wipe_logger
+
+if typing.TYPE_CHECKING:
+    from .components.loader import HTMLTemplate
 
 __all__ = ['start_observer', 'stop_observer']
 
 observer: typing.Optional[Observer] = None
+logger = logging.getLogger("pantra.system")
 
 
 class AppFilesEventHandler(PatternMatchingEventHandler):
@@ -20,11 +25,13 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         self.sessions = sessions
         self.code_base = code_base
 
-    def refresh_template(self, filename: str):
+    @wipe_logger
+    def refresh_template(self, filename: str, hex_digest: str):
         if filename.endswith('.html'):
-            for k, v in list(self.templates.items()):
-                if v and v.filename == filename:
+            for k, v in list(self.templates.items()):  # type: str, HTMLTemplate
+                if v and v.filename == filename and v.hex_digest != hex_digest:
                     # self.sessions.error_later(f'component {k} has updated')
+                    logger.warning(f'File `{filename}` changed, refreshing')
                     del self.templates[k]
         else:
             if filename in self.code_base:
@@ -32,12 +39,13 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
                 del self.code_base[filename]
 
     def on_modified(self, event):
-        print(f'{datetime.now():%x %X}> file {event.src_path} changed, refreshing')
-        self.refresh_template(event.src_path)
+        hex_digest = hashlib.md5(Path(event.src_path).read_bytes()).hexdigest()
+        self.refresh_template(event.src_path, hex_digest)
 
 
 def start_observer(templates, sessions, code_base):
     global observer
+
     observer = Observer()
     observer.schedule(AppFilesEventHandler(templates, sessions, code_base), APPS_PATH, True)
     observer.schedule(AppFilesEventHandler(templates, sessions, code_base), COMPONENTS_PATH, True)

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from .patching import ENABLE_LOGGING, wipe_logger
+
 BASE_PATH = Path(__file__).parent.parent
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
@@ -17,4 +19,7 @@ SOCKET_TIMEOUT = 180
 MAX_MESSAGE_SIZE = 4 * 1024 * 1024
 LOCKS_TIMEOUT = 5
 
-DEFAULT_APP = COMPONENTS_PATH #os.path.join(BASE_PATH, 'apps', 'score_parser')
+BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
+DEFAULT_APP = COMPONENTS_PATH
+
+ENABLE_LOGGING = False

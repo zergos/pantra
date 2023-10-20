@@ -81,6 +81,7 @@ function attach_drag_events() {
                 event.stopPropagation();
                 process_drag_stop(event);
                 drag_mode_active = false;
+                se_log("drag mode disabled")
             }
         });
     }

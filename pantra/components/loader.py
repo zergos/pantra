@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 import re
 import typing
@@ -15,7 +16,7 @@ from .grammar.PMLLexer import PMLLexer
 from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
-from pantra.defaults import CSS_PATH, COMPONENTS_PATH
+from pantra.defaults import CSS_PATH, COMPONENTS_PATH, BOOTSTRAP_FILENAME
 
 if typing.TYPE_CHECKING:
     from pantra.session import Session
@@ -32,7 +33,7 @@ templates: typing.Dict[str, HTMLTemplate] = {}
 
 class HTMLTemplate(UniNode):
     code_base: Dict[str, CodeType] = {}
-    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index')
+    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index', 'hex_digest')
 
     def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
         super().__init__(parent)
@@ -44,6 +45,7 @@ class HTMLTemplate(UniNode):
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
         self.index: int = index
+        self.hex_digest: str = ''
 
     def __str__(self):
         return self.tag_name
@@ -229,7 +231,9 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
         # raw nodes goes first
         visitor.root.children.insert(0, visitor.root.children.pop())
 
-    return visitor.root
+    res: HTMLTemplate = visitor.root
+    res.hex_digest = hashlib.md5(Path(filename).read_bytes()).hexdigest()
+    return res
 
 
 def _search_component(path: Path, name: str) -> str | None:
@@ -386,6 +390,8 @@ def load_styles(name: str, filename: str):
 def collect_styles(app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
     styles = []
     for file in app_path.glob('**/*.html'):
+        if file == BOOTSTRAP_FILENAME:
+            continue
         try:
             res = load_styles(file.stem, str(file))
         except Exception as e:

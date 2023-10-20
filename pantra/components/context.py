@@ -248,7 +248,7 @@ class HTMLElement(RenderNode):
         self.context.render(template, self, locals, build)
 
     @staticmethod
-    def _set_metrics(oid: int, metrics: Dict[str, int]):
+    def _set_metrics(oid: int, metrics: Dict[str, int]) -> object:
         self = get_node(oid)
         if self is None: return
         self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])

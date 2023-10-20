@@ -1,3 +1,5 @@
+let CONNECT_INTERVALS = [5,5,5,5,10,20,30,60,120,300,600];
+
 function show_online_bar() {
 	let bar = document.getElementById('online-bar');
 	bar.removeAttribute('style');
@@ -11,7 +13,7 @@ function hide_online_bar() {
 class WSClient {
 	constructor(url) {
 		this.url = url;
-		this.autoReconnectInterval = 5*1000;
+		this.currentInterval = -1;
 		this.connected = false;
 		this.init = false;
 		this.show_logs = false;
@@ -28,9 +30,14 @@ class WSClient {
 	}
 	reconnect() {
 		this.connected = false;
-		console.log(`WSClient: retry in ${this.autoReconnectInterval/1000}s`);
+		if (this.currentInterval >= CONNECT_INTERVALS.length) {
+			console.log("WSClient: no more retries, I gave up");
+			return;
+		}
+		let autoReconnectInterval = CONNECT_INTERVALS[this.currentInterval] * 1000;
+		console.log(`WSClient: retry in ${autoReconnectInterval/1000}s`);
 		//this.instance.removeAllListeners();
-		setTimeout(() => this.refresh(), this.autoReconnectInterval);
+		setTimeout(() => this.refresh(), autoReconnectInterval);
 	}
 	onrefresh() {
 		console.log('refreshing connection')
@@ -39,6 +46,7 @@ class WSClient {
 		if (this.show_logs)
 			console.log(`WSClient: connected`);
 		this.connected = true;
+		this.currentInterval = 0;
 		show_online_bar();
 		if (this.init)
 			this.onrefresh();
@@ -53,6 +61,7 @@ class WSClient {
 		switch (e.code) {
 			case 1006:
 				console.log(`WSClient: server down...`);
+				this.currentInterval ++;
 				this.reconnect();
 				break;
 			case 1000:

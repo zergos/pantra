@@ -4,6 +4,7 @@ import typing
 from .common import WebUnits
 
 if typing.TYPE_CHECKING:
+    import logging
     from pantra.common import ADict
     from pantra.components.context import Context, HTMLElement, AnyNode
     from pantra.session import Session
@@ -12,6 +13,7 @@ if typing.TYPE_CHECKING:
     refs: ADict[str, Context]
     ctx: Context
     session: Session
+    logger: logging.Logger
 
     Locals = Dict[str, Any]
 
@@ -23,6 +25,6 @@ if typing.TYPE_CHECKING:
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
-               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits']
+               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger']
 else:
     __all__ = ['typing', 'WebUnits']

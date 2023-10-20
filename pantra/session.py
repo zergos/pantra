@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import asyncio.exceptions
 import functools
 import traceback
 import typing
 import uuid
 from queue import Queue
+from collections import defaultdict
+import logging
 
-from .defaults import APPS_PATH, COMPONENTS_PATH
+from .defaults import APPS_PATH, COMPONENTS_PATH, wipe_logger, ENABLE_LOGGING
 from .common import ADict, UniNode
 from .compiler import exec_restart
 from .workers import async_worker
@@ -17,30 +18,38 @@ from .session_storage import SessionStorage
 if typing.TYPE_CHECKING:
     from aiohttp import web
     from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
+    from pathlib import Path
     from typing import *
 
 
+logger = logging.getLogger("pantra.system")
+
+
+@wipe_logger
 class Session:
-    sessions: Dict[str, 'Session'] = dict()
+    states: ClassVar[dict[str, ADict]] = defaultdict(ADict)
+    sessions: ClassVar[dict[str, Self]] = dict()
     pending_errors: Queue[str] = Queue()
 
     __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title',
                  'locale', 'translations', 'storage']
 
-    def __new__(cls, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
+    def __new__(cls, browser_id: str, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
         key = f'{session_id}/{app}'
         if key in cls.sessions:
+            logger.debug(f"Reuse session {key}")
             return cls.sessions[key]
+        logger.debug(f"New session {key}")
         self = super().__new__(cls)
         cls.sessions[key] = self
         return self
 
-    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: List):
+    def __init__(self, browser_id: str, session_id: str, ws: web.WebSocketResponse, app: str, lang: List):
         self.app: Optional[str] = app
         self.ws: web.WebSocketResponse = ws
         self.storage: SessionStorage | None = None
         if not hasattr(self, "state"):
-            self.state: ADict = ADict()
+            self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
             self.root: Optional[Context] = None
             self.title = 'Fruity App'
@@ -59,25 +68,27 @@ class Session:
         return item in self.state
 
     @property
-    def app_path(self):
+    def app_path(self) -> Path:
         if self.app == 'Core':
             return COMPONENTS_PATH
         else:
             return APPS_PATH / self.app
 
     @staticmethod
-    def gen_session_id():
+    def gen_session_id() -> str:
         return uuid.uuid4().hex
 
     def restart(self):
         from .components.render import ContextShot
         from .components.context import Context
+        logger.debug(f"{{{self.app}}} Going to restart...")
         self.send_message({'m': 'rst'})
         shot = ContextShot()
         try:
             ctx = Context("Main", shot=shot, session=self)
             if ctx.template:
                 self.root = ctx
+                logger.debug(f"{{{self.app}}} Build [Main] context")
                 ctx.render.build()
                 self.send_shot()
         except:
@@ -121,14 +132,18 @@ class Session:
 
     def send_shot(self):
         if not self.root.shot:
-            print('Shot not prepared yet')
+            logger.error('Shot not prepared yet')
             return
         shot: ContextShot = self.root.shot
-        if shot.deleted:
-            self.send_message({'m': 'd', 'l': list(shot.deleted)})
-        if shot.updated:
-            self.send_message({'m': 'u', 'l': list(shot.updated)})
-        shot.reset()
+        updated, deleted = shot.pop()
+        logger.debug(f"{{{self.app}}} Sending shot UPD:{len(updated)} DEL:{len(deleted)}")
+        #if ENABLE_LOGGING:
+        #    import traceback
+        #    logger.debug(''.join(traceback.format_stack(limit=3)))
+        if deleted:
+            self.send_message({'m': 'd', 'l': deleted})
+        if updated:
+            self.send_message({'m': 'u', 'l': updated})
 
     def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
         for child in children:  # type: AnyNode
@@ -141,6 +156,7 @@ class Session:
             self._collect_children(child.children, lst)
 
     async def send_root(self):
+        logger.debug(f"{{{self.app}}} Sending root")
         lst = []
         if 'on_restart' in self.root.locals:
             exec_restart(self.root)
@@ -148,6 +164,7 @@ class Session:
         await self.send_message({'m': 'u', 'l': lst})
 
     def request_metrics(self, node: RenderNode):
+        logger.debug(f"{{{self.app}}} Request metrics for {node}")
         self.send_message({'m': 'm', 'l': node.oid})
 
     def drop_metrics(self):
@@ -156,23 +173,27 @@ class Session:
                 delattr(node, '_metrics')
 
     def request_value(self, node: HTMLElement, t: str = 'text'):
+        logger.debug(f"{{{self.app}}} Request value for {node}")
         self.send_message({'m': 'v', 'l': node.oid, 't': t})
 
     def request_validity(self, node: HTMLElement):
+        logger.debug(f"{{{self.app}}} Request validity for {node}")
         self.send_message({'m': 'valid', 'l': node.oid})
 
     def log(self, message):
         self.send_message({'m': 'log', 'l': message})
 
     def call(self, method: str, *args):
+        logger.debug(f"{{{self.app}}} Calling method {method}")
         self.send_message({'m': 'call', 'method': method, 'args': args})
 
     @staticmethod
-    def get_apps():
-        dirs = list(APPS_PATH.glob("*"))
+    def get_apps() -> list[str]:
+        dirs = [app.name for app in APPS_PATH.glob("*")]
         return dirs
 
     def start_app(self, app):
+        logger.debug(f"{{{self.app}}} Start app")
         self.send_message({'m': 'app', 'l': app})
 
     def send_title(self, title):
@@ -183,7 +204,9 @@ class Session:
         self.send_title(title)
 
     def set_locale(self, lang: Union[str, List]):
-        self.locale = get_locale(lang if isinstance(lang, str) else lang[0])
+        lang_name = lang if isinstance(lang, str) else lang[0]
+        logger.debug(f"{{{self.app}}} Set lang = {lang_name}")
+        self.locale = get_locale(lang_name)
         self.translations = get_translation(self.app_path, lang)
 
     @typing.overload
@@ -192,8 +215,9 @@ class Session:
     def gettext(self, message: str, **kwargs) -> str:
         return zgettext(self.translations, message, **kwargs)
 
-    def set_storage(self, storage_cls: type[SessionStorage]):
-        self.storage = storage_cls(self)
+    def set_storage(self, storage_cls: type[SessionStorage] | SessionStorage):
+        from inspect import isclass
+        self.storage = storage_cls(self) if isclass(storage_cls) else storage_cls
         self.storage.load()
 
     def bind_state(self, name: str, dict_ref: dict, key: str = "value"):
@@ -220,6 +244,7 @@ class Session:
 def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)
     def res(*args, **kwargs):
+        dont_refresh = kwargs.pop("dont_refresh", False)
         if type(args[0]) is not Session:
             return
         try:
@@ -227,9 +252,14 @@ def trace_errors(func: Callable[[Session, ...], None]):
         except:
             args[0].error(traceback.format_exc())
         else:
-            args[0].send_shot()
+            if not dont_refresh:
+                args[0].send_shot()
     res.call = func
     return res
+
+
+@typing.overload
+def run_safe(session: Session, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
 
 
 @trace_errors

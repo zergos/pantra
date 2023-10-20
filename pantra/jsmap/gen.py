@@ -103,7 +103,7 @@ def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool =
     dest['mappings'] = ','.join(mappings) + ';'
 
     (path / OUT_NAME).write_text(out)
-    with (path / OUT_NAME).with_suffix('.map').open('wt') as f:
+    with (path / (OUT_NAME + '.map')).open('wt') as f:
         json.dump(dest, f)
 
 

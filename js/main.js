@@ -1,4 +1,4 @@
-var main;
+let main;
 
 function start(new_local_id, new_tab_id) {
     let chunks = location.pathname.split('/');
@@ -20,7 +20,7 @@ function start(new_local_id, new_tab_id) {
         tab_id = new_tab_id;
         sessionStorage.setItem('tab_id', tab_id);
     }
-    protocol = location.protocol === "http:"? "ws" : "wss";
+    let protocol = location.protocol === "http:"? "ws" : "wss";
     main = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
     main.onrefresh = () => {
         send_message({'C': 'UP'})
@@ -80,6 +80,7 @@ function start(new_local_id, new_tab_id) {
             }
 
             case 'dm':
+                se_log("drag mode active");
                 drag_mode_active = true;
                 break;
 

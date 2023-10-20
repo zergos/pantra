@@ -3,7 +3,9 @@
     {{#if filters}}
     <FilterTable filters="{filters}" search="search_fields" callback="@apply_filters" search_callback="@apply_search"/>
     {{/if}}
-    <BaseTable ref:basetable consume/>
+    <BaseTable ref:basetable consume>
+
+    </BaseTable>
 </component>
 
 <python>

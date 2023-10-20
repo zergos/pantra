@@ -32,12 +32,17 @@ const HTMLElementSerializer = {
         if (!element) {
             parent = OID.node(v.p);
             if (!parent) {
-                se_log(`element ${v.i} ${v.n} became new root node (${v.p} not found)`);
+                if (v.p === null)
+                    se_log(`element ${v.i} ${v.n} created in root node`);
+                else
+                    se_log(`element ${v.i} ${v.n} created in root node (${v.p} not found)`);
                 parent = root_node();
                 if (!content_filled) {
                     parent.innerText = '';
                     content_filled = true;
                 }
+            } else {
+                se_log(`element ${v.i} ${v.n} created with parent ${v.p}`);
             }
             if ('x' in v)
                 element = document.createElementNS(namespaces[v.x], v.n);
@@ -46,7 +51,6 @@ const HTMLElementSerializer = {
 
             //element.typical = true;
             OID.set(element, v.i);
-            se_log(`element ${v.i} ${v.n} created with parent ${v.p}`);
             parent.appendChild(element);
             is_new = true;
 
