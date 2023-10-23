@@ -109,11 +109,11 @@ class UniNode:
             return str(self)
         return f'{self._parent.path()}/{self}'
 
-    def select(self, predicate: Callable[[Self], bool], depth: int = 0) -> Generator[Self]:
+    def select(self, predicate: Callable[[Self], bool], depth: int = None) -> Generator[Self]:
         for child in self._children:
             if predicate(child):  
                 yield child
-            if depth == 0:
+            if depth is None:
                 yield from child.select(predicate)
             elif depth > 1:
                 yield from child.select(predicate, depth-1)
@@ -130,7 +130,7 @@ class UniNode:
             node = node.parent
         return None
 
-    def downto(self, predicate: Callable[[Self], bool], depth: int = 0) -> Optional[Self]:
+    def downto(self, predicate: Callable[[Self], bool], depth: int = None) -> Optional[Self]:
         return next(self.select(predicate, depth), None)
 
 

@@ -33,16 +33,16 @@ const HTMLElementSerializer = {
             parent = OID.node(v.p);
             if (!parent) {
                 if (v.p === null)
-                    se_log(`element ${v.i} ${v.n} created in root node`);
+                    se_log(`element #${v.i} <${v.n}> created in root node`);
                 else
-                    se_log(`element ${v.i} ${v.n} created in root node (${v.p} not found)`);
+                    se_log(`element #${v.i} <${v.n}> created in root node (#${v.p} not found)`);
                 parent = root_node();
                 if (!content_filled) {
                     parent.innerText = '';
                     content_filled = true;
                 }
             } else {
-                se_log(`element ${v.i} ${v.n} created with parent ${v.p}`);
+                se_log(`element #${v.i} <${v.n}> created with parent #${v.p}`);
             }
             if ('x' in v)
                 element = document.createElementNS(namespaces[v.x], v.n);
@@ -91,6 +91,7 @@ const HTMLElementSerializer = {
             else if (v.type === 'number') element.valueAsNumber = v.v;
             else if (v.type === 'time') element.valueAsDate = v.v;
             else if (v.type === 'date') element.valueAsDate = v.v;
+            else if (v.type === 'checkbox') element.checked = v.v;
             else element.value = v.v;
         return element;
     }

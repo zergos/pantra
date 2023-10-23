@@ -6,7 +6,7 @@ from pathlib import Path
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from .defaults import APPS_PATH, COMPONENTS_PATH, wipe_logger
+from .defaults import BASE_PATH, APPS_PATH, COMPONENTS_PATH, wipe_logger
 
 if typing.TYPE_CHECKING:
     from .components.loader import HTMLTemplate
@@ -31,7 +31,7 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
             for k, v in list(self.templates.items()):  # type: str, HTMLTemplate
                 if v and v.filename == filename and v.hex_digest != hex_digest:
                     # self.sessions.error_later(f'component {k} has updated')
-                    logger.warning(f'File `{filename}` changed, refreshing')
+                    #logger.warning(f'File `{Path(filename).relative_to(BASE_PATH)}` changed, refreshing')
                     del self.templates[k]
         else:
             if filename in self.code_base:

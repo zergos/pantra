@@ -107,7 +107,7 @@ class RenderNode(UniqueNode):
                     clone.append(sub)
         return clone
 
-    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = 0) -> Generator[AnyNode]:
+    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> Generator[AnyNode]:
         if isinstance(predicate, str):
             yield from super().select(lambda node: str(node) == predicate, depth)
         elif isinstance(predicate, typing.Iterable):

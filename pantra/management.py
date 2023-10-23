@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 def _detect_app():
     path = Path.cwd()
     if path.is_relative_to(APPS_PATH):
-        return path.relative_to(APPS_PATH).parents[-1]
+        return path.relative_to(APPS_PATH).parts[0]
     if path.is_relative_to(COMPONENTS_PATH):
         return 'Core'
     return Empty
@@ -371,8 +371,8 @@ class Locale:
         pot_name = path / 'app.po'
 
         args = ['', '-q', 'extract']
-        args.extend(['-F', ini_name])
-        args.extend(['-o', pot_name])
+        args.extend(['-F', str(ini_name)])
+        args.extend(['-o', str(pot_name)])
         args.append('--sort-by-file')
         args.append(f'--project=Pantra App "{self.app}"')
         args.extend(['-c', 'NOTE'])
@@ -382,7 +382,7 @@ class Locale:
             args.append(f'--msgid-bugs-address={email}')
         if version:
             args.append(f'--version={version}')
-        args.append(path)
+        args.append(str(path))
         CommandLineInterface().run(args)
 
         dest_name = path / 'locale' / self.locale / 'LC_MESSAGES' / 'messages.po'
@@ -390,10 +390,10 @@ class Locale:
             args = ['', 'init']
         else:
             args = ['', 'update']
-        args.extend(['-i', pot_name])
+        args.extend(['-i', str(pot_name)])
         args.extend(['-l', self.locale])
         # args.extend(['-D', self.app])
-        args.extend(['-d', path / 'locale'])
+        args.extend(['-d', str(path / 'locale')])
         CommandLineInterface().run(args)
 
         if not no_clear:
@@ -404,10 +404,10 @@ class Locale:
             return
 
         args = ['', 'compile']
-        args.extend(['-i', dest_name])
+        args.extend(['-i', str(dest_name)])
         args.extend(['-l', self.locale])
         # args.extend(['-D', self.app])
-        args.extend(['-d', path / 'locale'])
+        args.extend(['-d', str(path / 'locale')])
         args.append('--statistics')
         CommandLineInterface().run(args)
 

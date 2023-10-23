@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .patching import ENABLE_LOGGING, wipe_logger
+from .patching import wipe_logger
 
 BASE_PATH = Path(__file__).parent.parent
 COMPONENTS_PATH = BASE_PATH / 'components'

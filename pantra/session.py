@@ -240,6 +240,12 @@ class Session:
         self.storage.gather()
         self.storage.dump()
 
+    def key_events_off(self):
+        self.send_message({"m": "koff"})
+
+    def key_events_on(self):
+        self.send_message({"m": "kon"})
+
 
 def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)

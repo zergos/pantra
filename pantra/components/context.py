@@ -37,7 +37,6 @@ class NSType(Enum):
     SVG_EV = auto()     # http://www.w3.org/2001/xml-events
     SVG_XLINK = auto()  # http://www.w3.org/1999/xlink
     MATH = auto()       # http://www.w3.org/1998/Math/MathML
-    FB = auto()         # http://www.facebook.com/2008/fbml
 
 
 @dataclass
@@ -306,7 +305,7 @@ class HTMLElement(RenderNode):
     def value(self, value):
         self._value = value
 
-    def check_validity(self):
+    def validate(self):
         if not hasattr(self, '_validity_ev'):
             self._validity_ev = threading.Event()
         self.session.request_validity(self)

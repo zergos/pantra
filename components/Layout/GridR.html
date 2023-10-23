@@ -1,11 +1,13 @@
-<div class="grid" class:fullscreen>
-    <div ref:header class="header" css:height="{top_height}">
+<div ref:grid class="grid" class:fullscreen
+     css:grid-template-columns="minmax({left_width}, max-content) 3px auto"
+     css:grid-template-rows="minmax({top_height}, max-content) 3px auto">
+    <div ref:header class="header">
         <slot name="header">
             Header
         </slot>
     </div>
     <div class="splitter v" on:drag="VDragSplitter" css:cursor="{'auto' if fixed_header else ''}"/>
-    <div ref:leftcol class="leftcol" css:width="{left_width}">
+    <div ref:leftcol class="leftcol">
         <slot name="leftcol">
             Left column
         </slot>
@@ -26,8 +28,7 @@
         grid: "header header header" minmax($header-height, max-content)
               "splitter-v splitter-v splitter-v" 3px
               "leftcol splitter-h main" auto /
-              //minmax($leftcol-width, min-content) 3px auto;
-              minmax(10rem, max-content) 3px auto;
+              minmax($leftcol-width, min-content) 3px auto;
 
         &.fullscreen {
             height: 100vh;
@@ -78,8 +79,8 @@
 from pantra.imports import *
 from pantra.ctx import *
 
-top_height: str = ''
-left_width: str = ''
+top_height: str = '2rem'
+left_width: str = '10rem'
 
 fixed_header: bool = False
 fixed_leftcol: bool = False
@@ -96,21 +97,17 @@ class HDragSplitter(DragController):
             return False
         self.source_width = refs.leftcol.metrics.width
         self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
-        logger.warning("Drag started")
         return True
 
     def move(self):
-        logger.warning("Drag move")
         self.drag_node.move(self.delta_x, 0)
 
     def stop(self):
-        logger.warning("Drag stop")
         self.drag_node.remove()
-        width = self.source_width + self.x - self.from_x
+        width = self.x # self.source_width + self.x - self.from_x
         if width<100:
             width = 0
         ctx['left_width'] = WebUnits(width)
-        refs.leftcol.metrics.width = width
 
 class VDragSplitter(DragController):
     drag_node: HTMLElement
@@ -133,6 +130,5 @@ class VDragSplitter(DragController):
         self.drag_node.remove()
         height = self.source_height + self.y - self.from_y
         ctx['top_height'] = WebUnits(height)
-        refs.header.metrics.height = height
 
 </python>

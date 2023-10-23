@@ -103,6 +103,7 @@ function start(new_local_id, new_tab_id) {
                 root.id = 'display';
                 parent.appendChild(root);
                 drag_mode_active = false;
+                drag_events_attached = false;
                 reset_events();
                 break;
 
@@ -117,6 +118,15 @@ function start(new_local_id, new_tab_id) {
             case 'valid':
                 let node = OID.node(obj.l);
                 send_message({C: 'VALID', oid: obj.l, validity: node.validity.valid});
+                break;
+
+            case 'koff':
+                key_events_disabled = true;
+                break
+
+            case 'kon':
+                key_events_disabled = false;
+                break;
         }
     };
 
@@ -163,6 +173,9 @@ function process_bind_value(variable, oid, target) {
     else if (target.type === 'date') {
         value = target.valueAsDate;
         //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
+    }
+    else if (target.type === 'checkbox') {
+        value = target.checked;
     }
     else value = target.value;
     send_message({C: 'B', v: variable, oid: oid, x: value})

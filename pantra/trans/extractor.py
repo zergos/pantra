@@ -22,7 +22,7 @@ def drain_fstring(f):
 
     s = ''
     for v in node.body.values:
-        if type(v) == ast.Str:
+        if type(v) == ast.Str or type(v) == ast.Constant:
             s += v.s
         elif type(v) == ast.FormattedValue:
             s += '{'

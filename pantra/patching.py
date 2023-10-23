@@ -1,17 +1,18 @@
 import dis, types
 import inspect
 
-ENABLE_LOGGING = True
-
 
 def wipe_logger(func: types.FunctionType | type) -> types.FunctionType | type:
+    from .defaults import ENABLE_LOGGING
     if ENABLE_LOGGING:
         return func
 
     if inspect.isclass(func):
         for k, v in func.__dict__.items():
-            if not k.startswith('__') and inspect.isfunction(v):
+            if inspect.isfunction(v):
                 setattr(func, k, wipe_logger(v))
+            elif type(v) is staticmethod:
+                setattr(func, k, staticmethod(wipe_logger(v.__func__)))
         return func
 
     load_global = dis.opmap['LOAD_GLOBAL']

@@ -46,8 +46,18 @@ class KeyListener extends EventListener {
     }
     handleEvent(event) {
         super.handleEvent(event);
-        if (event.key !== undefined && (!this.key || event.key === this.key))
-            process_key(this.method, this.get_oid(event), event.key);
+        if (event.key !== undefined && (!this.key || event.key === this.key)) {
+            let visible;
+            let node = this.get_oid(event);
+            if (node) {
+                let box = node.getBoundingClientRect();
+                visible = box.width && box.height;
+            } else {
+                visible = true;
+            }
+            if (visible)
+                process_key(this.method, node, event.key);
+        }
     }
 }
 
@@ -63,6 +73,7 @@ class DragListener extends EventListener {
 function attach_drag_events() {
     if (!drag_events_attached) {
         drag_events_attached = true;
+        se_log("drag events attached");
         let root = root_node();
         root.addEventListener('selectstart', (event) => {
             if (drag_mode_active) do_nothing(event);
@@ -107,7 +118,8 @@ function addEvent(attr, selector, method, oid) {
 }
 
 let event_registered = [];
-let event_tab = {}; //Dict['event', List[Dict['selector,listener', data]]]
+let event_tab = {}; //dict['event', list[dict['selector,listener', data]]]
+let key_events_disabled = false;
 
 function addEventHandler(type, selector, listener) {
     if (selector instanceof Element) {
@@ -161,6 +173,8 @@ function process_event_attribute(ctx, selector, attr, value, oid) {
 }
 
 function process_events(type, event) {
+    if (['keyup', 'keydown'].includes(type) && key_events_disabled)
+        return;
     let node = event.target;
     for (let row of event_tab[type]) {
         if (row.selector && !node.matches(row.selector)) continue;
