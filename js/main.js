@@ -50,6 +50,8 @@ function start(new_local_id, new_tab_id) {
                         se_log(`removing ${v} ${element.tagName}`);
                         element.remove();
                         OID.delete(v);
+                    } else {
+                        se_log(`element ${v} not found for removing`)
                     }
                 }
                 //root_node().style.visibility = 'hidden';
@@ -122,7 +124,7 @@ function start(new_local_id, new_tab_id) {
 
             case 'koff':
                 key_events_disabled = true;
-                break
+                break;
 
             case 'kon':
                 key_events_disabled = false;

@@ -637,13 +637,13 @@ class DefaultRenderer:
                                     pos += 1
                                 newmap[index] = oldmap[index]
                                 del oldmap[index]
-                                continue
-                            newmap[index] = []
-                            for temp_child in node.template.children:
-                                sub = self.build_node(temp_child, node)
-                                node.move(len(node.children)-1, pos)
-                                newmap[index].append(sub)
-                                pos += 1
+                            else:
+                                newmap[index] = []
+                                for temp_child in node.template.children:
+                                    sub = self.build_node(temp_child, node)
+                                    node.move(len(node.children)-1, pos)
+                                    newmap[index].append(sub)
+                                    pos += 1
                         if node.var_name in self.ctx.locals:
                             del self.ctx.locals[node.var_name]
                         if parentloop:
@@ -699,12 +699,16 @@ class ContextShot:
         self._freeze_list = None
 
     def pop(self) -> tuple[list[AnyNode], list[int]]:
-        updated = []
-        while not self.updated.empty():
-            updated.append(self.updated.get())
         deleted = []
         while not self.deleted.empty():
             deleted.append(self.deleted.get())
+        updated = []
+        while not self.updated.empty():
+            item = self.updated.get()
+            if item.oid in deleted:
+                deleted.remove(item.oid)
+            else:
+                updated.append(item)
         return updated, deleted
 
     @contextmanager

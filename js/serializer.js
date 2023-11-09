@@ -18,7 +18,6 @@ function root_node() {
 }
 
 function rebind_node(v, element) {
-    if (v['#'] === undefined) return;
     let parent = element.parentNode;
     parent.removeChild(element);
     parent.appendChild(element);
@@ -56,7 +55,7 @@ const HTMLElementSerializer = {
 
             if (v.type !== undefined)
                 element.type = v.type;
-        } else
+        } else if (v['#'])
             rebind_node(v, element);
         for (let at in v.a) {
             if (!process_special_attribute(at, v.a[at], element, v.i, is_new))
@@ -106,7 +105,7 @@ const TextSerializer = {
             element = document.createElement('text');
             OID.set(element, v.i);
             parent.appendChild(element);
-        } else
+        } else if (v['#'])
             rebind_node(v, element);
         element.textContent = v.t;
         return element;

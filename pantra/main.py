@@ -271,7 +271,8 @@ def run(host=None, port=8005):
 
     asyncio.run(main(host, port))
 
-setup_logger()
+if ENABLE_LOGGING:
+    setup_logger()
 
 if __name__ == '__main__':
     run()
