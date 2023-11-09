@@ -413,8 +413,8 @@ class Locale:
 
 
 def execute_from_command_line(argv):
-    main = ExposeToArgs(Main())
-    main.add_commands(Migrate())
-    main.add_commands(Schema())
-    main.add_commands(Locale())
+    main = ExposeToArgs(Main)
+    main.add_commands(Migrate)
+    main.add_commands(Schema)
+    main.add_commands(Locale)
     main.execute(argv)

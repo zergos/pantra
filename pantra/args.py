@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-import os
+from pathlib import Path
 import types
 import typing
 from collections import defaultdict
@@ -9,36 +9,38 @@ from dataclasses import dataclass, field
 from functools import wraps
 from inspect import signature, _empty
 import traceback
+import re
+import json
 if typing.TYPE_CHECKING:
     from typing import *
 
 __all__ = ['ExposeToArgs', 'context_args', 'Empty']
 
 
-def context_args(*ctx, goes_first: bool = False):
+def context_args(*ctx_args):
     def processor(f):
         @wraps(f)
         def func(self, *args, **kwargs):
-            if goes_first:
-                for k, v in zip(ctx, args):
+            empty_ctx = list(arg_name for arg_name in ctx_args if
+                             arg_name not in func.flags
+                             #and getattr(self, arg_name, Empty) is Empty
+                             and arg_name not in kwargs)
+            for k, v in zip(empty_ctx, args):
+                if v != '-':
                     setattr(self, k, v)
-                    del kwargs[k]
-                args = ()
+            args = list(args)[min(len(empty_ctx), len(args)):]
             for k, v in list(kwargs.items()):
-                if k in ctx:
+                if k in ctx_args:
                     setattr(self, k, v)
                     del kwargs[k]
-            for c in ctx:
-                if not hasattr(self, c):
-                    raise ArgsError(f"argument '{c}' not specified")
+            for arg_name in ctx_args:
+                if getattr(self, arg_name, Empty) is Empty:
+                    raise ArgsError(f"argument `{arg_name}` not specified")
             f(self, *args, **kwargs)
-        func.ctx = ctx
+        func.ctx = ctx_args
+        func.flags = ()
         return func
     return processor
-
-
-class Flag(str):
-    pass
 
 
 class Empty:
@@ -68,12 +70,7 @@ def parse_args(f):
             elif default is not False and a not in kwargs:
                 kwargs[a] = default
 
-        # parse flags
-        for a in args:
-            if type(a) == Flag:
-                kwargs[str(a)] = True
-            else:
-                new_args.append(a)
+        new_args.extend(args)
 
         # check unknown args
         for a in kwargs:
@@ -92,21 +89,13 @@ class ArgParam:
     value: Any = field(default=Empty)
 
 
-class StringLocals(dict):
-    def __getitem__(self, item):
-        try:
-            return super().__getitem__(item)
-        except KeyError:
-            return item
-
-
 class ExposeToArgs(dict):
-    instance: Type
+    cls: type
     doc: str
-    params: Dict[str, ArgParam]
+    params: dict[str, ArgParam]
 
     @staticmethod
-    def _split_doc(s: str) -> Tuple[List[str], Dict[str, ArgParam]]:
+    def _split_doc(s: str) -> tuple[list[str], dict[str, ArgParam]]:
         info = []
         params = {}
         for l in s.splitlines():
@@ -118,21 +107,21 @@ class ExposeToArgs(dict):
                 info.append(l.strip())
         return info, params
 
-    def __init__(self, instance):
+    def __init__(self, cls: type):
         super().__init__()
-        self.instance = instance
-        cls = instance.__class__
+        self.cls = cls
         self.doc, self.params = ExposeToArgs._split_doc(cls.__doc__) if cls.__doc__ else ([], {})
-        for attr_name in list(cls.__dict__):
-            if attr_name.startswith('_'):
+        for method_name in list(cls.__dict__):
+            if method_name.startswith('_'):
                 continue
-            attr = getattr(cls, attr_name)
-            if not callable(attr) or attr.__doc__ is None:
+            method = getattr(cls, method_name)
+            if not callable(method) or method.__doc__ is None:
                 continue
-            params: Dict[str, ArgParam] = defaultdict(ArgParam)
+            params: dict[str, ArgParam] = defaultdict(ArgParam)
             flags = []
-            if hasattr(attr, 'ctx'):
-                for name in attr.ctx:
+            # has context args?
+            if hasattr(method, 'ctx'):
+                for name in method.ctx:
                     if name in self.params:
                         params[name].doc = self.params[name].doc
 
@@ -158,9 +147,9 @@ class ExposeToArgs(dict):
                                 params[name].value = default
                                 params[name].default = repr(default)
 
-            info, func_params = self._split_doc(attr.__doc__)
+            info, func_params = self._split_doc(method.__doc__)
             params.update(func_params)
-            for i, (p, a) in enumerate(signature(attr).parameters.items()):
+            for i, (p, a) in enumerate(signature(method).parameters.items()):
                 if not i: continue  # first arg is always self
                 t = a.annotation
                 type_name = t if type(t) == str else t.__name__
@@ -188,30 +177,30 @@ class ExposeToArgs(dict):
                 if a.default:
                     args.append(k)
 
-            attr.doc = info
-            attr.params = params
-            attr.args = args
-            attr.flags = flags
-            self[attr_name] = attr
+            method.doc = info
+            method.params = params
+            method.args = args
+            method.flags = flags
+            self[method_name] = method
 
-    def add_commands(self, instance):
-        self[instance.__class__.__name__.lower()] = ExposeToArgs(instance)
+    def add_commands(self, cls):
+        self[cls.__name__.lower()] = ExposeToArgs(cls)
 
     @staticmethod
-    def _print_help(self, path=''):
-        if isinstance(self, ExposeToArgs):
+    def _print_help(function, path=''):
+        if isinstance(function, ExposeToArgs):
             label = 'Commands:'
-            data = self
+            data = function
             args = ('.command' if path != 'command' else '') + ' [?]'
             type_len = 1
         else:
             label= 'Parameters:'
-            data = self.params
-            args = ' ' + ', '.join('?'+arg if data[arg].default else arg for arg in self.args)
+            data = function.params
+            args = ' ' + ', '.join('?'+arg if data[arg].default else arg for arg in function.args)
             type_len = max(len(t) for v in data.values() for t in [v.type]) + 1 if data else 0
-        print(f'Usage: {os.path.basename(sys.argv[0])} {path}{args}\n')
-        if self.doc:
-            print('  ' + '\n  '.join(self.doc) + '\n')
+        print(f'Usage: {Path(sys.argv[0]).name} {path}{args}\n')
+        if function.doc:
+            print('  ' + '\n  '.join(function.doc) + '\n')
         if not data:
             return
         print(label)
@@ -234,32 +223,54 @@ class ExposeToArgs(dict):
         ExposeToArgs._print_help(self, 'command')
 
     @staticmethod
-    def _execute(self, instance, path: str, commands: List[str], args: str):
+    def _execute(function, cls: type, path: str, commands: list[str], args: list[str]):
         if len(commands) > 0:
             command = commands.pop(0)
-            if not isinstance(self, ExposeToArgs) or command not in self:
-                ExposeToArgs._print_help(self, path or 'command')
+            if not isinstance(function, ExposeToArgs) or command not in function:
+                ExposeToArgs._print_help(function, path or 'command')
                 return
             else:
-                ExposeToArgs._execute(self[command], self.instance, (path+'.' if path else '')+command, commands, args)
+                ExposeToArgs._execute(function[command], function.cls, (path + '.' if path else '') + command, commands, args)
         else:
-            if not callable(self) or args == '?':
-                ExposeToArgs._print_help(self, path)
+            if not callable(function) or args and args[0] == '?':
+                ExposeToArgs._print_help(function, path)
                 return
+            re_assign = re.compile(r'((\w|\d|_)+)=(.+)')
+            re_number = re.compile(r'^\d+$')
+            re_dict = re.compile(r'^\{\}$')
+            f_args = []
+            f_kwargs = {}
+            def get_value(v: str) -> int | bool | str | dict:
+                if v == 'y':
+                    return True
+                if v == 'n':
+                    return False
+                if re.match(re_number, v):
+                    return int(v)
+                if re.match(re_dict, v):
+                    return json.loads(v)
+                return v
+
+            for arg in args:
+                check = re.search(re_assign, arg)
+                if not check:
+                    if arg.startswith('--') and arg[2:] in function.flags:
+                        f_kwargs[arg[2:]] = True
+                    else:
+                        f_args.append(get_value(arg))
+                else:
+                    f_kwargs[check.group(1)] = get_value(check.group(3))
             try:
-                code = f'{self.__name__}(_{", "+args if args else ""})'
-                locals = StringLocals({self.__name__: parse_args(self), '_': instance, 'y': True, 'n': False})
-                for f in self.flags:
-                    locals[f] = Flag(f)
-                eval(code, {}, locals)
+                function(cls(), *f_args, **f_kwargs)
             except SyntaxError as e:
                 print(f'{e.args[0]}\n{e.args[1][3]}\n{" " * e.args[1][2]}^')
-                ExposeToArgs._print_help(self, path)
+                ExposeToArgs._print_help(function, path)
             except ArgsError as e:
                 print(str(e))
-                ExposeToArgs._print_help(self, path)
-            #except:
-            #    traceback.print_exc(-1)
+                ExposeToArgs._print_help(function, path)
+            except:
+                traceback.print_exc(-1)
+                raise
 
     def execute(self, argv=None):
         if argv is None:
@@ -267,12 +278,4 @@ class ExposeToArgs(dict):
         if len(argv) <= 1:
             self.help()
             return
-        expr = ' '.join(a if ' ' not in a else f'"{a}"' for a in argv[1:])
-        if ' ' in expr:
-            right = expr.index(' ')
-            args = expr[right+1:]
-        else:
-            right = len(expr)
-            args = ''
-        commands = expr[:right].split('.')
-        ExposeToArgs._execute(self, self.instance, '', commands, args)
+        ExposeToArgs._execute(self, self.cls, '', argv[1].split('.'), argv[2:])
