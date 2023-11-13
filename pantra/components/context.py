@@ -108,12 +108,15 @@ class Context(RenderNode):
         return node
 
     @contextmanager
-    def record_reactions(self, node: AnyNode):
-        self.locals.__class__ = WatchDictActive
-        self.locals.start_record(node)
-        yield
-        self.locals.stop_record()
-        self.locals.__class__ = WatchDict
+    def record_reactions(self, node: AnyNode, do_record: bool = True):
+        if do_record:
+            self.locals.__class__ = WatchDictActive
+            self.locals.start_record(node)
+            yield
+            self.locals.stop_record()
+            self.locals.__class__ = WatchDict
+        else:
+            yield
 
     def call(self, action: str, *args, **kwargs):
         if action not in self.locals:

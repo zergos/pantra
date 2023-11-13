@@ -64,11 +64,6 @@ class PMLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#macroCommand.
-    def visitMacroCommand(self, ctx:PMLParser.MacroCommandContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by PMLParser#inlineMacro.
     def visitInlineMacro(self, ctx:PMLParser.InlineMacroContext):
         return self.visitChildren(ctx)

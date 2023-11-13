@@ -9,14 +9,14 @@ from queue import Queue
 import logging
 
 from pantra.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
-from pantra.components.loader import collect_template, HTMLTemplate
+from pantra.components.loader import collect_template, HTMLTemplate, MacroCode
 from pantra.compiler import compile_context_code, ContextInitFailed
 from pantra.session import Session, run_safe
 
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.components.context import AnyNode, Context, HTMLElement, Condition, TextNode, Slot
-    StrOrCode = Union[str, CodeType]
+    StrOrCode = MacroCode | str | None
 
 __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
 
@@ -141,18 +141,18 @@ class DefaultRenderer:
         except ContextInitFailed:
             self.ctx.remove()
 
-    @staticmethod
-    def trace_eval(ctx: Context, text: StrOrCode, node: AnyNode):
+    def trace_eval(self, ctx: Context, macro: MacroCode, node: AnyNode):
         try:
-            return eval(text, {'ctx': ctx, 'this': node}, ctx.locals)
+            with self.ctx.record_reactions(node, macro.reactive):
+                return eval(macro.code, {'ctx': ctx, 'this': node}, ctx.locals)
         except:
-            ctx.session.error(f'{ctx.template.name}/{node}: evaluation error: {traceback.format_exc(-3)}')
+            ctx.session.error(f'{ctx.template.path()}/{node}: evaluation error: {traceback.format_exc(-3)}')
             return None
 
-    def build_func(self, text: StrOrCode, node: AnyNode) -> Callable[[], Any]:
+    def build_func(self, macro: MacroCode | None, node: AnyNode) -> Callable[[], Any] | None:
         # return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
         ctx = self.ctx  # save ctx to lambda instead of self, as ctx could be temporarily changed by slot
-        return lambda: self.trace_eval(ctx, text, node)
+        return macro and (lambda: self.trace_eval(ctx, macro, node))
 
     def translate(self, s):
         if s.startswith('\\'):
@@ -162,18 +162,27 @@ class DefaultRenderer:
         return s
 
     def build_string(self, source: StrOrCode, node: AnyNode) -> Optional[Union[str, DynamicString]]:
+        if type(source) is MacroCode:
+            return DynamicString(self.build_func(source, node))
+        return source
+
+    def build_string_i10n(self, source: StrOrCode, node: AnyNode) -> Optional[Union[str, DynamicString]]:
         if source is None:
             return None
-        if typename(source) == 'code':
+        if type(source) is MacroCode:
             return DynamicString(self.build_func(source, node))
-        else:
-            return self.translate(source)
+        return self.translate(source)
 
     def eval_string(self, source: StrOrCode, node: AnyNode) -> Any:
+        if type(source) is MacroCode:
+            return self.trace_eval(self.ctx, source, node)
+        return source
+
+    def eval_string_i10n(self, source: StrOrCode, node: AnyNode) -> Any:
         if source is None:
             return None
 
-        if typename(source) == 'code':
+        if type(source) is MacroCode:
             return self.trace_eval(self.ctx, source, node)
         if source.startswith('@'):
             if ' ' in source:
@@ -182,14 +191,12 @@ class DefaultRenderer:
             return self.ctx[source[1:]]
         return self.translate(source)
 
-    def build_bool(self, source: StrOrCode, node: AnyNode) -> Union[str, DynamicString]:
-        if not source:
-            return 'True'
-        if typename(source) == 'code':
-            return DynamicString(self.build_func(source, node))
+    def build_func_or_local(self, source: StrOrCode, node: AnyNode, default: Any = None) -> Callable[[], Any]:
+        if type(source) is MacroCode:
+            return self.build_func(source, node)
         else:
             ctx = self.ctx
-            return DynamicString(lambda: ctx.locals.get(source) or '')
+            return lambda: ctx.locals.get(source, default)
 
     def process_special_attribute(self, attr: str, value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
         # common attributes
@@ -228,26 +235,19 @@ class DefaultRenderer:
             if ':' in attr:
                 if attr.startswith('class:'):
                     cls = attr.split(':')[1].strip()
-                    ctx = self.ctx
                     if value is None:
-                        func = lambda: ctx.locals[cls]
-                    else:
-                        if typename(value) == 'code':
-                            func = self.build_func(value, node)
-                        else:
-                            func = lambda: ctx.locals[value]
+                        value = cls
+                    func = self.build_func_or_local(value, node)
                     node.con_classes.append((func, cls))
                     return True
                 if attr.startswith('css:'):
                     if type(node.style) != DynamicStyles:
                         self.ctx.session.error(f'Can not combine dynamic style with expressions {attr}={value}')
                         return True
-                    ctx = self.ctx
                     attr = attr.split(':')[1].strip()
                     if value is None:
-                        node.style[attr] = DynamicString(lambda: ctx.locals.get(attr))
-                    else:
-                        node.style[attr] = self.build_string(value, node)
+                        value = attr
+                    node.style[attr] = DynamicString(self.build_func_or_local(value, node, ''))
                     return True
                 if attr == 'bind:value':
                     if value is None:
@@ -255,24 +255,25 @@ class DefaultRenderer:
                     node.attributes[attr] = value
                     # ctx = self.ctx
                     node.value = self.ctx.locals.get(value)
-                    self.ctx.locals._record(value)
+                    with self.ctx.record_reactions(node):
+                        _ = self.ctx.locals['value']
                     return True
                 if attr.startswith('set:'):
                     attr = attr.split(':')[1].strip()
                     if value is None:
                         value = attr
-                    value = self.build_bool(value, node)
+                    value = self.build_func_or_local(value, node, '')
                     if attr == 'focus':
-                        node._set_focus = bool(value)
+                        node._set_focus = bool(value())
                     else:
-                        node.attributes[attr] = value
+                        node.attributes[attr] = DynamicString(lambda: value() or '')
                     return True
                 if attr.startswith('data:'):
                     attr = attr.split(':')[1].strip()
-                    node.data[attr] = self.eval_string(value, node)
+                    node.data[attr] = self.eval_string_i10n(value, node)
                     return True
                 if attr == 'src:media':
-                    node.attributes['src'] = self.ctx.media(self.eval_string(value, node))
+                    node.attributes['src'] = self.ctx.media(self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value)
                     return True
             else:
                 if attr == 'style':
@@ -282,7 +283,7 @@ class DefaultRenderer:
                     node.style = self.build_string(value, node)
                     return True
                 if attr == 'class':
-                    if typename(value) == 'code':
+                    if value is MacroCode:
                         node.classes = self.build_string(value, node)
                     else:
                         node.classes = DynamicClasses(value)
@@ -319,11 +320,12 @@ class DefaultRenderer:
 
             node = c.HTMLElement(tag_name, parent=parent)
 
-            with self.ctx.record_reactions(node):
+            #with self.ctx.record_reactions(node):
+            if True:
                 # evaluate attributes
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        node.attributes[attr] = self.build_string(value, node)
+                        node.attributes[attr] = self.build_string_i10n(value, node)
 
                 node.con_classes()
 
@@ -363,10 +365,11 @@ class DefaultRenderer:
                 node.slot = c.Slot(self.ctx, template)
 
             # evaluate attributes
-            with self.ctx.record_reactions(node):
+            #with self.ctx.record_reactions(node):
+            if True:
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        data = self.eval_string(value, node) if value is not None else True
+                        data = self.eval_string_i10n(value, node) if value is not None else True
                         node.locals[attr] = data
 
             try:
@@ -397,16 +400,13 @@ class DefaultRenderer:
                     else:
                         item = c.Condition((lambda: True), child_template)
                     node.conditions.append(item)
-                self.update(node, record_reactions=True)
+                self.update(node)
 
             elif tag_name == '#for':
                 node: c.LoopNode = c.LoopNode(parent, template.children[0])
-                sides = template.macro.split('#')
-                chunks = sides[0].split(' in ')
-                node.var_name = chunks[0].strip()
-                node.iterator = self.build_func(chunks[1], node)
-                if len(sides) > 1:
-                    node.index_func = self.build_func(sides[1], node)
+                node.var_name = template.text
+                node.iterator = self.build_func(template.macro[0], node)
+                node.index_func = template.macro[1].code and self.build_func(template.macro[1], node)
 
                 if len(template.children) > 1:
                     node.else_template = template.children[1]
@@ -414,11 +414,9 @@ class DefaultRenderer:
 
             elif tag_name == '#set':
                 node: c.SetNode = c.SetNode(parent, template)
-                chunks = template.macro.split(':=')
-                if len(chunks) == 2:
-                    node.var_name = chunks[0].strip()
-                    node.expr = self.build_func(chunks[1], node)
-                    self.update(node)
+                node.var_name = template.text
+                node.expr = self.build_func(template.macro, node)
+                self.update(node)
 
         elif tag_name[0] == '@':
             if tag_name == '@component':
@@ -527,7 +525,7 @@ class DefaultRenderer:
             else:
                 child.update_tree()
 
-    def update(self, node: AnyNode, recursive: bool = False, record_reactions: bool = False):
+    def update(self, node: AnyNode, recursive: bool = False):
         if typename(node) in ('HTMLElement', 'NSElement'):
             # attributes, classes and text evaluation
             for k, v in node.attributes.items():
@@ -552,13 +550,13 @@ class DefaultRenderer:
         elif typename(node) == 'Context':
             if not recursive:
                 for attr, value in node.source_attributes.items():
-                    if typename(value) == 'code':
-                        data = self.eval_string(value, node) if value is not None else True
+                    if type(value) is MacroCode:
+                        data = self.eval_string_i10n(value, node) if value is not None else True
                         node[attr] = data
                 return
 
         elif typename(node) == 'TextNode':
-            if type(node.text) == DynamicString:
+            if type(node.text) is DynamicString:
                 node.text = node.text()
             node.shot(node)
             return  # no children ever
@@ -566,18 +564,11 @@ class DefaultRenderer:
         elif typename(node) == 'ConditionNode':
             state: int = -1
             condition: Optional[Condition] = None
-            if record_reactions:
-                with self.ctx.record_reactions(node):
-                    for i, c in enumerate(node.conditions):
-                        if c.func() and state < 0:
-                            state = i
-                            condition = c
-            else:
-                for i, c in enumerate(node.conditions):
-                    if c.func():
-                        state = i
-                        condition = c
-                        break
+            for i, c in enumerate(node.conditions):
+                if c.func():
+                    state = i
+                    condition = c
+                    break
 
             if node.state != state:
                 if node.state >= 0:

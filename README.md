@@ -19,7 +19,7 @@ Component based Web framework with specific features:
   <button type="button" on:click="choose" data:value="{destiny}">{{destiny}}</button>
 {{/for}}
 </div>
-<h2 class="verdict">{{chosen}}</h2>
+<h2 class="verdict">!{{chosen}}</h2>
 
 <style type="text/scss">
 .list {

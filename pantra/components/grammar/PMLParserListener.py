@@ -107,15 +107,6 @@ class PMLParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#macroCommand.
-    def enterMacroCommand(self, ctx:PMLParser.MacroCommandContext):
-        pass
-
-    # Exit a parse tree produced by PMLParser#macroCommand.
-    def exitMacroCommand(self, ctx:PMLParser.MacroCommandContext):
-        pass
-
-
     # Enter a parse tree produced by PMLParser#inlineMacro.
     def enterInlineMacro(self, ctx:PMLParser.InlineMacroContext):
         pass

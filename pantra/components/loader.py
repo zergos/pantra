@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
     from typing import *
     from types import CodeType
 
-__all__ = ['HTMLTemplate', 'collect_styles', 'collect_template']
+__all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template']
 
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
 SPECIAL_ELEMENTS = 'slot event scope react component '.split()
@@ -31,16 +31,21 @@ SPECIAL_ELEMENTS = 'slot event scope react component '.split()
 templates: typing.Dict[str, HTMLTemplate] = {}
 
 
+class MacroCode(typing.NamedTuple):
+    reactive: bool
+    code: CodeType | None
+
+
 class HTMLTemplate(UniNode):
     code_base: Dict[str, CodeType] = {}
     __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index', 'hex_digest')
 
-    def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Optional[List[Union[Dict, ADict]]] = None, text: str = None):
+    def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Optional[Union[Dict, ADict]] = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
-        self.attributes: Dict[str, Union[str, CodeType]] = attributes and ADict(attributes) or ADict()
+        self.attributes: Dict[str, str | MacroCode | None] = attributes and ADict(attributes) or ADict()
         self.text: str = text
-        self.macro: CodeType = None
+        self.macro: MacroCode | list[MacroCode] | None = None
         self.name: Optional[str] = None
         self.filename: Optional[str] = None
         self.code: Optional[Union[CodeType, str]] = None
@@ -109,16 +114,21 @@ class MyVisitor(PMLParserVisitor):
     def visitAttrValue(self, ctx: PMLParser.AttrValueContext):
         text = ctx.getText().strip('"\'')
         if '{' in text:
+            reactive = False
+            if text.startswith('!{'):
+                reactive = True
+                text = text[1:]
             if text.startswith('{'):
+                text = text.strip('{}')
                 if not self.cur_attr.startswith('set:'):
-                    value = compile(text.strip('{}'), f'<attribute:{self.cur_attr}>', 'eval')
+                    value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
                 else:
-                    text = text.strip('{}')
                     text = f"({text} or '')"
-                    value = compile(text, f'<attribute:{self.cur_attr}>', 'eval')
+                    value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
             else:
-                text = text.replace('`{', '{').replace('}`', '}')
-                value = compile(f'f"{text}"', f'<attribute:{self.cur_attr}>', 'eval')
+                reactive = '`!{' in text
+                text = text.replace('`{', '{').replace('`!{', '{').replace('}`', '}')
+                value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
         else:
             value = text
         self.current.attributes[self.cur_attr] = value
@@ -144,34 +154,51 @@ class MyVisitor(PMLParserVisitor):
             raise IllegalStateException(f"close tag don't match {tag_name}")
         self.current = self.current.parent
 
-    def visitMacroCommand(self, ctx: PMLParser.MacroCommandContext):
-        command = ctx.getText()
+    def visitMacroBegin(self, ctx: PMLParser.MacroCommandContext):
+        reactive = ctx.children[0].getText().startswith('_')
+        command = ctx.children[1].getText()
 
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
+        macro = None
         if not macro_chunks:
             tag_name = command.strip()
-            macro = ''
+            text = ''
         else:
             tag_name = macro_chunks.group(1).strip()
-            macro = macro_chunks.group(2).strip()
+            text = macro_chunks.group(2).strip()
+            if tag_name not in ('for', 'set'):
+                macro = MacroCode(reactive, compile(text, f"<{tag_name}>", "eval"))
 
         # gen 'if' subtree
         if tag_name == 'if':
             parent = HTMLTemplate('#if', self.index, self.current)
             self.current = HTMLTemplate('#choice', self.index, parent=parent)
-            self.current.macro = macro or "True"
+            self.current.macro = macro
         elif tag_name == 'for':
             parent = HTMLTemplate('#for', self.index, self.current)
-            parent.macro = macro
+            sides = text.split('#')
+            chunks = sides[0].split(' in ')
+            var_name = chunks[0].strip()
+            iterator = compile(chunks[1], f"<{parent.path()}:iterator>", "eval")
+            index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
+
+            parent.macro = [MacroCode(reactive, iterator), MacroCode(reactive, index_func)]
+            parent.text = var_name
             self.current = HTMLTemplate('#loop', self.index, parent=parent)
         elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
-            self.current.macro = macro or "True"
+            self.current.macro = macro
         elif tag_name == 'else':
             self.current = HTMLTemplate('#else', self.index, parent=self.current.parent)
         elif tag_name == 'set':
             self.current = HTMLTemplate('#set', self.index, parent=self.current)
-            self.current.macro = macro
+            chunks = text.split(':=')
+            if len(chunks) != 2:
+                raise IllegalStateException("set command should contains `:=` marker")
+            var_name = chunks[0].strip()
+            expr = compile(chunks[1].strip(), f"<{self.current.path()}>", "eval")
+            self.current.macro = MacroCode(reactive, expr)
+            self.current.text = var_name
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
@@ -188,8 +215,8 @@ class MyVisitor(PMLParserVisitor):
     def visitInlineMacro(self, ctx: PMLParser.InlineMacroContext):
         macro = HTMLTemplate('@macro', self.index, parent=self.current)
         text = ctx.children[1].getText()
-        code = compile(text, '<macro>', 'eval')
-        macro.macro = code
+        code = compile(text, f'<{self.current}:macro>', 'eval')
+        macro.macro = MacroCode(ctx.children[0].getText().startswith('!'), code)
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')

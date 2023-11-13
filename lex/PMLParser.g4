@@ -25,9 +25,8 @@ attrValue   : STRING ;
 
 macro       : macroBegin
             | macroEnd ;
-macroBegin  : OPEN_MACRO_BEGIN macroCommand CLOSE_MACRO ;
+macroBegin  : OPEN_MACRO_BEGIN COMMAND CLOSE_MACRO ;
 macroEnd    : OPEN_MACRO_END COMMAND CLOSE_MACRO ;
-macroCommand: COMMAND;
 
 inlineMacro : INLINE_MACRO COMMAND CLOSE_MACRO ;
 

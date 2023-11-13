@@ -33,9 +33,9 @@
             {{/for}}
         </thead>
         <tbody ref:tbody>
-        {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id is not None else forloop.counter}}
+        {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id is not None else forloop.counter0}}
             {{#for row in maps}}
-            <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
+            <tr data:row="{datarow}" data:row_id="{forloop.parent.index}" class:selected="{forloop.parent.index == active_row_id}">
                 {{#for col in row}}
                 <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow.get(col.info.name, None), col.info)}}</td>
                 {{/for}}
@@ -178,7 +178,7 @@ selectable: bool = False
 callback: Callable[[Any], None] = EmptyCaller()
 on_select: Callable[[LoopNode], None] = EmptyCaller()
 
-columns: Columns
+columns: Columns = {}
 
 maps: Optional[MapsRows] = None
 col_styles: Optional[List[Dict[str, Any]]] = []
