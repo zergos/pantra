@@ -1,7 +1,8 @@
-from .contrib import bsdf_lite as bsdf
 import typing
 from datetime import date, time, datetime, timezone
 
+from .contrib import bsdf_lite as bsdf
+from .common import DynamicString
 from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, AnyNode
 
 __all__ = ['serializer']
@@ -21,7 +22,19 @@ class HTMLElementSerializer(bsdf.Extension):
         return isinstance(v, HTMLElement)
 
     def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
-        res = {'n': v.tag_name, 'i': v.oid, 'p': get_parent_oid(v), 'a': v.attributes, 'C': v.classes + v.con_classes.cache, 't': v.text, 's': str(v.style), 'f': v._set_focus}
+        res = {
+            'n': v.tag_name,
+            'i': v.oid,
+            'p': get_parent_oid(v),
+            'a': v.attributes,
+            'C': v.classes + v.con_classes.cache,
+            's': str(v.style),
+            'f': v._set_focus
+        }
+        if isinstance(v.text, DynamicString) and v.text.html:
+            res['T'] = v.text
+        else:
+            res['t'] = v.text
         if type(v) == NSElement:
             res['x'] = v.ns_type.value
         if v._rebind:

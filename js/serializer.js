@@ -76,13 +76,13 @@ const HTMLElementSerializer = {
             element.setAttribute('style', v.s);
         else
             element.removeAttribute('style');
-        if (is_new) {
-            if (v.t) element.textContent = v.t;
-        } else if (!element.firstElementChild) {
+        if (v.T !== undefined) {
+            if (v.T !== element.innerHTML) element.innerHTML = v.T;
+        } else if (v.t !== null) {
             if (v.t !== element.textContent)
                 element.textContent = v.t;
-        } else
-            element.firstChild.nodeValue = v.t || '';
+        } /*else
+            element.firstChild.nodeValue = v.t || '';*/
         if (v.f)
             element.focus();
         if (v.v !== undefined)

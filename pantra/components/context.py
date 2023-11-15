@@ -207,14 +207,14 @@ class HTMLElement(RenderNode):
             instance = super().__new__(cls)
         return instance
 
-    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
+    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = None):
         super().__init__(parent, True)
         self.tag_name: str = tag_name
         self.attributes: ADict[str, Any] = attributes and ADict(attributes) or ADict()
         self.classes: Union[DynamicClasses, DynamicString, str] = DynamicClasses()
         self.con_classes: ConditionalClasses = ConditionalClasses()
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
-        self.text: Union[DynamicString, str] = text
+        self.text: Union[DynamicString, str, None] = text
         self.data: ADict[str, Any] = ADict()
         self._set_focus = False
         self.value_type = None
@@ -407,7 +407,7 @@ class LoopNode(RenderNode):
         return HTMLElement('loop', new_parent)
 
     def reset_cache(self):
-        self.index_map = {}
+        self.index_map.clear()
 
     def __str__(self):
         return '@'
@@ -416,9 +416,9 @@ class LoopNode(RenderNode):
 class TextNode(RenderNode):
     __slots__ = ['text']
 
-    def __init__(self, parent: RenderNode, text: Union[DynamicString, str]):
+    def __init__(self, parent: RenderNode, text: Union[DynamicString, str, None]):
         super().__init__(parent, True)
-        self.text: Union[DynamicString, str] = text
+        self.text: Union[DynamicString, str, None] = text
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return TextNode(new_parent, self.text)

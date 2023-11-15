@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 import typing
 import ctypes
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ if typing.TYPE_CHECKING:
     from typing import *
 
 __all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
-           'EmptyCaller', 'define_getter', 'define_setter']
+           'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue']
 
 from .oid import gen_id
 
@@ -143,24 +144,54 @@ class UniqueNode(UniNode):
 
 
 class DynamicString(str):
-    __slots__ = ['func']
+    __slots__ = ['func', 'html']
 
-    def __new__(cls, func: Callable[[], str]):
-        return super().__new__(cls, func() if callable(func) else func)
+    def __new__(cls, func: Callable[[], str] | str):
+        value = func() if isinstance(func, types.FunctionType) else func
+        instance = super().__new__(cls, value)
+        if isinstance(value, DynamicString):
+            instance.html = value.html
+        return instance
 
-    def __init__(self, func: Callable[[], str]):
+    def __init__(self, func: Callable[[], str] | str):
         self.func: Callable[[], str] = func
+        if not hasattr(self, "html"):
+            self.html = False
 
-    def __call__(self, *args, **kwargs) -> 'DynamicString':
-        return DynamicString(self.func)
+    def __call__(self, *args, **kwargs) -> Self:
+        return self.__class__(self.func)
 
     def __add__(self, other):
         if not other:
-            return DynamicString(self.func)
+            return self.__class__(self.func)
         return self+other
 
     def __getstate__(self):
         return str(self)
+
+    def __setstate__(self, state):
+        self.func = lambda: state
+
+
+class DynamicHTML(DynamicString):
+    def __init__(self, func: Callable[[], str] | str):
+        super().__init__(func)
+        self.html = True
+
+
+class DynamicValue:
+    __slots__ = ['func', 'value']
+
+    def __init__(self, func: Callable[[], Any]):
+        self.func: Callable[[], Any] = func
+        self.value = func()
+
+    def update(self):
+        self.value = self.func()
+        return self.value
+
+    def __getstate__(self):
+        return self.value
 
     def __setstate__(self, state):
         self.func = lambda: state

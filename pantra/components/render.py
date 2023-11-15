@@ -262,7 +262,10 @@ class DefaultRenderer:
                     attr = attr.split(':')[1].strip()
                     if value is None:
                         value = attr
-                    value = self.build_func_or_local(value, node, '')
+                    if isinstance(value, str) and value == "yes":
+                        value = lambda: True
+                    else:
+                        value = self.build_func_or_local(value, node, '')
                     if attr == 'focus':
                         node._set_focus = bool(value())
                     else:
@@ -283,7 +286,7 @@ class DefaultRenderer:
                     node.style = self.build_string(value, node)
                     return True
                 if attr == 'class':
-                    if value is MacroCode:
+                    if type(value) is MacroCode:
                         node.classes = self.build_string(value, node)
                     else:
                         node.classes = DynamicClasses(value)
@@ -696,9 +699,7 @@ class ContextShot:
         updated = []
         while not self.updated.empty():
             item = self.updated.get()
-            if item.oid in deleted:
-                deleted.remove(item.oid)
-            else:
+            if item.oid not in deleted:
                 updated.append(item)
         return updated, deleted
 
