@@ -35,7 +35,7 @@
         <tbody ref:tbody>
         {{#for datarow in get_rows(order_col, order_dir) #datarow[col_id] if col_id is not None else forloop.counter0}}
             {{#for row in maps}}
-            <tr data:row="{datarow}" data:row_id="{forloop.parent.index}" class:selected="{forloop.parent.index == active_row_id}">
+            <tr data:row="{datarow}" data:row_id="{forloop.parent.index}">
                 {{#for col in row}}
                 <td colspan="{col.hspan}" rowspan="{col.vspan}" data:col="{col.info}">{{fmt(datarow.get(col.info.name, None), col.info)}}</td>
                 {{/for}}
@@ -51,7 +51,7 @@
 </div>
 
 <event selector=".Table tbody td:not(.empty)" global on:click="select_cell" on:dblclick="enter_cell"/>
-<event selector=".Table tbody td input" global on:focusout="exit_cell"/>
+<!--event selector=".Table tbody td input" global on:focusout="exit_cell" on:keyup:Enter="exit_cell" on:keyup:Escape="exit_cell"/-->
 
 <style type="text/scss" global>
     @import "defaults";
@@ -235,6 +235,8 @@ def init():
 def fmt(value, info: ColumnInfo):
     if value is None:
         return ''
+    if info.formatter is not None:
+        return info.formatter(value)
     if info.type == datetime:
         return f'{value:%x %X}'
     if info.type == bool:
@@ -242,9 +244,19 @@ def fmt(value, info: ColumnInfo):
     return str(value)
 
 def refresh(clear: bool = False):
+    global active_row, active_row_node
     if clear:
         refs.tbody[0].reset_cache()
+    active_row = None
+    active_row_node = None
     refs.tbody.update_tree()
+
+    if active_row_id is not None:
+        for rows in refs.tbody[0]:
+            row = rows[0]
+            if row.data.row_id == active_row_id:
+                select_cell(row[0][0])
+                break
 
 def get_order_class(node):
     if order_dir == 0 or order_node != node:
@@ -309,7 +321,7 @@ def get_widget(col_info: ColumnInfo):
 
 def select_cell(node: HTMLElement):
     global active_row_id, active_row, active_row_node, active_col, active_col_cell
-    if active_row_id is not None:
+    if active_row_node is not None:
         for n in active_row_node:
             n.classes -= 'selected'
             ctx.shot(n)
@@ -340,7 +352,7 @@ def enter_cell(node: HTMLElement):
         callback(active_row_id)
         return
 
-    if not editable or not node.data.col.editable:
+    if not editable or node.data.col.readonly:
         return
 
     node.render(node.data.col.widget, {'column': node.data.col, 'value': str(node.text)})

@@ -15,6 +15,7 @@ from pantra.components.loader import HTMLTemplate
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.components.context import Context
+    from pantra.components.render import RenderNode
     MapsRows = List[List['ColumnMap | None']]
     Columns = Dict[str, 'ColumnInfo']
 else:
@@ -48,6 +49,7 @@ OPER_MAP = {
 class ColumnInfo(UX):
     style: DynamicStyles = field(default_factory=DynamicStyles)
     widget: HTMLTemplate | None = None
+    formatter: Callable[[Any], str] | None = None
 
 class DBColumnInfo(ColumnInfo):
     def __init__(self, ux: UX):

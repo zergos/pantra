@@ -48,7 +48,7 @@ class KeyListener extends EventListener {
         super.handleEvent(event);
         if (event.key !== undefined && (!this.key || event.key === this.key)) {
             let visible;
-            let node = this.get_oid(event);
+            let node = event.target;
             if (node) {
                 let box = node.getBoundingClientRect();
                 visible = box.width && box.height;
@@ -56,7 +56,7 @@ class KeyListener extends EventListener {
                 visible = true;
             }
             if (visible)
-                process_key(this.method, node, event.key);
+                process_key(this.method, this.get_oid(event), event.key);
         }
     }
 }
@@ -114,6 +114,8 @@ function addEvent(attr, selector, method, oid) {
         addEventHandler(attr.slice(3), selector, new SimpleListener(method, oid));
         /*if (attr === 'on:click')
             addEventHandler('mousedown', selector, do_nothing);*/
+    } else {
+        console.log(`wrong event ${attr}`);
     }
 }
 
