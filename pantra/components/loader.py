@@ -155,7 +155,7 @@ class MyVisitor(PMLParserVisitor):
         self.current = self.current.parent
 
     def visitMacroBegin(self, ctx: PMLParser.MacroCommandContext):
-        reactive = ctx.children[0].getText().startswith('_')
+        reactive = ctx.children[0].getText().startswith('!')
         command = ctx.children[1].getText()
 
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)

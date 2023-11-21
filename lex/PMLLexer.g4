@@ -18,13 +18,13 @@ OPEN_END    : '</' -> pushMode(TAG_PROPERTIES);
 
 // macro command
 OPEN_MACRO_BEGIN
-            : ('{{#' | '!{{#') -> pushMode(MACRO);
+            : ('!{{#' | '{{#') -> pushMode(MACRO);
 OPEN_MACRO_END
             : '{{/' -> pushMode(MACRO);
-INLINE_MACRO: ('{{' | '!{{') -> pushMode(MACRO);
+INLINE_MACRO: ('!{{' | '{{') -> pushMode(MACRO);
 
 // text other content inside tags
-TEXT        : (~[<{] | [{] ~[<{] | [!] ~[<{] | [!] [{] ~[<{] )+ ;
+TEXT        : (~[<{!] | [{] ~[<{] | [!] ~[<{] | [!] [{] ~[<{] )+ ;
 
 mode TAG_PROPERTIES;
 

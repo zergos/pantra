@@ -1,7 +1,7 @@
-<label class:inline class:block="{not inline}" class:required class:error>
+<label class:inline class:block="{not inline}" class:required class:error="!{error}">
     <span css:width="{caption_width}">{{caption}}</span>
     <input set:id set:name set:type bind:value set:placeholder set:required set:disabled="readonly" css:width>
-    <div class="message">{{error}}</div>
+    <div class="message">!{{error}}</div>
 </label>
 
 <python use="inputs">
