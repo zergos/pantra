@@ -8,7 +8,8 @@ from dataclasses import dataclass, field
 import logging
 
 from .common import raise_exception_in_thread
-from .defaults import *
+from .patching import wipe_logger
+from .settings import config
 
 logger = logging.getLogger('pantra.system')
 
@@ -61,16 +62,16 @@ def stat_thread():
                 if v.finish_flag == -1:
                     del workers[k]
                 continue
-            if v.active and tick - v.last_time > THREAD_TIMEOUT:
-                if len(workers) > MIN_TASK_THREADS:
+            if v.active and tick - v.last_time > config.THREAD_TIMEOUT:
+                if len(workers) > config.MIN_TASK_THREADS:
                     logger.warning(f"Thread removing `f{k}`")
                     raise_exception_in_thread(k)
                     del workers[k]
-            elif not v.active and tick - v.last_time > KILL_THREAD_LAG:
+            elif not v.active and tick - v.last_time > config.KILL_THREAD_LAG:
                 v.finish_flag = 1
             if tick > last_tick:
                 last_tick = tick
-        if not task_queue.empty() and last_tick and tick - last_tick > CREAT_THREAD_LAG:
+        if not task_queue.empty() and last_tick and tick - last_tick > config.CREAT_THREAD_LAG:
             logger.warning(f'New thread creation X#{len(workers)}')
             threading.Thread(target=task_processor, name=f'X#{len(workers)}').start()
 
@@ -85,7 +86,7 @@ def thread_worker(func):
 def start_task_workers():
     global task_queue
     task_queue = queue.Queue()
-    for i in range(MIN_TASK_THREADS):
+    for i in range(config.MIN_TASK_THREADS):
         threading.Thread(target=task_processor, name=f'#{i}').start()
 
 

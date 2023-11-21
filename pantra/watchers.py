@@ -6,7 +6,8 @@ from pathlib import Path
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from .defaults import BASE_PATH, APPS_PATH, COMPONENTS_PATH, wipe_logger
+from .settings import config
+from .patching import wipe_logger
 
 if typing.TYPE_CHECKING:
     from .components.loader import HTMLTemplate
@@ -47,8 +48,8 @@ def start_observer(templates, sessions, code_base):
     global observer
 
     observer = Observer()
-    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), APPS_PATH, True)
-    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), COMPONENTS_PATH, True)
+    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.APPS_PATH, True)
+    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.COMPONENTS_PATH, True)
     observer.start()
 
 

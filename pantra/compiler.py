@@ -8,7 +8,7 @@ import logging
 
 import sass
 from .common import ADict
-from .defaults import CSS_PATH
+from .settings import config
 
 if typing.TYPE_CHECKING:
     from types import CodeType
@@ -88,7 +88,7 @@ def compile_style(ctx: Context, template: HTMLTemplate) -> str:
     if template.code:
         return template.code
     try:
-        css = sass.compile(string=template.text, output_style='compressed', include_paths=[str(CSS_PATH)])
+        css = sass.compile(string=template.text, output_style='compressed', include_paths=[str(config.CSS_PATH)])
     except Exception as e:
         css = ''
         ctx.session.error(f'{template.filename}.scss> {e}')

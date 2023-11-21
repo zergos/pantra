@@ -3,8 +3,8 @@ import inspect
 
 
 def wipe_logger(func: types.FunctionType | type) -> types.FunctionType | type:
-    from .defaults import ENABLE_LOGGING
-    if ENABLE_LOGGING:
+    from .settings import config
+    if config.ENABLE_LOGGING:
         return func
 
     if inspect.isclass(func):

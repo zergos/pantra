@@ -5,8 +5,6 @@ import time
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
-from .defaults import *
-
 if typing.TYPE_CHECKING:
     from .session import Session
 

@@ -12,7 +12,8 @@ from .components.controllers import process_click, process_drag_start, process_d
     process_select, process_bind_value, process_key, process_direct_call
 from .components.loader import collect_styles, templates
 from .serializer import serializer
-from .defaults import *
+from .settings import config
+from .patching import wipe_logger
 from .session import Session
 from .workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
 from .watchers import start_observer, stop_observer
@@ -50,9 +51,9 @@ async def file_sender(writer, file_path=None):
 async def get_media(request: web.Request):
     app = request.match_info['app']
     if not app:
-        file_path = COMPONENTS_PATH
+        file_path = config.COMPONENTS_PATH if config.DEFAULT_APP == 'Core' else config.APPS_PATH / config.DEFAULT_APP
     else:
-        file_path = APPS_PATH / app
+        file_path = config.APPS_PATH / app
     file_path /= request.match_info['file']
     if not file_path.exists():
         return web.Response(body=f'File `{file_path.name}` not found', status=404)
@@ -66,12 +67,12 @@ async def get_media(request: web.Request):
 @routes.get(r'/{app:\w*}/ws/{local_id:\w+}/{session_id:\w+}')
 @wipe_logger
 async def get_ws(request: web.Request):
-    ws = web.WebSocketResponse(receive_timeout=SOCKET_TIMEOUT, max_msg_size=MAX_MESSAGE_SIZE)
+    ws = web.WebSocketResponse(receive_timeout=config.SOCKET_TIMEOUT, max_msg_size=config.MAX_MESSAGE_SIZE)
     await ws.prepare(request)
 
     app = request.match_info['app']
     if not app:
-        app = 'Core'
+        app = config.DEFAULT_APP
 
     logger.debug(f"WebSocket connected {{{app}}} {request.match_info['local_id']}/{request.match_info['session_id']}")
 
@@ -168,7 +169,7 @@ async def get_ws(request: web.Request):
 @wipe_logger
 async def get_global_css(request: web.Request):
     logger.debug("Collecting global components` styles")
-    styles = collect_styles(COMPONENTS_PATH, Session.error_later)
+    styles = collect_styles(config.COMPONENTS_PATH, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
 
@@ -178,8 +179,11 @@ async def get_local_css(request: web.Request):
     app = request.match_info['app']
     logger.debug(f"[{app}] Collecting styles")
     if not app:
-        return web.Response(content_type='text/css')
-    app_path = APPS_PATH / app
+        if config.DEFAULT_APP == 'Core':
+            return web.Response(content_type='text/css')
+        else:
+            app = config.DEFAULT_APP
+    app_path = config.APPS_PATH / app
     styles = collect_styles(app_path, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
@@ -190,9 +194,9 @@ async def get_static_scss(request: web.Request):
     file_name = request.match_info['name']
     logger.debug(f"Compiling SCSS {file_name}")
     try:
-        file_name = CSS_PATH / file_name
+        file_name = config.CSS_PATH / file_name
         text = file_name.with_suffix('.scss').read_text(encoding='utf-8')
-        css = sass.compile(string=text, output_style='compact', include_paths=[str(CSS_PATH)])
+        css = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH)])
     except Exception as e:
         Session.error_later(f'{file_name}.scss> {e}')
         return web.Response(status=404)
@@ -204,14 +208,14 @@ async def get_static_scss(request: web.Request):
 @wipe_logger
 async def get_out_js(request: web.Request):
     logger.debug("Building JS bundle")
-    jsmap.make(JS_PATH)  # TODO: Cache it!
-    file_name = JS_PATH / jsmap.OUT_NAME
+    jsmap.make(config.JS_PATH)  # TODO: Cache it!
+    file_name = config.JS_PATH / jsmap.OUT_NAME
     text = file_name.read_text('utf-8')
     return web.Response(body=text, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
 
 
-routes.static('/js', BASE_PATH / 'js', append_version=True)
-routes.static('/css', BASE_PATH / 'css', append_version=True)
+routes.static('/js', config.BASE_PATH / 'js', append_version=True)
+routes.static('/css', config.BASE_PATH / 'css', append_version=True)
 
 
 async def startup(app):
@@ -259,11 +263,11 @@ def setup_logger(level: int = logging.DEBUG):
 
 def run(host=None, port=8005):
     global bootstrap
-    if not BOOTSTRAP_FILENAME.exists():
-        print(f'File `{BOOTSTRAP_FILENAME}` not found')
+    if not config.BOOTSTRAP_FILENAME.exists():
+        print(f'File `{config.BOOTSTRAP_FILENAME}` not found')
         sys.exit(1)
 
-    bootstrap = BOOTSTRAP_FILENAME.read_text()
+    bootstrap = config.BOOTSTRAP_FILENAME.read_text()
 
     # patch incorrect default python mime-types
     mimetypes.init()
@@ -271,7 +275,7 @@ def run(host=None, port=8005):
 
     asyncio.run(main(host, port))
 
-if ENABLE_LOGGING:
+if config.ENABLE_LOGGING:
     setup_logger()
 
 if __name__ == '__main__':

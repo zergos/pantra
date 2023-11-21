@@ -8,8 +8,9 @@ from queue import Queue
 from collections import defaultdict
 import logging
 
-from .defaults import APPS_PATH, COMPONENTS_PATH, wipe_logger, ENABLE_LOGGING
+from .settings import config
 from .common import ADict, UniNode
+from .patching import wipe_logger
 from .compiler import exec_restart
 from .workers import async_worker
 from .trans import get_locale, get_translation, zgettext
@@ -70,9 +71,9 @@ class Session:
     @property
     def app_path(self) -> Path:
         if self.app == 'Core':
-            return COMPONENTS_PATH
+            return config.COMPONENTS_PATH
         else:
-            return APPS_PATH / self.app
+            return config.APPS_PATH / self.app
 
     @staticmethod
     def gen_session_id() -> str:
@@ -189,7 +190,7 @@ class Session:
 
     @staticmethod
     def get_apps() -> list[str]:
-        dirs = [app.name for app in APPS_PATH.glob("*")]
+        dirs = [app.name for app in config.APPS_PATH.glob("*")]
         return dirs
 
     def start_app(self, app):
