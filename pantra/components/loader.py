@@ -272,7 +272,7 @@ def _search_component(path: Path, name: str) -> str | None:
 def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplate]:
     global templates
 
-    key = '/'.join([session.app, name])
+    key = session.app +  '/' + name
     if key in templates:
         return templates[key]
 

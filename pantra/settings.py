@@ -7,21 +7,21 @@ class Config:
         self._inited: bool = False
 
     def init(self):
-        mods = ['pantra.defaults', 'app.config']
+        mods = ['pantra.defaults', 'apps.config']
         for mod in mods:
             try:
                 settings = import_module(mod)
             except ModuleNotFoundError:
                 continue
             for attr in dir(settings):
-                if attr.upper():
+                if attr.isupper():
                     setattr(self, attr, getattr(settings, attr))
         self._inited = True
 
     def __getattr__(self, item):
-        if item.upper() and not self._inited:
+        if item.isupper() and not self._inited:
             self.init()
-        super().__getattribute__(item)
+        return super().__getattribute__(item)
 
 
 config: Config = Config()
