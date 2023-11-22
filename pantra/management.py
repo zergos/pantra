@@ -54,6 +54,49 @@ class Main:
         update_dtd()
         print('Done')
 
+    def get_boilerplate(self):
+        """
+        download basic template
+        """
+        import tempfile
+        import os
+        import shutil
+        import zipfile
+
+        import requests
+        from .settings import config
+
+        REPO_BRANCH = 'pantra-master'
+
+        with tempfile.TemporaryFile(delete=False) as f:
+            res = requests.get("https://github.com/zergos/pantra/archive/master.zip")
+            if res.status_code != 200:
+                print(f'{res.status_code} {res.reason}')
+                return
+
+            f.write(res.content)
+            temp_name = f.name
+
+        cwd = config.BASE_PATH
+        with zipfile.ZipFile(temp_name, "r") as zip:
+            for member in ['components', 'css', 'js', 'apps/demo']:
+                for file in zip.namelist():
+                    if file.startswith(f'{REPO_BRANCH}/{member}/'):
+                        zip.extract(file, cwd)
+
+
+        for file_name in (cwd / REPO_BRANCH).glob('*'):
+            shutil.move(file_name, cwd)
+        os.rmdir(cwd / REPO_BRANCH)
+
+        #config.APPS_PATH.mkdir(exist_ok=True)
+        config_file = (config.APPS_PATH / 'config.py')
+        if not config_file.exists():
+            config_file.write_text('# apps configs')
+
+        os.remove(temp_name)
+        print('Done')
+
 
 class Migrate:
     """
@@ -412,7 +455,7 @@ class Locale:
         CommandLineInterface().run(args)
 
 
-def execute_from_command_line(argv):
+def execute_from_command_line(argv=None):
     main = ExposeToArgs(Main)
     main.add_commands(Migrate)
     main.add_commands(Schema)
