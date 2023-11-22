@@ -18,6 +18,11 @@ class Config:
                     setattr(self, attr, getattr(settings, attr))
         self._inited = True
 
+        if self.ENABLE_LOGGING:
+            for attr in dir(self):
+                if attr.isupper():
+                    print(f'{attr} = {getattr(self, attr)}')
+
     def __getattr__(self, item):
         if item.isupper() and not self._inited:
             self.init()

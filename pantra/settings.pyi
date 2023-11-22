@@ -1,27 +1,27 @@
 from pathlib import Path
 
 class Config:
-    BASE_PATH = Path(__file__).parent.parent
-    COMPONENTS_PATH = BASE_PATH / 'components'
-    PAGES_PATH = BASE_PATH / 'pages'
-    CSS_PATH = BASE_PATH / 'css'
-    JS_PATH = BASE_PATH / 'js'
-    APPS_PATH = BASE_PATH / 'apps'
-    DEFAULT_APP = 'Core'
+    BASE_PATH: Path
+    COMPONENTS_PATH: Path
+    PAGES_PATH: Path
+    CSS_PATH: Path
+    JS_PATH: Path
+    APPS_PATH: Path
+    DEFAULT_APP: str
 
-    MIN_TASK_THREADS = 2
-    MAX_TASK_THREADS = 100
-    CREAT_THREAD_LAG = 3
-    KILL_THREAD_LAG = 300
-    THREAD_TIMEOUT = 180
+    MIN_TASK_THREADS: int
+    MAX_TASK_THREADS: int
+    CREAT_THREAD_LAG: int
+    KILL_THREAD_LAG: int
+    THREAD_TIMEOUT: int
 
-    SOCKET_TIMEOUT = 180
-    MAX_MESSAGE_SIZE = 4 * 1024 * 1024
-    LOCKS_TIMEOUT = 5
+    SOCKET_TIMEOUT: int
+    MAX_MESSAGE_SIZE: int
+    LOCKS_TIMEOUT: int
 
-    BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
+    BOOTSTRAP_FILENAME: Path
 
-    ENABLE_LOGGING = False
+    ENABLE_LOGGING: bool
 
 
 config: Config = Config()

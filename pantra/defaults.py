@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_PATH = Path(__file__).parent.parent
+BASE_PATH = Path('.')
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
 CSS_PATH = BASE_PATH / 'css'
@@ -20,5 +20,5 @@ LOCKS_TIMEOUT = 5
 
 BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 
-ENABLE_LOGGING = False
+ENABLE_LOGGING = True
 
