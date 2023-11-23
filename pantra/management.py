@@ -4,8 +4,8 @@ from pathlib import Path
 import sys
 import typing
 
-from pantra.args import *
-from pantra.defaults import *
+from .args import *
+from .settings import config
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -14,9 +14,9 @@ if typing.TYPE_CHECKING:
 
 def _detect_app():
     path = Path.cwd()
-    if path.is_relative_to(APPS_PATH):
-        return path.relative_to(APPS_PATH).parts[0]
-    if path.is_relative_to(COMPONENTS_PATH):
+    if path.is_relative_to(config.APPS_PATH):
+        return path.relative_to(config.APPS_PATH).parts[0]
+    if path.is_relative_to(config.COMPONENTS_PATH):
         return 'Core'
     return Empty
 
@@ -43,7 +43,7 @@ class Main:
         """
         list all apps
         """
-        for f in APPS_PATH.glob('*'):
+        for f in config.APPS_PATH.glob('*'):
             print(f)
 
     def collect_dtd(self):
@@ -92,7 +92,17 @@ class Main:
         #config.APPS_PATH.mkdir(exist_ok=True)
         config_file = (config.APPS_PATH / 'config.py')
         if not config_file.exists():
-            config_file.write_text('# apps configs')
+            config_file.write_text('''# apps configs
+from pathlib import Path            
+
+BASE_PATH = Path(__file__).parent
+COMPONENTS_PATH = BASE_PATH / 'components'
+PAGES_PATH = BASE_PATH / 'pages'
+CSS_PATH = BASE_PATH / 'css'
+JS_PATH = BASE_PATH / 'js'
+APPS_PATH = BASE_PATH / 'apps'
+BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
+''')
 
         os.remove(temp_name)
         print('Done')
@@ -362,8 +372,8 @@ class Locale:
     @staticmethod
     def _detect_locale():
         path = Path.cwd()
-        if path.is_relative_to(BASE_PATH):
-            path = path.relative_to(BASE_PATH)
+        if path.is_relative_to(config.BASE_PATH):
+            path = path.relative_to(config.BASE_PATH)
             while path.parent.name:
                 if path.parent.name == 'locale':
                     return path.name
@@ -403,9 +413,9 @@ class Locale:
         from babel.messages.frontend import CommandLineInterface
 
         if self.app == 'Core':
-            path = COMPONENTS_PATH
+            path = config.COMPONENTS_PATH
         else:
-            path = APPS_PATH / self.app
+            path = config.APPS_PATH / self.app
         ini_name = path / 'babel.ini'
         with ini_name.open("wt") as f:
             f.write('[extractors]\npython = pantra.trans:extract_python\nhtml = pantra.trans:extract_html\ndata = pantra.trans:extract_data\n')

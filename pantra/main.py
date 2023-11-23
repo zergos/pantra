@@ -205,16 +205,14 @@ async def get_static_scss(request: web.Request):
 
 
 @routes.get(r'/js/'+jsmap.OUT_NAME)
-@wipe_logger
 async def get_out_js(request: web.Request):
-    logger.debug("Building JS bundle")
-    jsmap.make(config.JS_PATH)  # TODO: Cache it!
-    file_name = config.JS_PATH / jsmap.OUT_NAME
-    text = file_name.read_text('utf-8')
-    return web.Response(body=text, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
+    return web.Response(body=jsmap.cache.content, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
+
+@routes.get(r'/js/'+jsmap.OUT_NAME_MAP)
+async def get_out_js(request: web.Request):
+    return web.Response(body=jsmap.cache.map, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
 
 
-routes.static('/js', config.BASE_PATH / 'js', append_version=True)
 routes.static('/css', config.BASE_PATH / 'css', append_version=True)
 
 

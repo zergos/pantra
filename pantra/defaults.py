@@ -1,10 +1,19 @@
 from pathlib import Path
+import pkg_resources
 
-BASE_PATH = Path('.')
+def get_proj_path():
+    cwd = Path('.').absolute()
+    while cwd.name:
+        if (cwd / 'components' / 'bootstrap.html').exists():
+            return cwd
+        cwd = cwd.parent
+    return Path('.')
+
+BASE_PATH = get_proj_path()
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
 CSS_PATH = BASE_PATH / 'css'
-JS_PATH = BASE_PATH / 'js'
+JS_PATH = Path(pkg_resources.resource_filename('pantra', "js"))
 APPS_PATH = BASE_PATH / 'apps'
 DEFAULT_APP = 'Core'
 

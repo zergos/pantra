@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pantra"
+license = {text = "Apache 2.0"}
+authors = [
+    {name = "Andrey Aseev", email = "invent@zergos.ru"}
+]
+maintainers = [
+    {name = "Andrey Aseev", email = "invent@zergos.ru"}
+]
+urls = {Homepage = "https://github.com/zergos/pantra"}
+description = "Python Full-stack Framework"
+dependencies = [
+    'aiohttp==3.7.4.post0',
+    'antlr4-python3-runtime==4.10',
+    'cssutils==2.3.0',
+    'requests==2.31.0',
+    'libsass==0.22.0',
+    'Babel>=2.9.1',
+    'watchdog>=2.1.6',
+    'quazydb @ git+https://github.com/zergos/quazydb',
+]
+requires-python = ">=3.10"
+dynamic = ["version", "readme"]
+scripts = {pantra = "pantra.management:execute_from_command_line"}
+
+[tool.setuptools]
+package-dir = {pantra = "pantra"}
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "pantra.VERSION"}
+readme = {file = ["README.md"]}

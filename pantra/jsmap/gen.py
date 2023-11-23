@@ -5,10 +5,11 @@ from . import vlq
 
 MAP_CONFIG = 'map.json'
 OUT_NAME = 'all.js'
+OUT_NAME_MAP = 'all.js.map'
 sepa_tokens = string.ascii_letters + string.digits + '_$'
 
 
-def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False):
+def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False) -> tuple[str, str]:
     with (path / MAP_CONFIG).open("rb") as f:
         src_names = json.load(f)
 
@@ -102,14 +103,17 @@ def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool =
 
     dest['mappings'] = ','.join(mappings) + ';'
 
-    (path / OUT_NAME).write_text(out)
-    with (path / (OUT_NAME + '.map')).open('wt') as f:
-        json.dump(dest, f)
+    return out, json.dumps(dest)
 
 
 if __name__ == '__main__':
     if not Path(MAP_CONFIG).exists():
         print(f'define source files names list in {MAP_CONFIG} file')
     else:
-        make()
+        out, out_map = make()
+        path = Path('.')
+        (path / OUT_NAME).write_text(out)
+        with (path / (OUT_NAME + '.map')).open('wt') as f:
+            json.dump(out_map, f)
+
         print('done')
