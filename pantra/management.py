@@ -71,7 +71,7 @@ class Main:
 
         REPO_BRANCH = 'pantra-master'
 
-        with tempfile.TemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
             res = requests.get("https://github.com/zergos/pantra/archive/master.zip")
             if res.status_code != 200:
                 print(f'{res.status_code} {res.reason}')
