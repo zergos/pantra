@@ -14,6 +14,8 @@ if typing.TYPE_CHECKING:
 
 def _detect_app():
     path = Path.cwd()
+    if path == config.APPS_PATH:
+        return Empty
     if path.is_relative_to(config.APPS_PATH):
         return path.relative_to(config.APPS_PATH).parts[0]
     if path.is_relative_to(config.COMPONENTS_PATH):
@@ -44,7 +46,8 @@ class Main:
         list all apps
         """
         for f in config.APPS_PATH.glob('*'):
-            print(f)
+            if not f.name.startswith('_') and f.is_dir():
+                print(f.name)
 
     def collect_dtd(self):
         """
@@ -92,17 +95,7 @@ class Main:
         #config.APPS_PATH.mkdir(exist_ok=True)
         config_file = (config.APPS_PATH / 'config.py')
         if not config_file.exists():
-            config_file.write_text('''# apps configs
-from pathlib import Path            
-
-BASE_PATH = Path(__file__).parent
-COMPONENTS_PATH = BASE_PATH / 'components'
-PAGES_PATH = BASE_PATH / 'pages'
-CSS_PATH = BASE_PATH / 'css'
-JS_PATH = BASE_PATH / 'js'
-APPS_PATH = BASE_PATH / 'apps'
-BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
-''')
+            config_file.write_text('# apps configs')
 
         os.remove(temp_name)
         print('Done')
