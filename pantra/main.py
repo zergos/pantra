@@ -214,7 +214,7 @@ async def get_out_js(request: web.Request):
 
 
 routes.static('/css', config.BASE_PATH / 'css', append_version=True)
-
+routes.static('/js', config.JS_PATH)
 
 async def startup(app):
     start_task_workers()

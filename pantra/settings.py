@@ -1,13 +1,10 @@
 from importlib import import_module
 import logging
 
-from .patching import wipe_logger
-
 __all__ = ['config']
 
 logger = logging.getLogger("pantra.system")
 
-@wipe_logger
 class Config:
     def __init__(self):
         self._inited: bool = False
