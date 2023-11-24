@@ -30,6 +30,7 @@ scripts = {pantra = "pantra.management:execute_from_command_line"}
 [tool.setuptools]
 package-dir = {pantra = "pantra"}
 include-package-data = true
+package-data = {pantra = ["*.pyi", "js/*.js", "js/*.json"]}
 
 [tool.setuptools.dynamic]
 version = {attr = "pantra.VERSION"}

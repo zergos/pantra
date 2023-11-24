@@ -471,3 +471,7 @@ def execute_from_command_line(argv=None):
     main.add_commands(Schema)
     main.add_commands(Locale)
     main.execute(argv)
+
+
+if __name__ == "__main__":
+    execute_from_command_line()
