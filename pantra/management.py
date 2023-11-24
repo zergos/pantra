@@ -82,15 +82,20 @@ class Main:
 
         cwd = config.BASE_PATH
         with zipfile.ZipFile(temp_name, "r") as zip:
-            for member in ['components', 'css', 'js', 'apps/demo']:
+            for member in ['components', 'css', 'apps/demo']:
                 for file in zip.namelist():
                     if file.startswith(f'{REPO_BRANCH}/{member}/'):
                         zip.extract(file, cwd)
 
 
         for file_name in (cwd / REPO_BRANCH).glob('*'):
+            if (cwd / file_name.name).exists():
+                print(f"directory `{file_name.name}` exists, skipped")
+                continue
+            print(f'move {file_name} to {cwd}')
             shutil.move(file_name, cwd)
-        os.rmdir(cwd / REPO_BRANCH)
+
+        shutil.rmtree(cwd / REPO_BRANCH)
 
         #config.APPS_PATH.mkdir(exist_ok=True)
         config_file = (config.APPS_PATH / 'config.py')
