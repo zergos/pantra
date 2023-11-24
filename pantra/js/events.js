@@ -20,8 +20,11 @@ class SimpleListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
         process_click(this.method, this.get_oid(event));
-        if (event.target.tagName === 'button') // prevent submit
+        let tagName = event.target.tagName.toLowerCase();
+        if (tagName === 'button' || tagName === 'form') {// prevent submit
             event.preventDefault();
+            return false;
+        }
     }
 }
 
