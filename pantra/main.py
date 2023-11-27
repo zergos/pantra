@@ -254,8 +254,8 @@ async def web_app():
                 app.router.add_static(config.WEB_PATH + route.prefix, route.path, **route.kwargs)
             else:
                 raise "Call a coder here"
-
-    #app.add_routes(routes)
+    else:
+        app.add_routes(routes)
 
     app.on_startup.append(startup)
     app.on_shutdown.append(shutdown)
