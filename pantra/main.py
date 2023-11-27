@@ -240,12 +240,22 @@ async def web_app():
     mimetypes.init()
     mimetypes.add_type('application/javascript', '.js')
 
+    if config.ENABLE_LOGGING:
+        setup_logger()
+
     app = web.Application()
 
-    #for route in routes:
-    #    app.router.add_route(route.method, route.path, route.handler, **route.kwargs)
+    if config.WEB_PATH:
+        from aiohttp.web_routedef import RouteDef, StaticDef
+        for route in routes:
+            if type(route) is RouteDef:
+                app.router.add_route(route.method, config.WEB_PATH + route.path, route.handler, **route.kwargs)
+            elif type(route) is StaticDef:
+                app.router.add_static(config.WEB_PATH + route.prefix, route.path, **route.kwargs)
+            else:
+                raise "Call a coder here"
 
-    app.add_routes(routes)
+    #app.add_routes(routes)
 
     app.on_startup.append(startup)
     app.on_shutdown.append(shutdown)
@@ -284,9 +294,6 @@ def setup_logger(level: int = logging.DEBUG):
 def run(host=None, port=8005):
     asyncio.run(main(host, port))
 
-
-if config.ENABLE_LOGGING:
-    setup_logger()
 
 if __name__ == '__main__':
     run()

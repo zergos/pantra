@@ -21,7 +21,7 @@ function start(new_local_id, new_tab_id, web_path) {
         sessionStorage.setItem('tab_id', tab_id);
     }
     let protocol = location.protocol === "http:"? "ws" : "wss";
-    main = new WSClient(`${protocol}://${location.host}${web_path}${location.pathname}/ws/${local_id}/${tab_id}`);
+    main = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
     main.onrefresh = () => {
         send_message({'C': 'UP'})
     };
