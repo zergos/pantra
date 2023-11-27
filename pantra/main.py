@@ -229,6 +229,17 @@ async def shutdown(app):
 
 
 async def web_app():
+    global bootstrap
+    if not config.BOOTSTRAP_FILENAME.exists():
+        print(f'File `{config.BOOTSTRAP_FILENAME}` not found')
+        sys.exit(1)
+
+    bootstrap = config.BOOTSTRAP_FILENAME.read_text()
+
+    # patch incorrect default python mime-types
+    mimetypes.init()
+    mimetypes.add_type('application/javascript', '.js')
+
     app = web.Application()
 
     #for route in routes:
@@ -271,17 +282,6 @@ def setup_logger(level: int = logging.DEBUG):
 
 
 def run(host=None, port=8005):
-    global bootstrap
-    if not config.BOOTSTRAP_FILENAME.exists():
-        print(f'File `{config.BOOTSTRAP_FILENAME}` not found')
-        sys.exit(1)
-
-    bootstrap = config.BOOTSTRAP_FILENAME.read_text()
-
-    # patch incorrect default python mime-types
-    mimetypes.init()
-    mimetypes.add_type('application/javascript', '.js')
-
     asyncio.run(main(host, port))
 
 
