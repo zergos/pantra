@@ -2,6 +2,7 @@ from pathlib import Path
 
 class Config:
     BASE_PATH: Path
+    WEB_PATH: str
     COMPONENTS_PATH: Path
     PAGES_PATH: Path
     CSS_PATH: Path

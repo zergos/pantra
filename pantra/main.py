@@ -34,6 +34,7 @@ async def get_main_page(request: web.Request):
     session_id = Session.gen_session_id()
     body = bootstrap.replace('{{LOCAL_ID}}', local_id)
     body = body.replace('{{TAB_ID}}', session_id)
+    body = body.replace('{{WEB_PATH}}', config.WEB_PATH)
     logger.debug(f"Bootstrap page rendered {local_id}/{session_id}")
     return web.Response(body=body, content_type='text/html')
 

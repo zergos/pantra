@@ -1,12 +1,12 @@
 let main;
 
-function start(new_local_id, new_tab_id) {
+function start(new_local_id, new_tab_id, web_path) {
     let chunks = location.pathname.split('/');
     if (chunks.length >= 2) {
         let app_name = chunks[1];
         let local_style = document.createElement('link');
         local_style.setAttribute('rel', 'stylesheet');
-        local_style.setAttribute('href', `/css/${app_name}.local.css`);
+        local_style.setAttribute('href', `${web_path}/css/${app_name}.local.css`);
         document.head.append(local_style);
     }
 
@@ -21,7 +21,7 @@ function start(new_local_id, new_tab_id) {
         sessionStorage.setItem('tab_id', tab_id);
     }
     let protocol = location.protocol === "http:"? "ws" : "wss";
-    main = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
+    main = new WSClient(`${protocol}://${location.host}${web_path}${location.pathname}/ws/${local_id}/${tab_id}`);
     main.onrefresh = () => {
         send_message({'C': 'UP'})
     };

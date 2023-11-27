@@ -10,6 +10,7 @@ def get_proj_path():
     return Path('.')
 
 BASE_PATH = get_proj_path()
+WEB_PATH = ''
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
 CSS_PATH = BASE_PATH / 'css'
