@@ -1,6 +1,9 @@
 from importlib import import_module
+import logging
 
 __all__ = ['config']
+logger = logging.getLogger("pantra.init")
+
 
 class Config:
     def __init__(self):
@@ -11,10 +14,10 @@ class Config:
         for mod in mods:
             try:
                 settings = import_module(mod)
-                print(f"Config `{mod}` loaded")
+                logger.warning(f"Config `{mod}` loaded")
             except ModuleNotFoundError:
                 import sys
-                print(f"Module `{mod}` is not found in {sys.path}")
+                logger.warning(f"Module `{mod}` is not found in {sys.path}")
                 continue
             for attr in dir(settings):
                 if attr.isupper():
@@ -28,7 +31,7 @@ class Config:
         if self.ENABLE_LOGGING:
             for attr in dir(self):
                 if attr.isupper():
-                    print(f'{attr} = {getattr(self, attr)}')
+                    logger.warning(f'{attr} = {getattr(self, attr)}')
 
     def __getattr__(self, item):
         if item.isupper() and not self._inited:

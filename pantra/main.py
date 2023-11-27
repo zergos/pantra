@@ -228,12 +228,22 @@ async def shutdown(app):
     stop_observer()
 
 
-async def main(host, port):
+async def web_app():
     app = web.Application()
+
+    #for route in routes:
+    #    app.router.add_route(route.method, route.path, route.handler, **route.kwargs)
+
     app.add_routes(routes)
 
     app.on_startup.append(startup)
     app.on_shutdown.append(shutdown)
+
+    return app
+
+
+async def main(host, port):
+    app = await web_app()
 
     #web.run_app(app, port=8005)
 
@@ -273,6 +283,7 @@ def run(host=None, port=8005):
     mimetypes.add_type('application/javascript', '.js')
 
     asyncio.run(main(host, port))
+
 
 if config.ENABLE_LOGGING:
     setup_logger()
