@@ -17,6 +17,7 @@ CSS_PATH = BASE_PATH / 'css'
 JS_PATH = Path(pkg_resources.resource_filename('pantra', "js"))
 APPS_PATH = BASE_PATH / 'apps'
 DEFAULT_APP = 'Core'
+PRODUCTIVE = False
 
 MIN_TASK_THREADS = 2
 MAX_TASK_THREADS = 100
@@ -30,5 +31,6 @@ LOCKS_TIMEOUT = 5
 
 BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 
-ENABLE_LOGGING = True
+ENABLE_LOGGING = False
+
 

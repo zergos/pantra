@@ -1,6 +1,6 @@
 <div class="taskbar" ref:bars class:hidden="{len(windows)<2}"/>
-<div class="title" class:hidden="{not title}">
-    <div class="title-content">{{title}}</div><div class="close" on:click="close">🗙</div>
+<div class="title" class:hidden="!{not title}">
+    <div class="title-content">!{{title}}</div><div class="close" on:click="close">🗙</div>
 </div>
 
 <style type="text/scss">

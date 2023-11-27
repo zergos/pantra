@@ -9,6 +9,7 @@ class Config:
     JS_PATH: Path
     APPS_PATH: Path
     DEFAULT_APP: str
+    PRODUCTIVE: bool
 
     MIN_TASK_THREADS: int
     MAX_TASK_THREADS: int

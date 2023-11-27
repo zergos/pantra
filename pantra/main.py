@@ -220,7 +220,8 @@ routes.static('/js', config.JS_PATH)
 async def startup(app):
     start_task_workers()
     init_async_worker()
-    start_observer(templates, Session, code_base)
+    if not config.PRODUCTIVE:
+        start_observer(templates, Session, code_base)
 
 
 async def shutdown(app):
