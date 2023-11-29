@@ -14,7 +14,8 @@ maintainers = [
 urls = {Homepage = "https://github.com/zergos/pantra"}
 description = "Python Full-stack Framework"
 dependencies = [
-    'aiohttp==3.7.4.post0',
+    'aiohttp>=3.7.4.post0',
+    'aiofiles',
     'antlr4-python3-runtime==4.10',
     'cssutils==2.3.0',
     'requests==2.31.0',

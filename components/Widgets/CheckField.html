@@ -1,3 +1,4 @@
+<div class="checkbox">
 <label>
     <div class="message">{{error}}</div>
     <input type="checkbox"
@@ -5,13 +6,26 @@
            set:required
            set:disabled = "{readonly}"
            class:error
+           on:change="on_change"
     >
     <span>{{caption}}</span>
 </label>
-<react to="value" action="on_change"/>
+    <HelpMessage consume="help">
+        <help reuse/>
+    </HelpMessage>
+</div>
 
 <style type="text/scss">
     @import "defaults";
+
+    .checkbox {
+        display: flex;
+        flex-flow: row wrap;
+    }
+
+    label {
+        width: auto;
+    }
 
     input {
         appearance: none;
@@ -47,6 +61,8 @@
 </style>
 
 <python use="validators">
+from pantra.ctx import *
+
 value: bool = False
 caption: str = ''
 error: str = ''

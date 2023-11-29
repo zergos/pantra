@@ -53,11 +53,14 @@ class Session:
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
             self.root: Optional[Context] = None
-            self.title = 'Fruity App'
+            self.title = ''
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
-            self.set_locale(lang)
+            try:
+                self.set_locale(lang)
+            except Exception as e:
+                raise
 
     def __getitem__(self, item):
         return self.state[item]

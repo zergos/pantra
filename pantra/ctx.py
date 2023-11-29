@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 from .common import WebUnits, EmptyCaller, DynamicHTML
+from .settings import config
 
 if typing.TYPE_CHECKING:
     import logging
@@ -25,6 +26,4 @@ if typing.TYPE_CHECKING:
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
-               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML']
-else:
-    __all__ = ['typing', 'WebUnits', 'EmptyCaller', 'DynamicHTML']
+               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML', 'config']

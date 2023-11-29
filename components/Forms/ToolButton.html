@@ -1,4 +1,4 @@
-<button type="button" on:click="action" class:danger class:default set:disabled>{{caption}}</button>
+<button type="button" on:click="action" class:danger class:green class:default set:disabled>{{caption}}</button>
 
 <style type="text/scss">
     @import "basic";
@@ -37,6 +37,14 @@
             }
         }
 
+        &.green {
+            background-color: $color-green;
+
+            &:hover {
+                background-color: lighten($color-green, 10%);
+            }
+        }
+
         &.default {
             font-weight: bold;
         }
@@ -47,6 +55,7 @@
 caption: str = ''
 action: str = ''
 danger: bool = False
+green: bool = False
 default: bool = False
 disabled: bool = False
 </python>

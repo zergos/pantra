@@ -22,6 +22,7 @@ class Config:
     LOCKS_TIMEOUT: int
 
     BOOTSTRAP_FILENAME: Path
+    APP_TITLE: str
 
     ENABLE_LOGGING: bool
 

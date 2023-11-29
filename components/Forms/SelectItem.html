@@ -1,6 +1,6 @@
-<option value="{this.oid}" selected="{selected}">{{caption}}</option>
+<option value="{this.oid}" selected="!{selected}">{{caption}}</option>
 
 <python>
-selected: str = ''
+selected: bool = False
 caption: str = 'option'
 </python>

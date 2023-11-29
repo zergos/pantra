@@ -1,4 +1,4 @@
-<form class:with-header="caption" on:submit="default_action">
+<form class:with-header="caption" spellcheck = "{spellcheck and '' or 'false'}" on:submit="default_action">
     {{#if caption}}
     <div class="header">{{caption}}</div>
     <div ref:content class="content">
@@ -16,7 +16,9 @@
         border: $form-border;
         border-radius: $form-radius;
         padding: $form-padding;
+        margin-top: 0.6rem;
         background: $form-bg;
+        background: linear-gradient(139deg, rgba(162,218,255,1) 0%, rgba(172,230,246,1) 70%, rgba(192,255,226,1) 100%);
     }
 
     .header {
@@ -44,7 +46,7 @@
 from pantra.ctx import *
 
 caption: str = ''
-
+spellcheck: bool = True
 
 def is_valid():
     ok = True

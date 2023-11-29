@@ -1084,7 +1084,7 @@
 
 
 <!--COMPONENTS-->
-<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DBField|DBQueryTable|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityForm|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|SVG|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DBField|DBQueryTable|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityForm|FBLoginButton|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|HelpMessage|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|Properties|QuestionForm|QuestionList|SVG|Screen1|Screen2|Screen3|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
 <!ELEMENT BaseTable %Flow;>
 <!ELEMENT Button %Flow;>
 <!ELEMENT CardForm %Flow;>
@@ -1101,6 +1101,7 @@
 <!ELEMENT Dialog %Flow;>
 <!ELEMENT DocumentList %Flow;>
 <!ELEMENT EntityForm %Flow;>
+<!ELEMENT FBLoginButton %Flow;>
 <!ELEMENT Field %Flow;>
 <!ELEMENT FilterTable %Flow;>
 <!ELEMENT FilterTableLine %Flow;>
@@ -1108,6 +1109,7 @@
 <!ELEMENT GridR %Flow;>
 <!ELEMENT GridX %Flow;>
 <!ELEMENT GridZ %Flow;>
+<!ELEMENT HelpMessage %Flow;>
 <!ELEMENT InlineGroup %Flow;>
 <!ELEMENT InputBox %Flow;>
 <!ELEMENT InputField %Flow;>
@@ -1119,9 +1121,13 @@
 <!ELEMENT MenuItem %Flow;>
 <!ELEMENT NumberField %Flow;>
 <!ELEMENT PopupMenu %Flow;>
+<!ELEMENT Properties %Flow;>
 <!ELEMENT QuestionForm %Flow;>
 <!ELEMENT QuestionList %Flow;>
 <!ELEMENT SVG %Flow;>
+<!ELEMENT Screen1 %Flow;>
+<!ELEMENT Screen2 %Flow;>
+<!ELEMENT Screen3 %Flow;>
 <!ELEMENT SelectBox %Flow;>
 <!ELEMENT SelectItem %Flow;>
 <!ELEMENT SideMenu %Flow;>

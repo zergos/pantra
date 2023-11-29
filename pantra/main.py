@@ -3,7 +3,9 @@ import sys
 import traceback
 import mimetypes
 import logging
+from importlib import import_module
 
+import aiofiles
 import sass
 from aiohttp import web, WSMessage, WSMsgType, streamer
 
@@ -32,37 +34,55 @@ logger = logging.getLogger('pantra.system')
 async def get_main_page(request: web.Request):
     local_id = Session.gen_session_id()
     session_id = Session.gen_session_id()
+
+    app = request.match_info['app']
+    if not app:
+        app = config.DEFAULT_APP
+
+    try:
+        app_module = import_module(f"apps.{app}")
+    except ModuleNotFoundError:
+        app_module = None
+    app_title = getattr(app_module, "APP_TITLE", None) or config.APP_TITLE
+
     body = bootstrap.replace('{{LOCAL_ID}}', local_id)
     body = body.replace('{{TAB_ID}}', session_id)
     body = body.replace('{{WEB_PATH}}', config.WEB_PATH)
+    body = body.replace('{{APP_TITLE}}', app_title)
+
     logger.debug(f"Bootstrap page rendered {local_id}/{session_id}")
     return web.Response(body=body, content_type='text/html')
 
 
-@streamer
-async def file_sender(writer, file_path=None):
-    with open(file_path, 'rb') as f:
-        chunk = f.read(2 ** 16)
-        while chunk:
-            await writer.write(chunk)
-            chunk = f.read(2 ** 16)
-
-
-@routes.get(r'/{app:\w*}/m/{file:.+}')
+@routes.get(r'/{app:\w*}/~/{file:.+}')
+@routes.get(r'/~/{file:.+}')
 async def get_media(request: web.Request):
-    app = request.match_info['app']
+    app = request.match_info.get('app', None)
     if not app:
-        file_path = config.COMPONENTS_PATH if config.DEFAULT_APP == 'Core' else config.APPS_PATH / config.DEFAULT_APP
+        search_path = config.COMPONENTS_PATH
     else:
-        file_path = config.APPS_PATH / app
-    file_path /= request.match_info['file']
+        search_path = config.APPS_PATH / app
+
+    file_path = search_path / request.match_info['file']
     if not file_path.exists():
         return web.Response(body=f'File `{file_path.name}` not found', status=404)
+
     headers = {
         "Content-disposition": f"attachment; filename={file_path.name}",
         "Content-type": mimetypes.guess_type(file_path)[0],
     }
-    return web.Response(body=file_sender(file_path=str(file_path)), headers=headers)
+    response = web.StreamResponse(headers=headers)
+    await response.prepare(request)
+
+    async with aiofiles.open(file_path, 'rb') as f:
+        while True:
+            chunk = await f.read(2 ** 16)
+            if not chunk:
+                break
+            await response.write(chunk)
+
+    await response.write_eof()
+    return response
 
 
 @routes.get(r'/{app:\w*}/ws/{local_id:\w+}/{session_id:\w+}')

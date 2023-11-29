@@ -4,7 +4,7 @@ from ..defaults import APPS_PATH, COMPONENTS_PATH
 
 def collect(path: Path, components_set: set):
     for file in path.glob("**/*.html"):
-        if (name:=file.stem).isupper():
+        if (name:=file.stem)[0].isupper():
             components_set.add(name)
 
 

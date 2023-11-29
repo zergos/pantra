@@ -1,22 +1,24 @@
-<component>
-    <Field consume block>
-        <textarea
-            bind:value
-            set:required
-            set:readonly
-            css:width
-            cols="{cols}"
-            rows="{rows}"
-            maxlength="{maxlength}"
-        />
-    </Field>
-</component>
+<Field consume block>
+    <div class="flex-break"/>
+    <textarea
+        bind:value
+        set:required
+        set:readonly
+        spellcheck = "{spellcheck and '' or 'false'}"
+        css:width
+        cols="{cols}"
+        rows="{rows}"
+        maxlength="{maxlength}"
+    />
+    <help reuse not:render/>
+</Field>
 <react to="value" action="on_change"/>
 
 <python>
 value: str = ''
 required: bool = ''
 readonly: bool = ''
+spellcheck: bool = True
 width: str = ''
 cols: int = 80
 rows: int = 5

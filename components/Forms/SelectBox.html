@@ -1,6 +1,6 @@
 <label ref:label class:inline class:block="{not inline}" class:error class:required>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <select class:wide multiple="{multiple}" required="{required}" on:select="update_value action">
+    <select on:render="render_select" class:wide multiple="{multiple}" required="{required}" on:select="update_value action">
         {{#if blank}}
         <SelectItem caption="" selected/>
         {{/if}}
@@ -8,6 +8,7 @@
             <option disabled>#Empty</option>
         </slot>
     </select>
+    <HelpMessage consume="help"/>
     <div ref:error class="message">{{error}}</div>
 </label>
 
@@ -17,6 +18,12 @@ multiple: str = ''
 wide: bool = False
 blank: bool = False
 action: str = ''
+
+def render_select(node):
+    global value
+    opts = [value] if type(value) is not list else value
+    for opt in node.select('option'):
+        opt.attributes.selected = opt in opts
 
 def update_value(node):
     global value

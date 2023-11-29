@@ -1,11 +1,21 @@
 <label class:block class:required class:error>
-    {{#if caption}}
-        <div class="cap" css:width="{caption_width}">{{caption}}</div>
-    {{/if}}
-    <div>
+    {{#if block}}
+        <div class="cap" css:width="{caption_width}">{{caption}}
+            <HelpMessage consume="help">
+                <help reuse/>
+            </HelpMessage>
+        </div>
         <div class="message">{{error}}</div>
         <slot/>
-    </div>
+    {{#else}}
+        {{#if caption}}
+            <div class="cap" css:width="{caption_width}">{{caption}}</div>
+        {{/if}}
+        <slot/>
+        <HelpMessage consume="help">
+            <help reuse/>
+        </HelpMessage>
+    {{/if}}
 </label>
 
 <style type="text/scss">
@@ -14,8 +24,8 @@
 
     label {
         display: flex;
-        flex-flow: nowrap row;
-        align-items: flex-end;
+        flex-flow: wrap row;
+        align-items: center;
         //padding-top: 0.35rem;
 
         &.block {

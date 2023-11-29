@@ -8,7 +8,7 @@ from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 
-from babel.support import Translations
+from babel.support import Translations, NullTranslations
 from pantra.defaults import APPS_PATH, COMPONENTS_PATH
 from .locale import Locale
 
@@ -35,9 +35,17 @@ def get_locale(lang: str) -> Locale:
 # TODO: make compatible with file watcher
 def get_translation(app_path: Path, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
-    trans = TranslationsExtra.load(COMPONENTS_PATH / 'locale', lang_lst)
-    trans.merge(Translations.load(APPS_PATH / 'system'/ 'locale', lang_lst))
-    trans.merge(Translations.load(app_path / 'locale', lang_lst))
+    transes = [
+        TranslationsExtra.load(COMPONENTS_PATH / 'locale', lang_lst),
+        Translations.load(APPS_PATH / 'system'/ 'locale', lang_lst),
+        Translations.load(app_path / 'locale', lang_lst),
+    ]
+    trans = transes[0]
+    for item in transes:
+        if type(trans) is NullTranslations:
+            trans = item
+        else:
+            trans.merge(item)
     return trans
 
 
@@ -61,7 +69,7 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
             args.append(eval(co, globals, locals))
         return f_cache[f].s, args
 
-    node = ast.parse(f"f'{f}'", mode='eval')
+    node = ast.parse(f"f'''{f}'''", mode='eval')
     frame = sys._getframe(3)
     locals = frame.f_locals
     globals = frame.f_globals

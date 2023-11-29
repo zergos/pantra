@@ -56,7 +56,7 @@ class HTMLTemplate(UniNode):
         return self.tag_name
 
 
-class MyVisitor(PMLParserVisitor):
+class HTMLVisitor(PMLParserVisitor):
 
     def __init__(self, filename: str):
         name = Path(filename).stem
@@ -73,13 +73,13 @@ class MyVisitor(PMLParserVisitor):
         return self._index
 
     def visitText(self, ctx: PMLParser.TextContext):
-        text = ctx.getText().strip().strip('\uFEFF')
-        if text and self.current != self.root:
+        text = ctx.getText().strip('\uFEFF')
+        if text.strip() and self.current != self.root:
             HTMLTemplate('@text', self.index, parent=self.current, text=text)
 
     def visitRawText(self, ctx: PMLParser.RawTextContext):
         text = ctx.getText()
-        if text.strip().strip('\uFEFF'):
+        if text.strip('\uFEFF'):
             tag_name = self.current.tag_name
             if tag_name == '@python':
                 line_no = ctx.start.line
@@ -241,7 +241,7 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
     parser.addErrorListener(ErrorVisitor(filename, error_callback))
     tree = parser.process()
 
-    visitor = MyVisitor(filename)
+    visitor = HTMLVisitor(filename)
     try:
         visitor.visit(tree)
     except IllegalStateException as e:

@@ -65,6 +65,14 @@ class Slot(typing.NamedTuple):
         else:
             raise NotImplementedError('integer indexing')  # return super().__getitem__(name)
 
+    def __contains__(self, name: str):
+        for child in self.template:
+            if child.tag_name == name:
+                if 'reuse' in child.attributes:
+                    return bool(self.ctx.slot and name in self.ctx.slot)
+                else:
+                    return True
+        return False
 
 class Context(RenderNode):
     __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', 'render', '_restyle', 'ns_type', 'react_vars',
@@ -148,21 +156,24 @@ class Context(RenderNode):
     def is_call_allowed(self, method: str) -> bool:
         return method in self.allowed_call or '*' in self.allowed_call
 
-    def media(self, file_name: str) -> str:
+    def has_slot(self, name: str = None) -> bool:
+        return bool(self.slot and (not name or name in self.slot))
+
+    def media(self, file_name: str, subdir: str = 'media') -> str:
         # check relative to component
-        path = Path(self.template.filename).parent / 'media' /  file_name
+        path = Path(self.template.filename).parent / subdir /  file_name
         if not path.exists():
             # relative to app
-            path = Path(self.session.app_path) / 'media' / file_name
+            path = Path(self.session.app_path) / subdir / file_name
             if not path.exists():
                 # relative to components base
-                path = COMPONENTS_PATH / 'media' / file_name
+                path = COMPONENTS_PATH / subdir / file_name
         if path.is_relative_to(APPS_PATH):
             path = path.relative_to(APPS_PATH)
-            return '/'.join(['', path.parts[0], 'm', *path.parts[1:]])
+            return '/'.join(['', path.parts[0], '~', *path.parts[1:]])
         elif path.is_relative_to(COMPONENTS_PATH):
             path = path.relative_to(COMPONENTS_PATH)
-            return '/'.join(['', 'm', *path.parts])
+            return '/'.join(['', '~', *path.parts])
         raise FileExistsError(file_name)
 
 class ConditionalClass(typing.NamedTuple):

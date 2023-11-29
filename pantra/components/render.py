@@ -115,6 +115,9 @@ class RenderNode(UniqueNode):
         else:
             yield from super().select(predicate, depth)
 
+    def contains(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> bool:
+        return next(self.select(predicate, depth), None) is not None
+
     def set_scope(self, data: Union[Dict, str], value: Any = None):
         if isinstance(data, str):
             data = {data: value}
@@ -264,6 +267,8 @@ class DefaultRenderer:
                         value = attr
                     if isinstance(value, str) and value == "yes":
                         value = lambda: True
+                    elif isinstance(value, str) and value == "no":
+                        value = lambda: False
                     else:
                         value = self.build_func_or_local(value, node, '')
                     if attr == 'focus':
@@ -275,8 +280,9 @@ class DefaultRenderer:
                     attr = attr.split(':')[1].strip()
                     node.data[attr] = self.eval_string_i10n(value, node)
                     return True
-                if attr == 'src:media':
-                    node.attributes['src'] = self.ctx.media(self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value)
+                if attr.startswith('src:'):
+                    subdir = attr.split(':')[1].strip()
+                    node.attributes['src'] = self.ctx.media((self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value), subdir)
                     return True
             else:
                 if attr == 'style':
@@ -321,6 +327,10 @@ class DefaultRenderer:
         if tag_name[0].islower():
             # reconstruct HTML element
 
+            if 'not:render' in template.attributes:
+                # forget it
+                return None
+
             node = c.HTMLElement(tag_name, parent=parent)
 
             #with self.ctx.record_reactions(node):
@@ -346,6 +356,9 @@ class DefaultRenderer:
                     elif template.children[0].tag_name == '@macro':
                         node.text = DynamicString(self.build_func(template.children[0].macro, node))
                         return node
+
+            if 'node_processor' in self.ctx.locals:
+                run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
 
             for child in template.children:
                 self.build_node(child, node)
@@ -374,6 +387,9 @@ class DefaultRenderer:
                     if not self.process_special_attribute(attr, value, node):
                         data = self.eval_string_i10n(value, node) if value is not None else True
                         node.locals[attr] = data
+
+            if 'node_processor' in self.ctx.locals:
+                run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
 
             try:
                 node.render.build()
