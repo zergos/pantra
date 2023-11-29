@@ -6,8 +6,8 @@ import logging
 from importlib import import_module
 
 import aiofiles
+from aiohttp import web, WSMsgType, WSMessage
 import sass
-from aiohttp import web, WSMessage, WSMsgType, streamer
 
 from .components.context import HTMLElement
 from .components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
@@ -104,7 +104,7 @@ async def get_ws(request: web.Request):
     # token = request.match_info['token']
 
     try:
-        async for msg in ws:  # type WSMessage
+        async for msg in ws:  # type: WSMessage
             if msg.type == WSMsgType.BINARY:
                 data = serializer.decode(msg.data)
                 command = data['C']

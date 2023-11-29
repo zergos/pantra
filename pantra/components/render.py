@@ -314,7 +314,7 @@ class DefaultRenderer:
                         for at in value.split(','):
                             at = at.strip()
                             if at in node.context.locals:
-                                node[at] = node.parent[at]
+                                node[at] = node.context[at]
                 return True
 
         return False
