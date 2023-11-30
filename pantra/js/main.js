@@ -1,13 +1,13 @@
 let main;
 
-function start(new_local_id, new_tab_id, web_path) {
+function start(new_local_id, new_tab_id, cache_id, web_path) {
     let chunks = location.pathname.split('/');
     let prefix_len = web_path.split('/').length - 1;
     if (chunks.length >= 2 + prefix_len) {
         let app_name = chunks[1 + prefix_len];
         let local_style = document.createElement('link');
         local_style.setAttribute('rel', 'stylesheet');
-        local_style.setAttribute('href', `${web_path}/css/${app_name}.local.css`);
+        local_style.setAttribute('href', `${web_path}/css/${app_name}.local.css?${cache_id}`);
         document.head.append(local_style);
     }
 

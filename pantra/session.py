@@ -57,10 +57,7 @@ class Session:
             self.metrics_stack: List[HTMLElement] = []
             self.pending_messages: Queue[bytes] = Queue()
             self.user: Optional[Dict[str, Any]] = None
-            try:
-                self.set_locale(lang)
-            except Exception as e:
-                raise
+            self.set_locale(lang)
 
     def __getitem__(self, item):
         return self.state[item]

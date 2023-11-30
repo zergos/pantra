@@ -4,10 +4,10 @@
     <meta charset='utf-8'>
 	<meta name='viewport' content='width=device-width'>
 	<title>{{APP_TITLE}}</title>
-    <script src="{{WEB_PATH}}/js/all.js"></script>
-    <link rel="stylesheet" href="{{WEB_PATH}}/css/normalize.css">
-    <link rel="stylesheet" href="{{WEB_PATH}}/css/basic.scss">
-    <link rel="stylesheet" href="{{WEB_PATH}}/css/global.css">
+    <script src="{{WEB_PATH}}/js/all.js?{{CACHE_ID}}"></script>
+    <link rel="stylesheet" href="{{WEB_PATH}}/css/normalize.css?{{CACHE_ID}}">
+    <link rel="stylesheet" href="{{WEB_PATH}}/css/basic.scss?{{CACHE_ID}}">
+    <link rel="stylesheet" href="{{WEB_PATH}}/css/global.css?{{CACHE_ID}}">
     <!--link rel="stylesheet" href="/css/{{app}}.local.css"-->
     <style>
         #online-bar {
@@ -34,7 +34,7 @@
     </style>
 </head>
 
-<body onload="start('{{LOCAL_ID}}', '{{TAB_ID}}', '{{WEB_PATH}}')">
+<body onload="start('{{LOCAL_ID}}', '{{TAB_ID}}', '{{CACHE_ID}}', '{{WEB_PATH}}')">
 <div id="online-bar" style="display: none" title="Online"></div>
 <div id="display">
     <div class="init-title">

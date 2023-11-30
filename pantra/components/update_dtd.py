@@ -1,5 +1,5 @@
 from pathlib import Path
-from ..defaults import APPS_PATH, COMPONENTS_PATH
+from ..settings import config
 
 
 def collect(path: Path, components_set: set):
@@ -10,11 +10,11 @@ def collect(path: Path, components_set: set):
 
 def update_dtd():
     components = set()
-    collect(COMPONENTS_PATH, components)
-    collect(APPS_PATH, components)
+    collect(config.COMPONENTS_PATH, components)
+    collect(config.APPS_PATH, components)
     components = sorted(list(components))
 
-    dtd = COMPONENTS_PATH / 'html5.dtd'
+    dtd = config.COMPONENTS_PATH / 'html5.dtd'
     src = dtd.read_text()
 
     res = []

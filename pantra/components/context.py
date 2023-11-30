@@ -7,16 +7,16 @@ from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 
-from pantra.common import ADict
-
-from .loader import collect_template, HTMLTemplate
-from pantra.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits
+from .loader import collect_template, HTMLTemplate, get_static_url
+from pantra.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits, ADict
 
 from pantra.components.render import RenderNode, DefaultRenderer
 from pantra.components.watchdict import WatchDict, WatchDictActive
 from pantra.oid import get_node
-from pantra.defaults import *
+from pantra.settings import config
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -159,22 +159,9 @@ class Context(RenderNode):
     def has_slot(self, name: str = None) -> bool:
         return bool(self.slot and (not name or name in self.slot))
 
-    def media(self, file_name: str, subdir: str = 'media') -> str:
-        # check relative to component
-        path = Path(self.template.filename).parent / subdir /  file_name
-        if not path.exists():
-            # relative to app
-            path = Path(self.session.app_path) / subdir / file_name
-            if not path.exists():
-                # relative to components base
-                path = COMPONENTS_PATH / subdir / file_name
-        if path.is_relative_to(APPS_PATH):
-            path = path.relative_to(APPS_PATH)
-            return '/'.join(['', path.parts[0], '~', *path.parts[1:]])
-        elif path.is_relative_to(COMPONENTS_PATH):
-            path = path.relative_to(COMPONENTS_PATH)
-            return '/'.join(['', '~', *path.parts])
-        raise FileExistsError(file_name)
+    def static(self, file_name: str) -> str:
+        return get_static_url(self.session.app, self.template, file_name)
+
 
 class ConditionalClass(typing.NamedTuple):
     condition: Callable[[], bool]
@@ -272,7 +259,7 @@ class HTMLElement(RenderNode):
         if not hasattr(self, '_metrics_cv'):
             self._metrics_ev = threading.Event()
         self.session.request_metrics(self)
-        self._metrics_ev.wait(LOCKS_TIMEOUT)
+        self._metrics_ev.wait(config.LOCKS_TIMEOUT)
 
     @property
     def metrics(self):
@@ -312,7 +299,7 @@ class HTMLElement(RenderNode):
         if not hasattr(self, '_value_cv'):
             self._value_ev = threading.Event()
         self.session.request_value(self, self.value_type or 'text')
-        self._value_ev.wait(LOCKS_TIMEOUT)
+        self._value_ev.wait(config.LOCKS_TIMEOUT)
         return self._value
 
     @value.setter
@@ -323,7 +310,7 @@ class HTMLElement(RenderNode):
         if not hasattr(self, '_validity_ev'):
             self._validity_ev = threading.Event()
         self.session.request_validity(self)
-        self._validity_ev.wait(LOCKS_TIMEOUT)
+        self._validity_ev.wait(config.LOCKS_TIMEOUT)
         return self._validity
 
     @staticmethod

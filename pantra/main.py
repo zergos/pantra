@@ -4,6 +4,7 @@ import traceback
 import mimetypes
 import logging
 from importlib import import_module
+from pathlib import Path
 
 import aiofiles
 from aiohttp import web, WSMsgType, WSMessage
@@ -28,6 +29,8 @@ __all__ = ['run']
 routes = web.RouteTableDef()
 logger = logging.getLogger('pantra.system')
 
+CACHE_ID = Session.gen_session_id()
+
 
 @routes.get(r'/{app:\w*}')
 @wipe_logger
@@ -45,10 +48,11 @@ async def get_main_page(request: web.Request):
         app_module = None
     app_title = getattr(app_module, "APP_TITLE", None) or config.APP_TITLE
 
-    body = bootstrap.replace('{{LOCAL_ID}}', local_id)
-    body = body.replace('{{TAB_ID}}', session_id)
-    body = body.replace('{{WEB_PATH}}', config.WEB_PATH)
-    body = body.replace('{{APP_TITLE}}', app_title)
+    body = bootstrap.replace('{{LOCAL_ID}}', local_id)\
+        .replace('{{TAB_ID}}', session_id)\
+        .replace('{{WEB_PATH}}', config.WEB_PATH)\
+        .replace('{{APP_TITLE}}', app_title)\
+        .replace('{{CACHE_ID}}', CACHE_ID)
 
     logger.debug(f"Bootstrap page rendered {local_id}/{session_id}")
     return web.Response(body=body, content_type='text/html')
@@ -57,15 +61,20 @@ async def get_main_page(request: web.Request):
 @routes.get(r'/{app:\w*}/~/{file:.+}')
 @routes.get(r'/~/{file:.+}')
 async def get_media(request: web.Request):
-    app = request.match_info.get('app', None)
+    app: str = request.match_info.get('app', None)
     if not app:
         search_path = config.COMPONENTS_PATH
+    elif app[0].isupper():
+        search_path = Path(templates[app].filename).parent
     else:
         search_path = config.APPS_PATH / app
 
-    file_path = search_path / request.match_info['file']
+    file_path = search_path / config.STATIC_DIR / request.match_info['file']
     if not file_path.exists():
+        logger.debug(f'File `{file_path.relative_to(config.BASE_PATH)}` not found')
         return web.Response(body=f'File `{file_path.name}` not found', status=404)
+
+    logger.debug(f'File `{file_path.relative_to(config.BASE_PATH)}` requested')
 
     headers = {
         "Content-disposition": f"attachment; filename={file_path.name}",
@@ -190,7 +199,7 @@ async def get_ws(request: web.Request):
 @wipe_logger
 async def get_global_css(request: web.Request):
     logger.debug("Collecting global components` styles")
-    styles = collect_styles(config.COMPONENTS_PATH, Session.error_later)
+    styles = collect_styles('Core', config.COMPONENTS_PATH, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
 
@@ -205,7 +214,7 @@ async def get_local_css(request: web.Request):
         else:
             app = config.DEFAULT_APP
     app_path = config.APPS_PATH / app
-    styles = collect_styles(app_path, Session.error_later)
+    styles = collect_styles(app, app_path, Session.error_later)
     return web.Response(body=styles, content_type='text/css')
 
 

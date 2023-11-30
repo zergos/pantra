@@ -8,6 +8,8 @@ class Config:
     CSS_PATH: Path
     JS_PATH: Path
     APPS_PATH: Path
+    STATIC_DIR: str
+
     DEFAULT_APP: str
     PRODUCTIVE: bool
 

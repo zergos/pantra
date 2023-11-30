@@ -1,7 +1,8 @@
 {{#if ctx.has_slot("help") or help}}
     <div class="help">
-        <img src:icons="question-circle.svg" on:click="toggle_help">
-        <div class:hidden="!{not help_visible}">
+        <!--img src:icons="question-circle.svg" on:click="toggle_help"-->
+        <div class="question" on:click="toggle_help"/>
+        <div class="content" class:hidden="!{not help_visible}">
             <slot name="help">
                 {{help}}
             </slot>
@@ -14,13 +15,14 @@
         display: inline-flex;
         align-items: center;
 
-        img {
+        .question {
             width: 2rem;
             height: 1.5rem;
             padding: .5rem 0 0 0;
+            background: static('icons/question-circle.svg') center no-repeat;
         }
 
-        div {
+        .content {
             background-color: #000;
             color: #fff;
             border-radius: .4rem;

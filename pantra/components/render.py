@@ -8,14 +8,15 @@ from types import CodeType
 from queue import Queue
 import logging
 
-from pantra.common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
-from pantra.components.loader import collect_template, HTMLTemplate, MacroCode
-from pantra.compiler import compile_context_code, ContextInitFailed
-from pantra.session import Session, run_safe
+from ..common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
+from ..components.loader import collect_template, HTMLTemplate, MacroCode
+from ..compiler import compile_context_code, ContextInitFailed
+from ..session import Session, run_safe
+from ..settings import config
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.components.context import AnyNode, Context, HTMLElement, Condition, TextNode, Slot
+    from .context import AnyNode, Context, HTMLElement, Condition, TextNode, Slot
     StrOrCode = MacroCode | str | None
 
 __all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
@@ -281,8 +282,8 @@ class DefaultRenderer:
                     node.data[attr] = self.eval_string_i10n(value, node)
                     return True
                 if attr.startswith('src:'):
-                    subdir = attr.split(':')[1].strip()
-                    node.attributes['src'] = self.ctx.media((self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value), subdir)
+                    subdir = attr.split(':')[1].strip() + '/'
+                    node.attributes['src'] = self.ctx.static(subdir + self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else subdir+value)
                     return True
             else:
                 if attr == 'style':
@@ -321,6 +322,7 @@ class DefaultRenderer:
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
         import pantra.components.context as c
+
         node: Optional[AnyNode] = None
 
         tag_name = template.tag_name
@@ -689,7 +691,7 @@ class DefaultRenderer:
             self.update_children(node)
 
     def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
-        from pantra.components.context import Context
+        from .context import Context
         if not parent:
             parent = self.ctx
         c = Context(template, parent, locals=locals)

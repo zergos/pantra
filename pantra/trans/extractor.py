@@ -146,13 +146,13 @@ class MyVisitor(PMLParserVisitor):
         self.in_python = False
 
     def visitAttrValue(self, ctx:PMLParser.AttrValueContext):
-        value = ctx.getText().strip('" \'')
+        value = ctx.getText().strip("' \"")
         if value.startswith('#'):
             self.res.append((ctx.start.line, '_', value[1:], []))
 
     def visitText(self, ctx:PMLParser.TextContext):
-        text = ctx.getText()
-        if text.startswith('#'):
+        text = ctx.getText().replace('\r\n','\n')
+        if text.strip() and text.strip().startswith('#'):
             self.res.append((ctx.start.line, '_', text[1:], []))
 
 

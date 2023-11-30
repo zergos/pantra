@@ -32,6 +32,7 @@ class Config:
             for attr in dir(self):
                 if attr.isupper():
                     logger.warning(f'{attr} = {getattr(self, attr)}')
+            logger.warning('----')
 
     def __getattr__(self, item):
         if item.isupper() and not self._inited:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from functools import lru_cache
 from pathlib import Path
 import re
 import typing
@@ -9,21 +10,21 @@ import cssutils
 import sass
 from antlr4 import FileStream, CommonTokenStream, IllegalStateException
 from antlr4.error.ErrorListener import ErrorListener
-from pantra.common import UniNode, ADict
 from cssutils.css import CSSMediaRule, CSSStyleRule
 
 from .grammar.PMLLexer import PMLLexer
 from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
-from pantra.defaults import CSS_PATH, COMPONENTS_PATH, BOOTSTRAP_FILENAME
+from pantra.common import UniNode, ADict
+from pantra.settings import config
 
 if typing.TYPE_CHECKING:
     from pantra.session import Session
     from typing import *
     from types import CodeType
 
-__all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template']
+__all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template', 'get_static_url']
 
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
 SPECIAL_ELEMENTS = 'slot event scope react component '.split()
@@ -73,7 +74,7 @@ class HTMLVisitor(PMLParserVisitor):
         return self._index
 
     def visitText(self, ctx: PMLParser.TextContext):
-        text = ctx.getText().strip('\uFEFF')
+        text = ctx.getText().strip('\uFEFF').replace('\r\n', '\n')
         if text.strip() and self.current != self.root:
             HTMLTemplate('@text', self.index, parent=self.current, text=text)
 
@@ -278,7 +279,7 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
 
     path = _search_component(session.app_path, name)
     if not path:
-        path = _search_component(COMPONENTS_PATH, name)
+        path = _search_component(config.COMPONENTS_PATH, name)
         if not path:
             # session.error(f'component {name} not found')
             return None
@@ -290,11 +291,36 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
     return template
 
 
+@lru_cache(maxsize=1000)
+def get_static_url(app: str, template_file_name: Path, file_name: str):
+    if file_name.startswith(config.STATIC_DIR + '/'):
+        file_name = file_name[len(config.STATIC_DIR) + 1:]
+
+    # check relative to component
+    path = template_file_name.parent / config.STATIC_DIR / file_name
+    if path.exists():
+        return '/'.join(['', template_file_name.name, '~', file_name])
+    else:
+        # relative to app
+        path = config.APPS_PATH / app / config.STATIC_DIR / file_name
+        if path.exists():
+            return '/'.join(['', app, '~', file_name])
+        else:
+            # relative to components base
+            path = config.COMPONENTS_PATH / config.STATIC_DIR / file_name
+            if path.exists():
+                return '/'.join(['', '~', file_name])
+            else:
+                raise FileExistsError(file_name)
+
+
 class StyleVisitor(PMLParserVisitor):
     parser = cssutils.CSSParser(validate=False, raiseExceptions=True)
 
-    def __init__(self, class_name: str):
+    def __init__(self, app:str, class_name: str, template_name: Path):
+        self.app = app
         self.class_name = class_name
+        self.template_name = template_name
         self.styles: typing.List[str] = []
         self.in_style = False
         self.global_mode = False
@@ -303,9 +329,14 @@ class StyleVisitor(PMLParserVisitor):
         if not self.in_style:
             return
 
+        def static(file_name) -> str:
+            return f'url("{get_static_url(self.app, self.template_name, file_name)}")'
+
         text = ctx.getText()
         text = '\n' * (ctx.start.line-1) + text
-        text = sass.compile(string=text, output_style='compact', include_paths=[str(CSS_PATH)])
+        text = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH)], custom_functions=[
+            sass.SassFunction("static", ("$a", ), static)
+        ])
 
         if self.global_mode:
             self.styles.append(text)
@@ -402,25 +433,25 @@ class StyleVisitor(PMLParserVisitor):
         raise IllegalStateException(f'wrong node {node.getText()}')
 
 
-def load_styles(name: str, filename: str):
-    in_stream = FileStream(filename, encoding='utf-8')
+def load_styles(app:str, name: str, filename: Path):
+    in_stream = FileStream(str(filename), encoding='utf-8')
     lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
     parser = PMLParser(stream)
     tree = parser.process()
 
-    visitor = StyleVisitor(name)
+    visitor = StyleVisitor(app, name, filename)
     visitor.visit(tree)
     return '\n'.join(visitor.styles)
 
 
-def collect_styles(app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
+def collect_styles(app:str, app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
     styles = []
     for file in app_path.glob('**/*.html'):
-        if file == BOOTSTRAP_FILENAME:
+        if file == config.BOOTSTRAP_FILENAME:
             continue
         try:
-            res = load_styles(file.stem, str(file))
+            res = load_styles(app, file.stem, file)
         except Exception as e:
             error_callback(f'{file}> Style collector> {e}')
         else:
