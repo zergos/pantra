@@ -306,17 +306,17 @@ def get_static_url(app: str, template_file_name: Path, file_name: str):
     # check relative to component
     path = template_file_name.parent / config.STATIC_DIR / file_name
     if path.exists():
-        return '/'.join(['', template_file_name.name, '~', file_name])
+        return config.WEB_PATH + '/'.join(['', template_file_name.name, '~', file_name])
     else:
         # relative to app
         path = config.APPS_PATH / app / config.STATIC_DIR / file_name
         if path.exists():
-            return '/'.join(['', app, '~', file_name])
+            return config.WEB_PATH + '/'.join(['', app, '~', file_name])
         else:
             # relative to components base
             path = config.COMPONENTS_PATH / config.STATIC_DIR / file_name
             if path.exists():
-                return '/'.join(['', '~', file_name])
+                return config.WEB_PATH + '/'.join(['', '~', file_name])
             else:
                 raise FileExistsError(file_name)
 
