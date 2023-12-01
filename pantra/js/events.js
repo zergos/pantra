@@ -16,7 +16,7 @@ class EventListener {
     }
 }
 
-class SimpleListener extends EventListener {
+class ClickListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
         process_click(this.method, this.get_oid(event));
@@ -101,24 +101,24 @@ function attach_drag_events() {
     }
 }
 
-function addEvent(attr, selector, method, oid) {
-    if (attr === 'on:select') {
+function addEvent(event_code, selector, method, oid) {
+    if (event_code === 'on:select') {
         addEventHandler('change', selector, new SelectListener(method, oid));
-    } else if (attr === 'on:drag') {
+    } else if (event_code === 'on:drag') {
         addEventHandler('dragstart', selector, do_nothing);
         addEventHandler('selectstart', selector, do_nothing);
         addEventHandler('mousedown', selector, new DragListener(method, oid));
         attach_drag_events();
-    } else if (attr.startsWith('on:keyup') || attr.startsWith('on:keydown')) {
-        let chunks = attr.split(':');
+    } else if (event_code.startsWith('on:keyup') || event_code.startsWith('on:keydown')) {
+        let chunks = event_code.split(':');
         let key = chunks.length > 2 ? chunks[2]:null;
         addEventHandler(chunks[1], selector, new KeyListener(method, key, oid));
-    } else if (attr.startsWith('on:')) {
-        addEventHandler(attr.slice(3), selector, new SimpleListener(method, oid));
+    } else if (event_code.startsWith('on:')) {
+        addEventHandler(event_code.slice(3), selector, new ClickListener(method, oid));
         /*if (attr === 'on:click')
             addEventHandler('mousedown', selector, do_nothing);*/
     } else {
-        console.log(`wrong event ${attr}`);
+        console.log(`wrong event ${event_code}`);
     }
 }
 
@@ -126,21 +126,21 @@ let event_registered = [];
 let event_tab = {}; //dict['event', list[dict['selector,listener', data]]]
 let key_events_disabled = false;
 
-function addEventHandler(type, selector, listener) {
+function addEventHandler(event_name, selector, listener) {
     if (selector instanceof Element) {
-        selector.addEventListener(type, listener);
+        selector.addEventListener(event_name, listener);
         return;
     }
 
-    if (!(type in event_tab)) {
-        event_tab[type] = [];
-        root_node().addEventListener(type, (event) => process_events(type, event));
+    if (!(event_name in event_tab)) {
+        event_tab[event_name] = [];
+        root_node().addEventListener(event_name, (event) => process_events(event_name, event));
     }
     else
-        for (let row of event_tab[type])
+        for (let row of event_tab[event_name])
             if (row.selector === selector)
                 return;
-    event_tab[type].push({selector: selector, listener: listener});
+    event_tab[event_name].push({selector: selector, listener: listener});
 }
 
 function process_special_attribute(attr, value, node, oid, is_new = false) {
@@ -165,15 +165,15 @@ function process_special_attribute(attr, value, node, oid, is_new = false) {
     return false;
 }
 
-function process_event_attribute(ctx, selector, attr, value, oid) {
+function process_event_attribute(ctx_name, selector, event_code, method, oid) {
     if (!selector) {
-        if (event_registered.includes(ctx + attr)) return;
-        event_registered.push(ctx + attr);
-        addEvent(attr, "", value, oid);
+        if (event_registered.includes(ctx_name + event_code)) return;
+        event_registered.push(ctx_name + event_code);
+        addEvent(event_code, "", method, oid);
     } else {
-        if (event_registered.includes(selector + attr)) return;
-        event_registered.push(selector + attr);
-        addEvent(attr, selector, value, null);
+        if (event_registered.includes(selector + event_code)) return;
+        event_registered.push(selector + event_code);
+        addEvent(event_code, selector, method, null);
     }
 }
 

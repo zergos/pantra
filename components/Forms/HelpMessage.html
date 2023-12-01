@@ -2,10 +2,11 @@
     <div class="help">
         <!--img src:icons="question-circle.svg" on:click="toggle_help"-->
         <div class="question" on:click="toggle_help"/>
-        <div class="content" class:hidden="!{not help_visible}">
+        <div class="content" class:hidden="!{not help_visible}" on:focusout="toggle_help">
             <slot name="help">
                 {{help}}
             </slot>
+            <div class="fog" on:click="close_help"/>
         </div>
     </div>
 {{/if}}
@@ -29,7 +30,14 @@
             padding: .25rem .5rem;
             word-break: break-word;
         }
-
+    }
+    .fog {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1000;
     }
 </style>
 
@@ -47,5 +55,9 @@ help_visible: bool = False
 
 def toggle_help(node):
     ctx['help_visible'] = not help_visible
+
+def close_help(node):
+    if help_visible:
+        toggle_help(node)
 
 </python>

@@ -136,15 +136,18 @@ async def get_ws(request: web.Request):
                         await session.remind_errors()
 
                 elif command == 'CLICK':
-                    logger.debug(f"[CLICK] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', 'none')}>")
+                    if config.ENABLE_LOGGING:
+                        ctx = getattr(get_node(data['oid']), 'context', None)
+                        oid = ctx and ctx.oid or data['oid']
+                        logger.debug(f"[CLICK] command `{data['method']}` to <{ctx}:{oid}>")
                     process_click(data['method'], data['oid'])
 
                 elif command == 'SELECT':
-                    logger.debug(f"[SELECT] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', 'none')}>")
+                    logger.debug(f"[SELECT] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
                     process_select(data['method'], data['oid'], data['opts'])
 
                 elif command == 'KEY':
-                    logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', 'none')}>")
+                    logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
                     process_key(data['method'], data['oid'], data['key'])
 
                 elif command == 'B':
@@ -152,15 +155,15 @@ async def get_ws(request: web.Request):
                     process_bind_value(data['oid'], data['v'], data['x'])
 
                 elif command == 'M':
-                    logger.debug(f"[M]etrics received for <{get_node(data['oid'])}>")
+                    logger.debug(f"[M]etrics received for <{get_node(data['oid'])}:{data['oid']}>")
                     HTMLElement._set_metrics(data['oid'], data)
 
                 elif command == 'V':
-                    logger.debug(f"[V]alue received for <{get_node(data['oid'])}>")
+                    logger.debug(f"[V]alue received for <{get_node(data['oid'])}:{data['oid']}>")
                     HTMLElement._set_value(data['oid'], data['value'])
 
                 elif command == 'DD':
-                    logger.debug(f"[DD]rag Start `{data['method']}` for <{get_node(data['oid'])}>")
+                    logger.debug(f"[DD]rag Start `{data['method']}` for <{get_node(data['oid'])}:{data['oid']}>")
                     process_drag_start(session, data['method'], data['oid'], data['x'], data['y'], data['button'])
 
                 elif command == 'DM':
@@ -172,7 +175,7 @@ async def get_ws(request: web.Request):
                     process_drag_stop(session, data['x'], data['y'])
 
                 elif command == 'VALID':
-                    logger.debug(f"[VALID]ity received for <{get_node(data['oid'])}>")
+                    logger.debug(f"[VALID]ity received for <{get_node(data['oid'])}:{data['oid']}>")
                     HTMLElement._set_validity(data['oid'], data['validity'])
 
                 elif command == 'CALL':
