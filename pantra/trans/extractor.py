@@ -151,8 +151,12 @@ class MyVisitor(PMLParserVisitor):
             self.res.append((ctx.start.line, '_', value[1:], []))
 
     def visitText(self, ctx:PMLParser.TextContext):
-        text = ctx.getText().replace('\r\n','\n')
+        text = ctx.getText()
         if text.strip() and text.strip().startswith('#'):
+            if text.startswith('#'):
+                text = re.sub(r'\s+', ' ', text)
+            else:
+                text = text.replace('\r\n', '\n')
             self.res.append((ctx.start.line, '_', text[1:], []))
 
 

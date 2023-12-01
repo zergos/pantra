@@ -74,8 +74,12 @@ class HTMLVisitor(PMLParserVisitor):
         return self._index
 
     def visitText(self, ctx: PMLParser.TextContext):
-        text = ctx.getText().strip('\uFEFF').replace('\r\n', '\n')
+        text = ctx.getText().strip('\uFEFF')
         if text.strip() and self.current != self.root:
+            if text.startswith('#'):
+                text = re.sub(r'\s+', ' ', text)
+            else:
+                text = text.replace('\r\n', '\n')
             HTMLTemplate('@text', self.index, parent=self.current, text=text)
 
     def visitRawText(self, ctx: PMLParser.RawTextContext):
@@ -114,22 +118,25 @@ class HTMLVisitor(PMLParserVisitor):
 
     def visitAttrValue(self, ctx: PMLParser.AttrValueContext):
         text = ctx.getText().strip('"\'')
-        if '{' in text:
+        if re.search(r'^([^{]|\{\{)*\{([^}]|\{\{|\}\})*\}(?!\})', text):
             reactive = False
-            if text.startswith('!{'):
-                reactive = True
-                text = text[1:]
-            if text.startswith('{'):
-                text = text.strip('{}')
-                if not self.cur_attr.startswith('set:'):
-                    value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
-                else:
-                    text = f"({text} or '')"
-                    value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+            if text == '{}':
+                value = '{}'
             else:
-                reactive = '`!{' in text
-                text = text.replace('`{', '{').replace('`!{', '{').replace('}`', '}')
-                value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                if text.startswith('!{'):
+                    reactive = True
+                    text = text[1:]
+                if text.startswith('{'):
+                    text = text[1:-1]
+                    if not self.cur_attr.startswith('set:'):
+                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                    else:
+                        text = f"({text} or '')"
+                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                else:
+                    reactive = '`!{' in text
+                    text = text.replace('`{', '{').replace('`!{', '{').replace('}`', '}')
+                    value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
         else:
             value = text
         self.current.attributes[self.cur_attr] = value
@@ -335,7 +342,7 @@ class StyleVisitor(PMLParserVisitor):
         text = ctx.getText()
         text = '\n' * (ctx.start.line-1) + text
         text = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH)], custom_functions=[
-            sass.SassFunction("static", ("$a", ), static)
+            sass.SassFunction("static", ("$url", ), static)
         ])
 
         if self.global_mode:

@@ -5,6 +5,15 @@
 
     $color-norm: #fcfdc2;
     $color-danger: #fbd1c5;
+    $color-green: #80da67;
+
+    @function button-color($color) {
+        @return linear-gradient(166deg,
+                rgba(lighten($color, 20%),1) 0%,
+                rgba($color,1) 45%,
+                rgba($color,1) 78%,
+                rgba(lighten($color, 10%),1) 100%);
+    }
 
     button {
         min-width: 7em;
@@ -15,11 +24,12 @@
         cursor: pointer;
         @include x-user-select();
         color: #04122b;
-        background-color: $color-norm;
+        background: $color-norm;
+        background: button-color($color-norm);
         border: none;
         border-left: solid 1px;
         border-right: solid 1px;
-        transition: background-color 0.15s ease-in-out;
+        /*transition: background-color 0.15s ease-in-out;*/
         margin: 0.2rem 0;
 
         &:disabled {
@@ -27,22 +37,22 @@
         }
 
         &:hover {
-            background-color: lighten($color-norm, 10%);
+            background: lighten($color-norm, 10%);
         }
 
         &.danger {
-            background-color: $color-danger;
+            background: button-color($color-danger);
 
             &:hover {
-                background-color: lighten($color-danger, 10%);
+                background: lighten($color-danger, 10%);
             }
         }
 
         &.green {
-            background-color: $color-green;
+            background: button-color($color-green);
 
             &:hover {
-                background-color: lighten($color-green, 10%);
+                background: lighten($color-green, 10%);
             }
         }
 

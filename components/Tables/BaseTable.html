@@ -142,11 +142,12 @@
 
             > tr.selected {
                 > td {
-                    background-color: rgba($table-cell-selected-color, 0.2) !important;
+                    //background-color: rgba($table-cell-selected-color, 0.2) !important;
+                    background-color: lighten($table-cell-selected-color, 40%) !important;
                 }
 
                 > td.selected {
-                    background-color: rgba($table-cell-selected-color, 0.3) !important;
+                    background-color: lighten($table-cell-selected-color, 30%) !important;
                     font-weight: bold;
                 }
             }
