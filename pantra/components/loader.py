@@ -135,7 +135,7 @@ class HTMLVisitor(PMLParserVisitor):
                         value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
                 else:
                     reactive = '`!{' in text
-                    text = text.replace('`{', '{').replace('`!{', '{').replace('}`', '}')
+                    text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
                     value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
         else:
             value = text

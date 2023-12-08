@@ -111,14 +111,13 @@ class Session:
                 await self.ws.send_bytes(code)
 
     def error(self, error: str):
-        self.send_message({'m': 'e', 'l': error})
+        return self.send_message({'m': 'e', 'l': error})
 
     @staticmethod
     def error_later(message):
         print(f'Evaluation error: {message}')
         Session.pending_errors.put(message)
 
-    @async_worker
     async def remind_errors(self):
         while not Session.pending_errors.empty():
             error = Session.pending_errors.get()
@@ -129,9 +128,10 @@ class Session:
             await self.ws.send_bytes(self.pending_messages.get())
 
     def send_context(self, ctx: Context):
-        self.send_message({'m': 'c', 'l': ctx})
+        return self.send_message({'m': 'c', 'l': ctx})
 
-    def send_shot(self):
+    @async_worker
+    async def send_shot(self):
         if not self.root.shot:
             logger.error('Shot not prepared yet')
             return
@@ -142,9 +142,9 @@ class Session:
         #    import traceback
         #    logger.debug(''.join(traceback.format_stack(limit=3)))
         if deleted:
-            self.send_message({'m': 'd', 'l': deleted})
+            await self.send_message({'m': 'd', 'l': deleted})
         if updated:
-            self.send_message({'m': 'u', 'l': updated})
+            await self.send_message({'m': 'u', 'l': updated})
 
     def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
         for child in children:  # type: AnyNode
@@ -156,13 +156,13 @@ class Session:
                 lst.append(child)
             self._collect_children(child.children, lst)
 
-    async def send_root(self):
+    def send_root(self):
         logger.debug(f"{{{self.app}}} Sending root")
         lst = []
         if 'on_restart' in self.root.locals:
             exec_restart(self.root)
         self._collect_children([self.root], lst)
-        await self.send_message({'m': 'u', 'l': lst})
+        return self.send_message({'m': 'u', 'l': lst})
 
     def request_metrics(self, node: RenderNode):
         logger.debug(f"{{{self.app}}} Request metrics for {node}")
@@ -182,11 +182,11 @@ class Session:
         self.send_message({'m': 'valid', 'l': node.oid})
 
     def log(self, message):
-        self.send_message({'m': 'log', 'l': message})
+        return self.send_message({'m': 'log', 'l': message})
 
     def call(self, method: str, *args):
         logger.debug(f"{{{self.app}}} Calling method {method}")
-        self.send_message({'m': 'call', 'method': method, 'args': args})
+        return self.send_message({'m': 'call', 'method': method, 'args': args})
 
     @staticmethod
     def get_apps() -> list[str]:
@@ -195,14 +195,14 @@ class Session:
 
     def start_app(self, app):
         logger.debug(f"{{{self.app}}} Start app")
-        self.send_message({'m': 'app', 'l': app})
+        return self.send_message({'m': 'app', 'l': app})
 
     def send_title(self, title):
         return self.send_message({'m': 'title', 'l': title})
 
     def set_title(self, title):
         self.title = title
-        self.send_title(title)
+        return self.send_title(title)
 
     def set_locale(self, lang: Union[str, List]):
         lang_name = lang if isinstance(lang, str) else lang[0]
@@ -263,6 +263,21 @@ def trace_errors(func: Callable[[Session, ...], None]):
                 args[0].send_shot()
     res.call = func
     return res
+
+
+async def check():
+    pass
+
+
+def trace_errors_async(session: Session, func: Coroutine):
+    async def res():
+        if session is None:
+            raise ValueError('No `session` specified')
+        try:
+            await func
+        except:
+            await session.error(traceback.format_exc())
+    return res()
 
 
 @typing.overload

@@ -96,18 +96,15 @@ def stop_task_workers():
 
 # Async workers
 
-async_loop: typing.Optional[asyncio.BaseEventLoop] = None
-
-
 def async_worker(func):
     @functools.wraps(func)
     def res(*args, **kwargs):
-        if async_loop._thread_id == threading.current_thread().ident:
+        if async_worker.async_loop._thread_id == threading.current_thread().ident:
             return func(*args, **kwargs)
-        asyncio.run_coroutine_threadsafe(func(*args, **kwargs), async_loop)
+        asyncio.run_coroutine_threadsafe(func(*args, **kwargs), async_worker.async_loop)
     return res
 
 
 def init_async_worker():
     global async_loop
-    async_loop = asyncio.get_running_loop()
+    async_worker.async_loop = asyncio.get_running_loop()
