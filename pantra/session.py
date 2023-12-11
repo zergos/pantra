@@ -8,6 +8,7 @@ from queue import Queue
 from collections import defaultdict
 import logging
 
+from .protocol import Messages
 from .settings import config
 from .common import ADict, UniNode
 from .patching import wipe_logger
@@ -83,7 +84,7 @@ class Session:
         from .components.render import ContextShot
         from .components.context import Context
         logger.debug(f"{{{self.app}}} Going to restart...")
-        self.send_message({'m': 'rst'})
+        self.send_message(Messages.restart())
         shot = ContextShot()
         try:
             ctx = Context("Main", shot=shot, session=self)
@@ -110,8 +111,8 @@ class Session:
             else:
                 await self.ws.send_bytes(code)
 
-    def error(self, error: str):
-        return self.send_message({'m': 'e', 'l': error})
+    def error(self, text: str):
+        return self.send_message(Messages.error(text))
 
     @staticmethod
     def error_later(message):
@@ -120,15 +121,15 @@ class Session:
 
     async def remind_errors(self):
         while not Session.pending_errors.empty():
-            error = Session.pending_errors.get()
-            await self.send_message({'m': 'e', 'l': error})
+            text = Session.pending_errors.get()
+            await self.send_message(Messages.error(text))
 
     async def recover_messages(self):
         while not self.pending_messages.empty():
             await self.ws.send_bytes(self.pending_messages.get())
 
     def send_context(self, ctx: Context):
-        return self.send_message({'m': 'c', 'l': ctx})
+        return self.send_message(Messages.send_context(ctx))
 
     @async_worker
     async def send_shot(self):
@@ -142,9 +143,9 @@ class Session:
         #    import traceback
         #    logger.debug(''.join(traceback.format_stack(limit=3)))
         if deleted:
-            await self.send_message({'m': 'd', 'l': deleted})
+            await self.send_message(Messages.delete(deleted))
         if updated:
-            await self.send_message({'m': 'u', 'l': updated})
+            await self.send_message(Messages.update(updated))
 
     def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
         for child in children:  # type: AnyNode
@@ -162,45 +163,45 @@ class Session:
         if 'on_restart' in self.root.locals:
             exec_restart(self.root)
         self._collect_children([self.root], lst)
-        return self.send_message({'m': 'u', 'l': lst})
+        return self.send_message(Messages.update(lst))
 
     def request_metrics(self, node: RenderNode):
         logger.debug(f"{{{self.app}}} Request metrics for {node}")
-        self.send_message({'m': 'm', 'l': node.oid})
+        self.send_message(Messages.request_metrics(node.oid))
 
     def drop_metrics(self):
         for node in self.metrics_stack:
             if hasattr(node, '_metrics'):
                 delattr(node, '_metrics')
 
-    def request_value(self, node: HTMLElement, t: str = 'text'):
+    def request_value(self, node: HTMLElement, typ: str = 'text'):
         logger.debug(f"{{{self.app}}} Request value for {node}")
-        self.send_message({'m': 'v', 'l': node.oid, 't': t})
+        self.send_message(Messages.request_value(node.oid, typ))
 
     def request_validity(self, node: HTMLElement):
         logger.debug(f"{{{self.app}}} Request validity for {node}")
-        self.send_message({'m': 'valid', 'l': node.oid})
+        self.send_message(Messages.request_validity(node.oid))
 
-    def log(self, message):
-        return self.send_message({'m': 'log', 'l': message})
+    def log(self, text: str):
+        return self.send_message(Messages.log(text))
 
     def call(self, method: str, *args):
         logger.debug(f"{{{self.app}}} Calling method {method}")
-        return self.send_message({'m': 'call', 'method': method, 'args': args})
+        return self.send_message(Messages.call(method, args))
 
     @staticmethod
     def get_apps() -> list[str]:
         dirs = [app.name for app in config.APPS_PATH.glob("*")]
         return dirs
 
-    def start_app(self, app):
+    def start_app(self, app: str):
         logger.debug(f"{{{self.app}}} Start app")
-        return self.send_message({'m': 'app', 'l': app})
+        return self.send_message(Messages.start_app(app))
 
-    def send_title(self, title):
-        return self.send_message({'m': 'title', 'l': title})
+    def send_title(self, title: str):
+        return self.send_message(Messages.set_title(title))
 
-    def set_title(self, title):
+    def set_title(self, title: str):
         self.title = title
         return self.send_title(title)
 
@@ -242,10 +243,10 @@ class Session:
         self.storage.dump()
 
     def key_events_off(self):
-        self.send_message({"m": "koff"})
+        self.send_message(Messages.keys_off())
 
     def key_events_on(self):
-        self.send_message({"m": "kon"})
+        self.send_message(Messages.keys_on())
 
 
 def trace_errors(func: Callable[[Session, ...], None]):

@@ -10,18 +10,15 @@ import aiofiles
 from aiohttp import web, WSMsgType, WSMessage
 import sass
 
-from .components.context import HTMLElement
-from .components.controllers import process_click, process_drag_start, process_drag_move, process_drag_stop, \
-    process_select, process_bind_value, process_key, process_direct_call
+from .protocol import process_message
 from .components.loader import collect_styles, templates
 from .serializer import serializer
 from .settings import config
 from .patching import wipe_logger
 from .session import Session
-from .workers import start_task_workers, init_async_worker, stop_task_workers, thread_worker
+from .workers import start_task_workers, init_async_worker, stop_task_workers
 from .watchers import start_observer, stop_observer
 from .compiler import code_base
-from .oid import get_node
 from . import jsmap
 
 __all__ = ['run']
@@ -116,72 +113,7 @@ async def get_ws(request: web.Request):
         async for msg in ws:  # type: WSMessage
             if msg.type == WSMsgType.BINARY:
                 data = serializer.decode(msg.data)
-                command = data['C']
-                if command in ('REFRESH', 'UP'):
-                    if session.just_connected:
-                        session.just_connected = False
-                        @thread_worker
-                        def restart():
-                            session.restart()
-                        restart()
-                    else:
-                        if command == 'REFRESH':
-                            logger.debug("[REFRESH] command")
-                            if hasattr(session.state, 'drag'):
-                                process_drag_stop(session, 0, 0)
-                            await session.send_root()
-                            if session.title:
-                                await session.send_title(session.title)
-                        await session.recover_messages()
-                        await session.remind_errors()
-
-                elif command == 'CLICK':
-                    if config.ENABLE_LOGGING:
-                        ctx = getattr(get_node(data['oid']), 'context', None)
-                        oid = ctx and ctx.oid or data['oid']
-                        logger.debug(f"[CLICK] command `{data['method']}` to <{ctx}:{oid}>")
-                    process_click(data['method'], data['oid'])
-
-                elif command == 'SELECT':
-                    logger.debug(f"[SELECT] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
-                    process_select(data['method'], data['oid'], data['opts'])
-
-                elif command == 'KEY':
-                    logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
-                    process_key(data['method'], data['oid'], data['key'])
-
-                elif command == 'B':
-                    logger.debug("[B]ind value command")
-                    process_bind_value(data['oid'], data['v'], data['x'])
-
-                elif command == 'M':
-                    logger.debug(f"[M]etrics received for <{get_node(data['oid'])}:{data['oid']}>")
-                    HTMLElement._set_metrics(data['oid'], data)
-
-                elif command == 'V':
-                    logger.debug(f"[V]alue received for <{get_node(data['oid'])}:{data['oid']}>")
-                    HTMLElement._set_value(data['oid'], data['value'])
-
-                elif command == 'DD':
-                    logger.debug(f"[DD]rag Start `{data['method']}` for <{get_node(data['oid'])}:{data['oid']}>")
-                    process_drag_start(session, data['method'], data['oid'], data['x'], data['y'], data['button'])
-
-                elif command == 'DM':
-                    logger.debug("[D]rag [M]ove")
-                    process_drag_move(session, data['x'], data['y'])
-
-                elif command == 'DU':
-                    logger.debug("[D]rag [S]top")
-                    process_drag_stop(session, data['x'], data['y'])
-
-                elif command == 'VALID':
-                    logger.debug(f"[VALID]ity received for <{get_node(data['oid'])}:{data['oid']}>")
-                    HTMLElement._set_validity(data['oid'], data['validity'])
-
-                elif command == 'CALL':
-                    logger.debug(f"[CALL] command `{data['method']}` to  <{getattr(get_node(data['oid']), 'context', 'none')}>")
-                    process_direct_call(data['oid'], data['method'], data['args'])
-
+                await process_message(session, data)
             elif msg.type == WSMsgType.ERROR:
                 logger.error(f'WebSocket connection closed with exception {ws.exception()}')
     except asyncio.exceptions.TimeoutError:
@@ -242,11 +174,11 @@ async def get_out_js(request: web.Request):
     return web.Response(body=jsmap.cache.content, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
 
 @routes.get(r'/js/'+jsmap.OUT_NAME_MAP)
-async def get_out_js(request: web.Request):
-    return web.Response(body=jsmap.cache.map, content_type='application/javascript', headers={'SourceMap': jsmap.OUT_NAME+'.map'})
+async def get_out_js_map(request: web.Request):
+    return web.Response(body=jsmap.cache.map, content_type='application/json')
 
 
-routes.static('/css', config.BASE_PATH / 'css', append_version=True)
+routes.static('/css', config.BASE_PATH / 'css')
 routes.static('/js', config.JS_PATH)
 
 async def startup(app):

@@ -24,116 +24,15 @@ function start(new_local_id, new_tab_id, cache_id, web_path) {
     let protocol = location.protocol === "http:"? "ws" : "wss";
     main = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${local_id}/${tab_id}`);
     main.onrefresh = () => {
-        send_message({'C': 'UP'})
+        send_message(Messages.up())
     };
 
     main.onmessage = (data) => {
         let obj = serializer.decode(data);
-        switch (obj.m) {
-            case 'u':
-                //root_node().style.visibility = 'visible';
-                break;
-
-            case 'c':
-                let display = root_node();
-                display.innerText = '';
-                display.append(obj.l);
-                break;
-
-            case 'e':
-                console.error(obj.l);
-                break;
-
-            case 'd':
-                for (let v of obj.l) {
-                    let element = OID.node(v);
-                    if (!!element) {
-                        se_log(`removing ${v} ${element.tagName}`);
-                        element.remove();
-                        OID.delete(v);
-                    } else {
-                        se_log(`element ${v} not found for removing`)
-                    }
-                }
-                //root_node().style.visibility = 'hidden';
-                break;
-
-            case 'm': {
-                let node = OID.node(obj.l);
-                let rect = node.getBoundingClientRect();
-                send_message({
-                    C: 'M',
-                    oid: obj.l,
-                    x: Math.round(rect.left),
-                    y: Math.round(rect.top),
-                    w: Math.round(rect.width),
-                    h: Math.round(rect.height)
-                });
-                break;
-            }
-
-            case 'v': {
-                let node = OID.node(obj.l);
-                let value;
-                if (obj.t === 'number' || obj.t === 'time') value = node.valueAsNumber;
-                else if (obj.t === 'date') value = node.valueAsDate;
-                else value = node.value;
-                send_message({C: 'V', oid: obj.l, value: value});
-                break;
-            }
-
-            case 'dm':
-                se_log("drag mode active");
-                drag_mode_active = true;
-                break;
-
-            case 'log':
-                console.log(obj.l);
-                break;
-
-            case 'call':
-                let functionName = obj.method;
-                if (typeof(window[functionName]) === "function")
-                    window[functionName].apply(null, obj.args);
-                break;
-
-            case 'rst':
-                let root = root_node();
-                let parent = root.parentElement;
-                root.remove();
-                OID.clear();
-                root = document.createElement('div');
-                root.id = 'display';
-                parent.appendChild(root);
-                drag_mode_active = false;
-                drag_events_attached = false;
-                reset_events();
-                break;
-
-            case 'app':
-                document.location.href = obj.l;
-                break;
-
-            case 'title':
-                document.title = obj.l;
-                break;
-
-            case 'valid':
-                let node = OID.node(obj.l);
-                send_message({C: 'VALID', oid: obj.l, validity: node.validity.valid});
-                break;
-
-            case 'koff':
-                key_events_disabled = true;
-                break;
-
-            case 'kon':
-                key_events_disabled = false;
-                break;
-        }
+        process_message(obj);
     };
 
-    send_message({C: 'REFRESH'});
+    send_message(Messages.refresh());
 }
 
 function send_message(message) {
@@ -141,20 +40,19 @@ function send_message(message) {
 }
 
 function process_click(method, oid) {
-    send_message({C: 'CLICK', method: method, oid: oid});
+    send_message(Messages.click(method, oid));
 }
 
 function process_drag_start(method, oid, event) {
-    send_message({C: 'DD', method: method, oid: oid, x: event.pageX, y: event.pageY, button: event.button});
+    send_message(Messages.drag_start(method, oid, event));
 }
 
 function process_drag_move(event) {
-    send_message({C: 'DM', x: event.pageX, y: event.pageY});
+    send_message(Messages.drag_move(event));
 }
 
 function process_drag_stop(event) {
-    send_message({C: 'DU', x: event.pageX, y: event.pageY});
-
+    send_message(Messages.drag_stop(event));
 }
 
 function process_select(method, oid, options) {
@@ -162,7 +60,7 @@ function process_select(method, oid, options) {
         acc.push(OID.get(cur));
         return acc;
     }, []);
-    send_message({C: 'SELECT', method: method, oid: oid, opts: opts});
+    send_message(Messages.select(method, oid, opts));
 }
 
 function process_bind_value(variable, oid, target) {
@@ -181,13 +79,13 @@ function process_bind_value(variable, oid, target) {
         value = target.checked;
     }
     else value = target.value;
-    send_message({C: 'B', v: variable, oid: oid, x: value})
+    send_message(Messages.bind_value(variable, oid, value))
 }
 
 function process_key(method, oid, key) {
-    send_message({C: 'KEY', method: method, oid: oid, key: key});
+    send_message(Messages.key(method, oid, key));
 }
 
 function process_call(oid, method) {
-    send_message({C: 'CALL', oid: oid, method: method, args: [...arguments].slice(2)})
+    send_message(Messages.call(oid, method, [...arguments].slice(2)));
 }
