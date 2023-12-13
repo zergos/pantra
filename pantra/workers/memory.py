@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from asyncio.queues import Queue
 
-from . import BaseWorkerClient, BaseWorkerServer
+from .base import BaseWorkerClient, BaseWorkerServer
 
 
 class WorkerServer(BaseWorkerServer):

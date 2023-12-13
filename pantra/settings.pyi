@@ -4,7 +4,7 @@ import typing
 from pathlib import Path
 
 if typing.TYPE_CHECKING:
-    from .workers import BaseWorkerClient, BaseWorkerServer
+    from .workers.base import BaseWorkerClient, BaseWorkerServer
 
 class Config:
     BASE_PATH: Path

@@ -6,7 +6,7 @@ import zmq
 import zmq.asyncio as zmqa
 
 from ..settings import config
-from . import BaseWorkerClient, BaseWorkerServer
+from .base import BaseWorkerClient, BaseWorkerServer
 
 
 class WorkerServer(BaseWorkerServer):
