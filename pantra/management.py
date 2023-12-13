@@ -48,16 +48,14 @@ class Main:
         """
         import os
         from .watchers import start_observer, stop_observer
-        from .compiler import code_base
         from .session import Session
-        from .components.loader import templates
 
         if config.WORKER_SERVER.run_with_web:
             print(f"This backend `{config.WORKER_SERVER.__name__}` should run with WEB only")
             return
 
         if not config.PRODUCTIVE:
-            start_observer(templates, Session, code_base)
+            start_observer()
 
         if os.name == 'nt':
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

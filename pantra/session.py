@@ -293,6 +293,8 @@ def trace_errors_async(session: Session, func: Coroutine):
             await func
         except:
             await session.error(traceback.format_exc())
+        else:
+            await session.send_shot()
     return res()
 
 

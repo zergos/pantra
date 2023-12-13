@@ -1,4 +1,4 @@
-import hashlib
+import sys
 import typing
 import logging
 import hashlib
@@ -20,10 +20,9 @@ logger = logging.getLogger("pantra.system")
 
 class AppFilesEventHandler(PatternMatchingEventHandler):
 
-    def __init__(self, templates, sessions, code_base):
+    def __init__(self, templates, code_base):
         super().__init__(['*.html', '*.py'])
         self.templates = templates
-        self.sessions = sessions
         self.code_base = code_base
 
     @wipe_logger
@@ -31,26 +30,35 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         if filename.endswith('.html'):
             for k, v in list(self.templates.items()):  # type: str, HTMLTemplate
                 if v and v.filename == filename and v.hex_digest != hex_digest:
-                    # self.sessions.error_later(f'component {k} has updated')
-                    #logger.warning(f'File `{Path(filename).relative_to(BASE_PATH)}` changed, refreshing')
+                    logger.warning(f'File `{Path(filename).relative_to(config.BASE_PATH)}` changed, refreshing')
                     del self.templates[k]
         else:
+            logger.warning(f'File `{Path(filename).relative_to(config.BASE_PATH)}` changed, refreshing')
             if filename in self.code_base:
-                # self.sessions.error_later(f'namespace {os.path.basename(filename)} has updated')
                 del self.code_base[filename]
+            else:
+                module_name = '.'.join(Path(filename).relative_to(config.BASE_PATH).parts).removesuffix('.py').removesuffix('.__init__')
+                if module_name in sys.modules:
+                    del sys.modules[module_name]
+
 
     def on_modified(self, event):
         hex_digest = hashlib.md5(Path(event.src_path).read_bytes()).hexdigest()
         self.refresh_template(event.src_path, hex_digest)
 
 
-def start_observer(templates, sessions, code_base):
+@wipe_logger
+def start_observer():
     global observer
 
+    from .compiler import code_base
+    from .components.loader import templates
+
+    logger.info("Starting files watchers")
     observer = Observer()
     observer.daemon = True
-    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.APPS_PATH, True)
-    observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.COMPONENTS_PATH, True)
+    observer.schedule(AppFilesEventHandler(templates, code_base), config.APPS_PATH, True)
+    observer.schedule(AppFilesEventHandler(templates, code_base), config.COMPONENTS_PATH, True)
     observer.start()
 
 

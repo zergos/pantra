@@ -7,7 +7,7 @@ import inspect
 
 from ..oid import get_node
 from ..session import trace_errors, trace_errors_async, Session
-from ..workers.decorators import thread_worker, async_worker
+from ..workers.decorators import thread_worker
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -108,7 +108,7 @@ def process_drag_stop(session: Session, x: int, y: int):
 def process_call(session: Session, node: AnyNode, method: str, *args):
     for m in method.split(' '):
         if inspect.iscoroutinefunction(caller:=node[m]):
-            asyncio.run_coroutine_threadsafe(trace_errors_async(session, caller(*args)), async_worker.async_loop)
+            asyncio.run_coroutine_threadsafe(trace_errors_async(session, caller(*args)), Session.server_worker.async_loop)
         elif callable(caller):
             caller(*args)
         else:

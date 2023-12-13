@@ -180,6 +180,9 @@ routes.static('/js', config.JS_PATH)
 
 async def startup(app):
     if config.WORKER_SERVER.run_with_web:
+        if not config.PRODUCTIVE:
+            from pantra.watchers import start_observer
+            start_observer()
         asyncio.create_task(Session.run_server_worker())
 
 async def web_app():
