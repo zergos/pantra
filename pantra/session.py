@@ -15,7 +15,7 @@ from .settings import config
 from .common import ADict, UniNode
 from .patching import wipe_logger
 from .compiler import exec_restart
-from .workers import async_worker
+from .workers.decorators import async_worker
 from .trans import get_locale, get_translation, zgettext
 from .session_storage import SessionStorage
 

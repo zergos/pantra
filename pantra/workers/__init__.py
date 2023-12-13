@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import functools
-import traceback
 import typing
 import logging
 import time
@@ -70,7 +68,6 @@ class BaseWorkerServer(ABC):
         except SystemExit:
             logger.error(f'`{ident}` thread got exit signal')
 
-    @wipe_logger
     def tasks_controller(self):
         while True:
             time.sleep(1)
@@ -193,25 +190,3 @@ class BaseWorkerClient(ABC):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close_connection()
-
-
-# Decorators
-
-def thread_worker(func):
-    @functools.wraps(func)
-    def res(*args, **kwargs):
-        from ..session import Session
-        Session.server_worker.task_queue.put((func, args, kwargs))
-    return res
-
-
-# Async workers
-
-def async_worker(func):
-    @functools.wraps(func)
-    def res(*args, **kwargs):
-        from ..session import Session
-        if Session.server_worker.async_loop._thread_id == threading.current_thread().ident:
-            return func(*args, **kwargs)
-        asyncio.run_coroutine_threadsafe(func(*args, **kwargs), Session.server_worker.async_loop)
-    return res

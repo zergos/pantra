@@ -7,22 +7,20 @@ from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
-from functools import lru_cache
-from pathlib import Path
 
 from .loader import collect_template, HTMLTemplate, get_static_url
-from pantra.common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits, ADict
+from ..common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits, ADict
 
-from pantra.components.render import RenderNode, DefaultRenderer
-from pantra.components.watchdict import WatchDict, WatchDictActive
-from pantra.oid import get_node
-from pantra.settings import config
+from ..components.render import RenderNode, DefaultRenderer
+from ..components.watchdict import WatchDict, WatchDictActive
+from ..oid import get_node
+from ..settings import config
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.common import DynamicString
-    from pantra.components.render import ContextShot
-    from pantra.session import Session
+    from ..common import DynamicString
+    from ..components.render import ContextShot
+    from ..session import Session
 
 __all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode',
            'EventNode', 'SetNode', 'ReactNode', 'ScriptNode', 'AnyNode']

@@ -6,8 +6,8 @@ from dataclasses import dataclass, field as dc_field
 
 from quazy import DBFactory
 
-from pantra.common import ADict
-from pantra.defaults import APPS_PATH
+from ..common import ADict
+from ..settings import config
 from .parser import parse_xml
 
 if typing.TYPE_CHECKING:
@@ -16,8 +16,8 @@ if typing.TYPE_CHECKING:
 
 @dataclass
 class DatabaseInfo:
-    factory: DBFactory = dc_field(default=None)
-    schema: str = dc_field(default_factory=str)
+    factory: DBFactory = None
+    schema: str = ""
     kwargs: Dict[str, str] = dc_field(default_factory=dict)
 
 
@@ -32,7 +32,7 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
         else:
             return None
 
-    file_name = APPS_PATH / app / 'data' / 'databases.xml'
+    file_name = config.APPS_PATH / app / 'data' / 'databases.xml'
     if not file_name.exists():
         return None
 

@@ -7,7 +7,7 @@ from typing import TypedDict, TYPE_CHECKING
 from .oid import get_node
 from .settings import config
 from .patching import wipe_logger
-from .workers import thread_worker
+from .workers.decorators import thread_worker
 
 if TYPE_CHECKING:
     from .session import Session

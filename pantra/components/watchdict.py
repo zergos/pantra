@@ -1,10 +1,10 @@
 from __future__ import annotations
 import typing
-from pantra.common import ADict, typename
+from ..common import ADict, typename
 from .controllers import process_call
 
 if typing.TYPE_CHECKING:
-    from pantra.components.context import Context, AnyNode
+    from ..components.context import Context, AnyNode
     from typing import *
 
 

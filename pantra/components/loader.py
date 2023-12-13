@@ -16,11 +16,11 @@ from .grammar.PMLLexer import PMLLexer
 from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
-from pantra.common import UniNode, ADict
-from pantra.settings import config
+from ..common import UniNode, ADict
+from ..settings import config
 
 if typing.TYPE_CHECKING:
-    from pantra.session import Session
+    from ..session import Session
     from typing import *
     from types import CodeType
 

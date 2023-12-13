@@ -5,13 +5,13 @@ import typing
 import asyncio
 import inspect
 
-from pantra.oid import get_node
-from pantra.session import trace_errors, trace_errors_async, Session
-from pantra.workers import thread_worker, async_worker
+from ..oid import get_node
+from ..session import trace_errors, trace_errors_async, Session
+from ..workers.decorators import thread_worker, async_worker
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.components.context import Context, RenderNode, HTMLElement, AnyNode
+    from ..components.context import Context, RenderNode, HTMLElement, AnyNode
 
 __all__ = ['DragOptions', 'DragController']
 
