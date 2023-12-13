@@ -51,5 +51,5 @@ SETUP_LOGGER = setup_logger
 
 WORKERS_MODULE = 'pantra.workers.memory'
 
-ZMQ_HOST = 'localhost'
-ZMQ_PORT = 5555
+ZMQ_LISTEN = 'tcp://*:5555'
+ZMQ_HOST = 'tcp://localhost:5555'

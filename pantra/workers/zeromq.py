@@ -27,7 +27,7 @@ class WorkerServer(BaseWorkerServer):
     def start_listener(self):
         context = zmqa.Context()
         socket = context.socket(zmq.ROUTER)
-        socket.bind(f'tcp://*:{config.ZMQ_PORT}')
+        socket.bind(config.ZMQ_LISTEN)
         self.listener = WorkerServer.Listener(socket)
 
 
@@ -50,5 +50,5 @@ class WorkerClient(BaseWorkerClient):
         context = zmqa.Context()
         socket = context.socket(zmq.DEALER)
         socket.setsockopt(zmq.IDENTITY, session_id.encode())
-        socket.connect(f"tcp://{config.ZMQ_HOST}:{config.ZMQ_PORT}")
+        socket.connect(config.ZMQ_HOST)
         self.connection = WorkerClient.Connection(socket)

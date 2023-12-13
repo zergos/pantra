@@ -39,8 +39,8 @@ class Config:
     ENABLE_LOGGING: bool
     SETUP_LOGGER: typing.Callable[[], None]
 
+    ZMQ_LISTEN: str
     ZMQ_HOST: str
-    ZMQ_PORT: int
 
 
 config: Config = Config()
