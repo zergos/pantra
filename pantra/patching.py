@@ -1,8 +1,9 @@
-import dis, types
+import dis, types, typing
 import inspect
 
+FT = typing.TypeVar('FT', bound=types.FunctionType | type)
 
-def wipe_logger(func: types.FunctionType | type) -> types.FunctionType | type:
+def wipe_logger(func: FT) -> FT:
     from .settings import config
     if config.ENABLE_LOGGING:
         return func

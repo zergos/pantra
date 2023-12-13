@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from typing import *
 
 __all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
-           'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue']
+           'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue', 'raise_exception_in_thread']
 
 from .oid import gen_id
 

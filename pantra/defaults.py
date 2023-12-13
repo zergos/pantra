@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import pkg_resources
 
@@ -23,7 +24,7 @@ PRODUCTIVE = False
 
 MIN_TASK_THREADS = 2
 MAX_TASK_THREADS = 100
-CREAT_THREAD_LAG = 3
+CREATE_THREAD_LAG = 3
 KILL_THREAD_LAG = 300
 THREAD_TIMEOUT = 180
 
@@ -36,4 +37,19 @@ APP_TITLE = "Pantra Web App"
 
 ENABLE_LOGGING = False
 
+def setup_logger(level: int = logging.DEBUG):
+    logger = logging.getLogger("pantra.system")
+    logger.setLevel(level)
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    logger.debug("Logger configured")
 
+SETUP_LOGGER = setup_logger
+
+WORKERS_MODULE = 'pantra.workers.memory'
+
+ZMQ_HOST = 'localhost'
+ZMQ_PORT = 5555

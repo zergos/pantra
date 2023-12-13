@@ -39,7 +39,7 @@ async def process_message(session: Session, data: dict):
                 await session.send_root()
                 if session.title:
                     await session.send_title(session.title)
-            await session.recover_messages()
+            #await session.recover_messages()
             await session.remind_errors()
 
     elif command == 'CLICK':
@@ -54,8 +54,7 @@ async def process_message(session: Session, data: dict):
         process_select(data['method'], data['oid'], data['opts'])
 
     elif command == 'KEY':
-        logger.debug(
-            f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
+        logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
         process_key(data['method'], data['oid'], data['key'])
 
     elif command == 'B':

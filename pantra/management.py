@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 import sys
 import typing
@@ -40,6 +41,28 @@ class Main:
         from pantra.main import run as run_main
 
         run_main(host, port)
+
+    def run_backend(self):
+        """
+        run pantra backend workers facility in separate process
+        """
+        import os
+        from .watchers import start_observer, stop_observer
+        from .compiler import code_base
+        from .session import Session
+        from .components.loader import templates
+
+        if config.WORKER_SERVER.run_with_web:
+            print(f"This backend `{config.WORKER_SERVER.__name__}` should run with WEB only")
+            return
+
+        if not config.PRODUCTIVE:
+            start_observer(templates, Session, code_base)
+
+        if os.name == 'nt':
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        asyncio.run(Session.run_server_worker())
 
     def apps(self):
         """

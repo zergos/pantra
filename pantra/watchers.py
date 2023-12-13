@@ -48,6 +48,7 @@ def start_observer(templates, sessions, code_base):
     global observer
 
     observer = Observer()
+    observer.daemon = True
     observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.APPS_PATH, True)
     observer.schedule(AppFilesEventHandler(templates, sessions, code_base), config.COMPONENTS_PATH, True)
     observer.start()

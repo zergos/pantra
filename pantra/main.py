@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import traceback
 import mimetypes
@@ -10,15 +11,12 @@ import aiofiles
 from aiohttp import web, WSMsgType, WSMessage
 import sass
 
-from .protocol import process_message
 from .components.loader import collect_styles, templates
 from .serializer import serializer
 from .settings import config
 from .patching import wipe_logger
 from .session import Session
-from .workers import start_task_workers, init_async_worker, stop_task_workers
-from .watchers import start_observer, stop_observer
-from .compiler import code_base
+from .protocol import Messages
 from . import jsmap
 
 __all__ = ['run']
@@ -97,6 +95,7 @@ async def get_ws(request: web.Request):
     ws = web.WebSocketResponse(receive_timeout=config.SOCKET_TIMEOUT, max_msg_size=config.MAX_MESSAGE_SIZE)
     await ws.prepare(request)
 
+    session_id = request.match_info['session_id']
     app = request.match_info['app']
     if not app:
         app = config.DEFAULT_APP
@@ -105,26 +104,24 @@ async def get_ws(request: web.Request):
 
     lang_info = request.headers.get('Accept-Language', 'en')
     lang = [part.split(';')[0].replace('-', '_') for part in lang_info.split(',')]
-    session = Session(request.match_info['local_id'], request.match_info['session_id'], ws, app, lang)
 
-    # token = request.match_info['token']
+    #session = Session(request.match_info['local_id'], session_id, ws, app, lang)
 
-    try:
-        async for msg in ws:  # type: WSMessage
-            if msg.type == WSMsgType.BINARY:
-                data = serializer.decode(msg.data)
-                await process_message(session, data)
-            elif msg.type == WSMsgType.ERROR:
-                logger.error(f'WebSocket connection closed with exception {ws.exception()}')
-    except asyncio.exceptions.TimeoutError:
-        pass
-    except asyncio.exceptions.CancelledError:
-        raise
-    except:
-        logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
-        session.ws = None
-        await session.send_message({'m': 'e', 'l': traceback.format_exc()})
-    session.ws = None
+    async with config.WORKER_CLIENT(session_id, ws, app, lang) as worker:
+        try:
+            async for msg in ws:  # type: WSMessage
+                if msg.type == WSMsgType.BINARY:
+                    await worker.connection.send(msg.data)
+                elif msg.type == WSMsgType.ERROR:
+                    logger.error(f'WebSocket connection closed with exception {ws.exception()}')
+        except asyncio.exceptions.TimeoutError:
+            pass
+        except asyncio.exceptions.CancelledError:
+            raise
+        except:
+            logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
+            message = serializer.encode(Messages.error(traceback.format_exc()))
+            await worker.connection.send(message)
 
     return ws
 
@@ -182,16 +179,8 @@ routes.static('/css', config.BASE_PATH / 'css')
 routes.static('/js', config.JS_PATH)
 
 async def startup(app):
-    start_task_workers()
-    init_async_worker()
-    if not config.PRODUCTIVE:
-        start_observer(templates, Session, code_base)
-
-
-async def shutdown(app):
-    stop_task_workers()
-    stop_observer()
-
+    if config.WORKER_SERVER.run_with_web:
+        asyncio.create_task(Session.run_server_worker())
 
 async def web_app():
     global bootstrap
@@ -204,9 +193,6 @@ async def web_app():
     # patch incorrect default python mime-types
     mimetypes.init()
     mimetypes.add_type('application/javascript', '.js')
-
-    if config.ENABLE_LOGGING:
-        setup_logger()
 
     app = web.Application()
 
@@ -223,7 +209,6 @@ async def web_app():
         app.add_routes(routes)
 
     app.on_startup.append(startup)
-    app.on_shutdown.append(shutdown)
 
     return app
 
@@ -246,17 +231,10 @@ async def main(host, port):
         await runner.cleanup()
 
 
-def setup_logger(level: int = logging.DEBUG):
-    logger.setLevel(level)
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    logger.debug("Logger configured")
-
-
 def run(host=None, port=8005):
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     asyncio.run(main(host, port))
 
 

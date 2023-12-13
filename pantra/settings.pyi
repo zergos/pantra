@@ -1,4 +1,10 @@
+from __future__ import annotations
+
+import typing
 from pathlib import Path
+
+if typing.TYPE_CHECKING:
+    from .workers import BaseWorkerClient, BaseWorkerServer
 
 class Config:
     BASE_PATH: Path
@@ -26,7 +32,15 @@ class Config:
     BOOTSTRAP_FILENAME: Path
     APP_TITLE: str
 
+    WORKERS_MODULE: str
+    WORKER_SERVER: type[BaseWorkerServer]
+    WORKER_CLIENT: type[BaseWorkerClient]
+
     ENABLE_LOGGING: bool
+    SETUP_LOGGER: typing.Callable[[], None]
+
+    ZMQ_HOST: str
+    ZMQ_PORT: int
 
 
 config: Config = Config()

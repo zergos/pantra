@@ -8,6 +8,8 @@ from queue import Queue
 from collections import defaultdict
 import logging
 
+from aiohttp import web
+
 from .protocol import Messages
 from .settings import config
 from .common import ADict, UniNode
@@ -18,25 +20,33 @@ from .trans import get_locale, get_translation, zgettext
 from .session_storage import SessionStorage
 
 if typing.TYPE_CHECKING:
-    from aiohttp import web
-    from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
     from pathlib import Path
     from typing import *
+
+    from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
+    from .workers import BaseWorkerServer
 
 
 logger = logging.getLogger("pantra.system")
 
-
 @wipe_logger
 class Session:
+    pending_errors: ClassVar[Queue[str]] = Queue()
     states: ClassVar[dict[str, ADict]] = defaultdict(ADict)
     sessions: ClassVar[dict[str, Self]] = dict()
-    pending_errors: Queue[str] = Queue()
+    server_worker: ClassVar[BaseWorkerServer] = None
 
-    __slots__ = ['state', 'just_connected', 'root', 'app', 'metrics_stack', 'pending_messages', 'ws', 'user', 'title',
+    __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
                  'locale', 'translations', 'storage']
 
-    def __new__(cls, browser_id: str, session_id: str, ws: web.WebSocketResponse, app: str, lang: str):
+    @classmethod
+    async def run_server_worker(cls):
+        cls.server_worker = config.WORKER_SERVER()
+        cls.server_worker.start_task_workers()
+        cls.server_worker.start_listener()
+        await cls.server_worker.run_processor()
+
+    def __new__(cls, session_id: str, app: str, lang: list[str]):
         key = f'{session_id}/{app}'
         if key in cls.sessions:
             logger.debug(f"Reuse session {key}")
@@ -46,18 +56,17 @@ class Session:
         cls.sessions[key] = self
         return self
 
-    def __init__(self, browser_id: str, session_id: str, ws: web.WebSocketResponse, app: str, lang: List):
+    def __init__(self, session_id: str, app: str, lang: list[str]):
+        self.session_id = session_id
         self.app: Optional[str] = app
-        self.ws: web.WebSocketResponse = ws
         self.storage: SessionStorage | None = None
         if not hasattr(self, "state"):
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
             self.root: Optional[Context] = None
             self.title = ''
-            self.metrics_stack: List[HTMLElement] = []
-            self.pending_messages: Queue[bytes] = Queue()
-            self.user: Optional[Dict[str, Any]] = None
+            self.metrics_stack: list[HTMLElement] = []
+            self.user: Optional[dict[str, Any]] = None
             self.set_locale(lang)
 
     def __getitem__(self, item):
@@ -96,27 +105,24 @@ class Session:
         except:
             # print(traceback.format_exc())
             self.error(traceback.format_exc(-3))
-        self.remind_errors()
 
     @async_worker
-    async def send_message(self, message: Dict['str', Any]):
+    async def send_message(self, message: dict[str, Any]):
         from .serializer import serializer
-        if self.ws is None or self.ws.closed:
-            self.pending_messages.put(serializer.encode(message))
+
+        try:
+            code = serializer.encode(message)
+        except:
+            logger.error(traceback.format_exc())
         else:
-            try:
-                code = serializer.encode(message)
-            except Exception as e:
-                print(traceback.format_exc())
-            else:
-                await self.ws.send_bytes(code)
+            await self.server_worker.listener.send(self.session_id, code)
 
     def error(self, text: str):
         return self.send_message(Messages.error(text))
 
     @staticmethod
     def error_later(message):
-        print(f'Evaluation error: {message}')
+        logger.error(f'Evaluation error: {message}')
         Session.pending_errors.put(message)
 
     async def remind_errors(self):
@@ -124,9 +130,18 @@ class Session:
             text = Session.pending_errors.get()
             await self.send_message(Messages.error(text))
 
+    @classmethod
+    async def remind_errors_client(cls, ws: web.WebSocketResponse):
+        from .serializer import serializer
+
+        while not cls.pending_errors.empty():
+            text = cls.pending_errors.get()
+            data = serializer.encode(Messages.error(text))
+            await ws.send_bytes(data)
+
     async def recover_messages(self):
         while not self.pending_messages.empty():
-            await self.ws.send_bytes(self.pending_messages.get())
+            await self.server_worker.listener.send(self.session_id, self.pending_messages.get())
 
     def send_context(self, ctx: Context):
         return self.send_message(Messages.send_context(ctx))
@@ -147,7 +162,7 @@ class Session:
         if updated:
             await self.send_message(Messages.update(updated))
 
-    def _collect_children(self, children: List[UniNode], lst: List[UniNode]):
+    def _collect_children(self, children: list[UniNode], lst: list[UniNode]):
         for child in children:  # type: AnyNode
             if not child:
                 continue
@@ -205,7 +220,7 @@ class Session:
         self.title = title
         return self.send_title(title)
 
-    def set_locale(self, lang: Union[str, List]):
+    def set_locale(self, lang: Union[str, list]):
         lang_name = lang if isinstance(lang, str) else lang[0]
         logger.debug(f"{{{self.app}}} Set lang = {lang_name}")
         self.locale = get_locale(lang_name)

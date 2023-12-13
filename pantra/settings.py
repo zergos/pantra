@@ -28,7 +28,22 @@ class Config:
 
         self._inited = True
 
+        if not hasattr(self, "WORKER_SERVER") and hasattr(self, "WORKERS_MODULE"):
+            try:
+                workers = import_module(self.WORKERS_MODULE)
+                logger.warning(f"Workers module `{self.WORKERS_MODULE}` loaded")
+            except ModuleNotFoundError:
+                import sys
+                logger.warning(f"Module `{self.WORKERS_MODULE}` is not found in {sys.path}")
+                raise
+            else:
+                setattr(self, "WORKER_SERVER",  workers.WorkerServer)
+                setattr(self, "WORKER_CLIENT",  workers.WorkerClient)
+
         if self.ENABLE_LOGGING:
+            if hasattr(self, "SETUP_LOGGER"):
+                self.SETUP_LOGGER()
+
             for attr in dir(self):
                 if attr.isupper():
                     logger.warning(f'{attr} = {getattr(self, attr)}')
