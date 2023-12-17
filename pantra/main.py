@@ -54,26 +54,40 @@ async def get_main_page(request: web.Request):
 
 
 @routes.get(r'/{app:\w*}/~/{file:.+}')
+@routes.get(r'/{app:\$\w*}/~/{file:.+}')
 @routes.get(r'/~/{file:.+}')
 async def get_media(request: web.Request):
-    app: str = request.match_info.get('app', None)
-    if not app:
-        search_path = config.COMPONENTS_PATH
-    elif app[0].isupper():
-        search_path = Path(templates[app].filename).parent
-    else:
-        search_path = config.APPS_PATH / app
+    app: str | None = request.match_info.get('app', None)
+    file_name: str = request.match_info['file']
+    if '..' in Path(file_name).parts:
+        return web.Response(body='`..` not allowed', status=403)
 
-    file_path = search_path / config.STATIC_DIR / request.match_info['file']
+    if not app:
+        search_path = config.COMPONENTS_PATH / config.STATIC_DIR
+    elif app[0] == '$':
+        if app[1:] not in config.ALLOWED_DIRS:
+            logger.debug(f'Directory `{app}` not found')
+            return web.Response(body=f'Directory `{app}` not found', status=404)
+        search_path = config.ALLOWED_DIRS[app[1:]]
+    elif app[0].isupper():
+        search_path = templates[app].filename.parent / config.STATIC_DIR
+    else:
+        search_path = config.APPS_PATH / app / config.STATIC_DIR
+
+    file_path = search_path / file_name
     if not file_path.exists():
         logger.debug(f'File `{file_path.relative_to(config.BASE_PATH)}` not found')
         return web.Response(body=f'File `{file_path.name}` not found', status=404)
 
     logger.debug(f'File `{file_path.relative_to(config.BASE_PATH)}` requested')
 
+    mimetype = mimetypes.guess_type(file_path)[0]
+    if mimetype is None:
+        mimetype = 'application/octet-stream'
+
     headers = {
         "Content-disposition": f"attachment; filename={file_path.name}",
-        "Content-type": mimetypes.guess_type(file_path)[0],
+        "Content-type": mimetype,
     }
     response = web.StreamResponse(headers=headers)
     await response.prepare(request)
@@ -196,6 +210,8 @@ async def web_app():
     # patch incorrect default python mime-types
     mimetypes.init()
     mimetypes.add_type('application/javascript', '.js')
+    mimetypes.add_type('application/x-yaml', '.yaml')
+    mimetypes.add_type('application/x-yaml', '.yml')
 
     app = web.Application()
 

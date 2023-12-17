@@ -48,6 +48,15 @@ class RenderNode(UniqueNode):
         self.name = ''
         self._rebind = False
 
+    def add(self, tag_name: str, attributes: dict = None, text: str = None) -> HTMLElement | Context | None:
+        from .context import HTMLElement
+        if tag_name[0].isupper():
+            node_template = collect_template(self.context.session, tag_name)
+            if not node_template: return None
+            return self.context.render(node_template, self, locals=attributes)
+        else:
+            return HTMLElement(tag_name, self, attributes, text)
+
     @property
     def parent(self) -> Optional[AnyNode]: return None
     del parent
@@ -281,9 +290,10 @@ class DefaultRenderer:
                     attr = attr.split(':')[1].strip()
                     node.data[attr] = self.eval_string_i10n(value, node)
                     return True
-                if attr.startswith('src:'):
-                    subdir = attr.split(':')[1].strip() + '/'
-                    node.attributes['src'] = self.ctx.static(subdir + self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else subdir+value)
+                if attr.startswith('src:') or attr.startswith('href:'):
+                    parts = attr.split(':')
+                    subdir = parts[1].strip()
+                    node.attributes[parts[0]] = self.ctx.static(subdir, self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value)
                     return True
             else:
                 if attr == 'style':
@@ -306,6 +316,18 @@ class DefaultRenderer:
             if attr.startswith('not:'):
                 attr = attr.split(':')[1].strip()
                 node.locals[attr] = False
+                return True
+            if attr.startswith('set:'):
+                attr = attr.split(':')[1].strip()
+                if value is None:
+                    value = True
+                elif isinstance(value, str) and value == "yes":
+                    value = True
+                elif isinstance(value, str) and value == "no":
+                    value = False
+                else:
+                    value = self.eval_string(value, node)
+                node.locals[attr] = value
                 return True
             if attr == 'consume':
                 if value is not None:

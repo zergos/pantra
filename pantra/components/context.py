@@ -157,8 +157,8 @@ class Context(RenderNode):
     def has_slot(self, name: str = None) -> bool:
         return bool(self.slot and (not name or name in self.slot))
 
-    def static(self, file_name: str) -> str:
-        return get_static_url(self.session.app, self.template, file_name)
+    def static(self, subdir: str, file_name: str) -> str:
+        return get_static_url(self.session.app, self.template.filename, subdir, file_name)
 
 
 class ConditionalClass(typing.NamedTuple):

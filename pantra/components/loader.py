@@ -48,7 +48,7 @@ class HTMLTemplate(UniNode):
         self.text: str = text
         self.macro: MacroCode | list[MacroCode] | None = None
         self.name: Optional[str] = None
-        self.filename: Optional[str] = None
+        self.filename: Optional[Path] = None
         self.code: Optional[Union[CodeType, str]] = None
         self.index: int = index
         self.hex_digest: str = ''
@@ -59,7 +59,7 @@ class HTMLTemplate(UniNode):
 
 class HTMLVisitor(PMLParserVisitor):
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: Path):
         name = Path(filename).stem
         root = HTMLTemplate(f'${name}', 0)
         root.filename = filename
@@ -240,8 +240,8 @@ class ErrorVisitor(ErrorListener):
         self.error_callback(f"{self.filename}: line {line}:{column} {msg}")
 
 
-def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.Optional[HTMLTemplate]:
-    in_stream = FileStream(filename, encoding='utf-8')
+def load(filename: Path, error_callback: typing.Callable[[str], None]) -> typing.Optional[HTMLTemplate]:
+    in_stream = FileStream(str(filename), encoding='utf-8')
     lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
     parser = PMLParser(stream)
@@ -260,9 +260,9 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
         return None
 
     # find external code file
-    code_filename = filename + '.py'
-    if (f:=Path(code_filename)).exists():
-        HTMLTemplate("@python", visitor.root, text=f.read_text(encoding='utf-8'))
+    code_filename = filename.with_suffix('.py')
+    if code_filename.exists():
+        HTMLTemplate("@python", 0, visitor.root, text=code_filename.read_text(encoding='utf-8'))
         # raw nodes goes first
         visitor.root.children.insert(0, visitor.root.children.pop())
 
@@ -271,9 +271,9 @@ def load(filename: str, error_callback: typing.Callable[[str], None]) -> typing.
     return res
 
 
-def _search_component(path: Path, name: str) -> str | None:
+def _search_component(path: Path, name: str) -> Path | None:
     for file in path.glob(f"**/{name}.html"):
-        return str(file)
+        return file
     return None
 
 
@@ -299,26 +299,38 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
 
 
 @lru_cache(maxsize=1000)
-def get_static_url(app: str, template_file_name: Path, file_name: str):
-    if file_name.startswith(config.STATIC_DIR + '/'):
-        file_name = file_name[len(config.STATIC_DIR) + 1:]
+def get_static_url(app: str, template_file_name: Path, sub_dir: str | None, file_name: str):
+    if sub_dir and sub_dir in config.ALLOWED_DIRS:
+        path = config.ALLOWED_DIRS[sub_dir] / file_name
+        if path.exists():
+            return config.WEB_PATH + '/'.join(['', '$' + sub_dir, '~', file_name])
+        else:
+            raise FileExistsError(file_name)
+
+    # omit 'static' part
+    if sub_dir and sub_dir != config.STATIC_DIR:
+        search_name = config.STATIC_DIR + '/' + sub_dir + '/' + file_name
+        web_name = sub_dir + '/' + file_name
+    else:
+        search_name = config.STATIC_DIR + '/' + file_name
+        web_name = file_name
 
     # check relative to component
-    path = template_file_name.parent / config.STATIC_DIR / file_name
+    path = template_file_name.parent / search_name
     if path.exists():
-        return config.WEB_PATH + '/'.join(['', template_file_name.name, '~', file_name])
+        return config.WEB_PATH + '/'.join(['', template_file_name.name, '~', web_name])
     else:
         # relative to app
-        path = config.APPS_PATH / app / config.STATIC_DIR / file_name
+        path = config.APPS_PATH / app / search_name
         if path.exists():
-            return config.WEB_PATH + '/'.join(['', app, '~', file_name])
+            return config.WEB_PATH + '/'.join(['', app, '~', web_name])
         else:
             # relative to components base
-            path = config.COMPONENTS_PATH / config.STATIC_DIR / file_name
+            path = config.COMPONENTS_PATH / search_name
             if path.exists():
-                return config.WEB_PATH + '/'.join(['', '~', file_name])
+                return config.WEB_PATH + '/'.join(['', '~', web_name])
             else:
-                raise FileExistsError(file_name)
+                raise FileExistsError(search_name)
 
 
 class StyleVisitor(PMLParserVisitor):
@@ -337,7 +349,7 @@ class StyleVisitor(PMLParserVisitor):
             return
 
         def static(file_name) -> str:
-            return f'url("{get_static_url(self.app, self.template_name, file_name)}")'
+            return f'url("{get_static_url(self.app, self.template_name, None, file_name)}")'
 
         text = ctx.getText()
         text = '\n' * (ctx.start.line-1) + text

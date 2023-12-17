@@ -15,6 +15,7 @@ class Config:
     JS_PATH: Path
     APPS_PATH: Path
     STATIC_DIR: str
+    ALLOWED_DIRS: dict[str, Path]
 
     DEFAULT_APP: str
     PRODUCTIVE: bool

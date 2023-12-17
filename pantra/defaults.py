@@ -18,6 +18,7 @@ CSS_PATH = BASE_PATH / 'css'
 JS_PATH = Path(pkg_resources.resource_filename('pantra', "js"))
 APPS_PATH = BASE_PATH / 'apps'
 STATIC_DIR = 'static'
+ALLOWED_DIRS = {}
 
 DEFAULT_APP = 'Core'
 PRODUCTIVE = False
