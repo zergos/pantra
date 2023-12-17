@@ -5,6 +5,7 @@ import typing
 from functools import lru_cache, wraps
 import traceback
 import logging
+from pathlib import Path
 
 import sass
 from .common import ADict
@@ -28,16 +29,15 @@ class ContextInitFailed(Exception):
     pass
 
 
-def exec_includes(lst: str, rel_name: str, ctx_locals: typing.Dict[str, typing.Any]):
-    path = os.path.dirname(rel_name)
+def exec_includes(lst: str, rel_name: Path, ctx_locals: typing.Dict[str, typing.Any]):
+    path = rel_name.parent
     for name in lst.split(' '):
         if not name.strip(): continue
-        filename = os.path.join(path, name) + '.py'
-        if filename not in code_base:
-            with open(filename, 'rt') as f:
-                source = f.read()
-            code_base[filename] = compile(source, filename, 'exec')
-        exec(code_base[filename], ctx_locals)
+        filename = (path / name).with_suffix('.py')
+        if str(filename) not in code_base:
+            source = filename.read_text()
+            code_base[str(filename)] = compile(source, filename, 'exec')
+        exec(code_base[str(filename)], ctx_locals)
 
 
 def trace_exec(func):

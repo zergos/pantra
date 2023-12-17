@@ -26,25 +26,25 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         self.code_base = code_base
 
     @wipe_logger
-    def refresh_template(self, filename: str, hex_digest: str):
-        if filename.endswith('.html'):
+    def refresh_template(self, filename: Path):
+        if filename.suffix == '.html':
+            hex_digest = hashlib.md5(filename.read_bytes()).hexdigest()
             for k, v in list(self.templates.items()):  # type: str, HTMLTemplate
                 if v and v.filename == filename and v.hex_digest != hex_digest:
-                    logger.warning(f'File `{Path(filename).relative_to(config.BASE_PATH)}` changed, refreshing')
+                    logger.warning(f'File `{filename.relative_to(config.BASE_PATH)}` changed, refreshing')
                     del self.templates[k]
         else:
-            logger.warning(f'File `{Path(filename).relative_to(config.BASE_PATH)}` changed, refreshing')
+            logger.warning(f'File `{filename.relative_to(config.BASE_PATH)}` changed, refreshing')
             if filename in self.code_base:
-                del self.code_base[filename]
+                del self.code_base[str(filename)]
             else:
-                module_name = '.'.join(Path(filename).relative_to(config.BASE_PATH).parts).removesuffix('.py').removesuffix('.__init__')
+                module_name = '.'.join(filename.relative_to(config.BASE_PATH).parts).removesuffix('.py').removesuffix('.__init__')
                 if module_name in sys.modules:
                     del sys.modules[module_name]
 
 
     def on_modified(self, event):
-        hex_digest = hashlib.md5(Path(event.src_path).read_bytes()).hexdigest()
-        self.refresh_template(event.src_path, hex_digest)
+        self.refresh_template(Path(event.src_path))
 
 
 @wipe_logger
