@@ -1,11 +1,20 @@
 let CONNECT_INTERVALS = [5,5,5,5,10,20,30,60,120,300,600];
 
-function show_online_bar() {
+function getCurrentTimeFormatted() {
+  const now = new Date();
+  return now.toLocaleString();
+}
+
+function wsLog(message) {
+	console.log(`[${getCurrentTimeFormatted()}] - WSClient: ${message}`)
+}
+
+function showOnlineBar() {
 	let bar = document.getElementById('online-bar');
 	bar.removeAttribute('style');
 }
 
-function hide_online_bar() {
+function hideOnlineBar() {
 	let bar = document.getElementById('online-bar');
 	bar.setAttribute('style', 'display: none');
 }
@@ -31,23 +40,23 @@ class WSClient {
 	reconnect() {
 		this.connected = false;
 		if (this.currentInterval >= CONNECT_INTERVALS.length) {
-			console.log("WSClient: no more retries, I gave up");
+			wsLog("no more retries, I gave up");
 			return;
 		}
 		let autoReconnectInterval = CONNECT_INTERVALS[this.currentInterval] * 1000;
-		console.log(`WSClient: retry in ${autoReconnectInterval/1000}s`);
+		wsLog(`retry in ${autoReconnectInterval/1000}s`);
 		//this.instance.removeAllListeners();
 		setTimeout(() => this.refresh(), autoReconnectInterval);
 	}
 	onrefresh() {
-		console.log('refreshing connection')
+		wsLog('refreshing connection')
 	}
 	onopen() {
 		if (this.show_logs)
-			console.log(`WSClient: connected`);
+			wsLog('connected');
 		this.connected = true;
 		this.currentInterval = 0;
-		show_online_bar();
+		showOnlineBar();
 		if (this.init)
 			this.onrefresh();
 		else
@@ -57,23 +66,23 @@ class WSClient {
 	}
 	onclose(e) {
 		this.connected = false;
-		hide_online_bar();
+		hideOnlineBar();
 		switch (e.code) {
 			case 1006:
-				console.log(`WSClient: server down...`);
+				wsLog('server down...');
 				this.currentInterval ++;
 				this.reconnect();
 				break;
 			case 1000:
 				if (this.show_logs)
-					console.log('WSClient: connection suspended');
+					wsLog('connection suspended');
 				break;
 			default:
-				console.error(`WSClient: unrecoverable error ${e.code}`);
+				wsLog(`unrecoverable error ${e.code}`);
 		}
 	}
 	onmessage(data) {
-		console.log('message coming ' + data);
+		wsLog(`message coming ${data}`);
 	}
 	send(data, option) {
 		if (!this.connected) {
