@@ -6,6 +6,7 @@ import mimetypes
 import logging
 from importlib import import_module
 from pathlib import Path
+from datetime import datetime, timedelta
 
 import aiofiles
 from aiohttp import web, WSMsgType, WSMessage
@@ -122,20 +123,23 @@ async def get_ws(request: web.Request):
     #session = Session(request.match_info['local_id'], session_id, ws, app, lang)
 
     async with config.WORKER_CLIENT(session_id, ws, app, lang) as worker:
-        try:
-            async for msg in ws:  # type: WSMessage
-                if msg.type == WSMsgType.BINARY:
-                    await worker.connection.send(msg.data)
-                elif msg.type == WSMsgType.ERROR:
-                    logger.error(f'WebSocket connection closed with exception {ws.exception()}')
-        except asyncio.exceptions.TimeoutError:
-            pass
-        except asyncio.exceptions.CancelledError:
-            raise
-        except:
-            logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
-            message = serializer.encode(Messages.error(traceback.format_exc()))
-            await worker.connection.send(message)
+        while True:
+            try:
+                async for msg in ws:  # type: WSMessage
+                    if msg.type == WSMsgType.BINARY:
+                        await worker.connection.send(msg.data)
+                    elif msg.type == WSMsgType.ERROR:
+                        logger.error(f'WebSocket connection closed with exception {ws.exception()}')
+                        break
+            except asyncio.exceptions.TimeoutError:
+                if (datetime.now() - worker.last_touch).seconds < config.SOCKET_TIMEOUT:
+                    continue
+                break
+            except asyncio.exceptions.CancelledError:
+                raise
+            except:
+                logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
+                break
 
     return ws
 
