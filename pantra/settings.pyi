@@ -27,6 +27,7 @@ class Config:
     THREAD_TIMEOUT: int
 
     SOCKET_TIMEOUT: int
+    SESSION_TTL: int
     MAX_MESSAGE_SIZE: int
     LOCKS_TIMEOUT: int
 

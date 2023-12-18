@@ -7,6 +7,7 @@ import uuid
 from queue import Queue
 from collections import defaultdict
 import logging
+from datetime import datetime
 
 from aiohttp import web
 
@@ -37,7 +38,7 @@ class Session:
     server_worker: ClassVar[BaseWorkerServer] = None
 
     __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
-                 'locale', 'translations', 'storage']
+                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag']
 
     @classmethod
     async def run_server_worker(cls):
@@ -60,6 +61,8 @@ class Session:
         self.session_id = session_id
         self.app: Optional[str] = app
         self.storage: SessionStorage | None = None
+        self.last_touch: datetime = datetime.now()
+        self.finish_flag: bool = False
         if not hasattr(self, "state"):
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
@@ -115,6 +118,7 @@ class Session:
         except:
             logger.error(traceback.format_exc())
         else:
+            self.last_touch = datetime.now()
             await self.server_worker.listener.send(self.session_id, code)
 
     def error(self, text: str):

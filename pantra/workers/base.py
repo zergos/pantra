@@ -95,12 +95,26 @@ class BaseWorkerServer(ABC):
                 logger.warning(f'New thread creation X#{len(BaseWorkerServer.workers)}')
                 threading.Thread(target=self.task_processor, name=f'X#{len(BaseWorkerServer.workers)}').start()
 
+    @staticmethod
+    def session_killer():
+        from ..session import Session
+        while True:
+            time.sleep(5)
+            now = datetime.now()
+            for session_id in frozenset(Session.sessions):
+                session = Session.sessions[session_id]
+                if (now - session.last_touch).seconds >= config.SESSION_TTL:
+                    logger.info(f'Session {session_id} killed by TTL limit {config.SESSION_TTL} seconds')
+                    session.finish_flag = 1
+                    del Session.sessions[session_id]
+
     def start_task_workers(self):
         logger.debug("Starting task workers")
         BaseWorkerServer.task_queue = queue.Queue()
         for i in range(config.MIN_TASK_THREADS):
             threading.Thread(target=self.task_processor, name=f'#{i}', daemon=True).start()
         threading.Thread(target=self.tasks_controller, daemon=True).start()
+        threading.Thread(target=self.session_killer, daemon=True).start()
 
     @abstractmethod
     def start_listener(self): ...
@@ -126,6 +140,7 @@ class BaseWorkerServer(ABC):
                     code = serializer.encode(Messages.restart())
                     await Session.server_worker.listener.send(session_id, code)
                 else:
+                    session.last_touch = datetime.now()
                     await process_message(session, data)
 
 
@@ -164,7 +179,7 @@ class BaseWorkerClient(ABC):
             while True:
                 message = await self.connection.receive()
                 self.last_touch = datetime.now()
-                await ws.send_bytes(message, compress=False) #len(message)>=1000)
+                await ws.send_bytes(message) #, compress=len(message)>=1000)
         self.sync_task = asyncio.create_task(task())
 
     async def connect_session(self, session_id: str, app: str, lang: list[str]):
