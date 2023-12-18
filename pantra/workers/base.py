@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import threading
 import queue
+from datetime import datetime
 
 from ..common import raise_exception_in_thread
 from ..settings import config
@@ -113,15 +114,19 @@ class BaseWorkerServer(ABC):
 
         self.async_loop = asyncio.get_running_loop()
 
-        session: Session = None
         while True:
             session_id, message = await self.listener.receive()
             data = serializer.decode(message)
 
             if data['C'] == "SESSION":
-                session = Session(session_id, data['app'], data['lang'])
+                Session(session_id, data['app'], data['lang'])
             else:
-                await process_message(session, data)
+                if (session:=Session.sessions.get(session_id, None)) is None:
+                    from ..protocol import Messages
+                    code = serializer.encode(Messages.restart())
+                    await Session.server_worker.listener.send(session_id, code)
+                else:
+                    await process_message(session, data)
 
 
 @wipe_logger
@@ -138,6 +143,7 @@ class BaseWorkerClient(ABC):
 
     connection: Connection
     sync_task: asyncio.Task
+    last_touch: datetime
 
     @abstractmethod
     def open_connection(self, session_id: str): ...
@@ -157,7 +163,8 @@ class BaseWorkerClient(ABC):
         async def task():
             while True:
                 message = await self.connection.receive()
-                await ws.send_bytes(message)
+                self.last_touch = datetime.now()
+                await ws.send_bytes(message, compress=False) #len(message)>=1000)
         self.sync_task = asyncio.create_task(task())
 
     async def connect_session(self, session_id: str, app: str, lang: list[str]):
@@ -177,12 +184,13 @@ class BaseWorkerClient(ABC):
 
     def __init__(self, *args):
         self.args = args
+        self.last_touch = datetime.now()
 
     async def __aenter__(self):
         from ..session import Session
 
         logger.debug("Connecting to task processor")
-        self.open_connection(self.args[0])
+        self.open_connection(self.args[0] + '/' + self.args[2])
         await Session.remind_errors_client(self.args[1])
         self.bind_to_websocket(self.args[1])
         await self.connect_session(self.args[0], self.args[2], self.args[3])

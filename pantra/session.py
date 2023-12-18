@@ -24,7 +24,7 @@ if typing.TYPE_CHECKING:
     from typing import *
 
     from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
-    from .workers import BaseWorkerServer
+    from .workers.base import BaseWorkerServer
 
 
 logger = logging.getLogger("pantra.system")
@@ -47,7 +47,7 @@ class Session:
         await cls.server_worker.run_processor()
 
     def __new__(cls, session_id: str, app: str, lang: list[str]):
-        key = f'{session_id}/{app}'
+        key = f'{session_id}'
         if key in cls.sessions:
             logger.debug(f"Reuse session {key}")
             return cls.sessions[key]
