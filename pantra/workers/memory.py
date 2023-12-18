@@ -44,6 +44,7 @@ class WorkerClient(BaseWorkerClient):
 
 
     def open_connection(self, session_id: str):
-        queue = Queue()
-        WorkerServer.queues[session_id] = queue
+        if (queue:=WorkerServer.queues.get(session_id, None)) is None:
+            queue = Queue()
+            WorkerServer.queues[session_id] = queue
         self.connection = WorkerClient.Connection(session_id, queue)
