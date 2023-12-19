@@ -137,6 +137,9 @@ async def get_ws(request: web.Request):
                 break
             except asyncio.exceptions.CancelledError:
                 raise
+            except RuntimeError as e:
+                #logger.error(f'Runtime error: {e}')
+                break
             except:
                 logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
                 break

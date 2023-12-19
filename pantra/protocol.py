@@ -24,6 +24,7 @@ async def process_message(session: Session, data: dict):
     command = data['C']
     if command in ('REFRESH', 'UP'):
         if session.just_connected:
+            logger.debug("[REFRESH] command (just connected)")
             session.just_connected = False
 
             @thread_worker
@@ -107,6 +108,10 @@ class Messages:
     @staticmethod
     def restart():
         return Messages.Command(m="rst")
+
+    @staticmethod
+    def reconnect():
+        return Messages.Command(m="recon")
 
     @staticmethod
     def error(text: str):

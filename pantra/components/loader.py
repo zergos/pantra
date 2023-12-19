@@ -134,7 +134,7 @@ class HTMLVisitor(PMLParserVisitor):
                         text = f"({text} or '')"
                         value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
                 else:
-                    reactive = '`!{' in text
+                    reactive = '`!{' in text or ' !{' in text
                     text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
                     value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
         else:
@@ -283,6 +283,8 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
     key = session.app +  '/' + name
     if key in templates:
         return templates[key]
+    elif name in templates:
+        return templates[name]
 
     path = _search_component(session.app_path, name)
     if not path:
@@ -290,6 +292,7 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
         if not path:
             # session.error(f'component {name} not found')
             return None
+        key = name
 
     template = load(path, session.error)
     if template:

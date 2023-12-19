@@ -2,7 +2,7 @@ let CONNECT_INTERVALS = [5,5,5,5,10,20,30,60,120,300,600];
 
 function getCurrentTimeFormatted() {
   const now = new Date();
-  return now.toLocaleString();
+  return now.toISOString();
 }
 
 function wsLog(message) {
@@ -26,15 +26,16 @@ class WSClient {
 		this.connected = false;
 		this.init = false;
 		this.show_logs = false;
+		this.want_refresh = false;
 	}
 	refresh(callback=null) {
 		if (!this.connected) {
 			this.callback = callback;
-			this.instance = new WebSocket(this.url);
-			this.instance.binaryType = "arraybuffer";
-			this.instance.onopen = () => this.onopen();
-			this.instance.onmessage = (message) => this.onmessage(message.data);
-			this.instance.onclose = (e) => this.onclose(e);
+			this.ws = new WebSocket(this.url);
+			this.ws.binaryType = "arraybuffer";
+			this.ws.onopen = () => this.onopen();
+			this.ws.onmessage = (message) => this.onmessage(message.data);
+			this.ws.onclose = (e) => this.onclose(e);
 		}
 	}
 	reconnect() {
@@ -48,6 +49,12 @@ class WSClient {
 		//this.instance.removeAllListeners();
 		setTimeout(() => this.refresh(), autoReconnectInterval);
 	}
+
+	reopen() {
+		this.want_refresh = true;
+		this.ws.close(1000);
+	}
+
 	onrefresh() {
 		wsLog('refreshing connection')
 	}
@@ -76,6 +83,10 @@ class WSClient {
 			case 1000:
 				if (this.show_logs)
 					wsLog('connection suspended');
+				if (this.want_refresh) {
+					this.want_refresh = false;
+					this.refresh();
+				}
 				break;
 			default:
 				wsLog(`unrecoverable error ${e.code}`);
@@ -90,7 +101,7 @@ class WSClient {
 			return;
 		}
 		try {
-			this.instance.send(data, option);
+			this.ws.send(data, option);
 		} catch (e) {
 			this.onerror(e);
 		}

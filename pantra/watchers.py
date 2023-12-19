@@ -33,6 +33,7 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
                 if v and v.filename == filename and v.hex_digest != hex_digest:
                     logger.warning(f'File `{filename.relative_to(config.BASE_PATH)}` changed, refreshing')
                     del self.templates[k]
+                    break
         else:
             logger.warning(f'File `{filename.relative_to(config.BASE_PATH)}` changed, refreshing')
             if filename in self.code_base:

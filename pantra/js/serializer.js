@@ -1,5 +1,5 @@
-let _serializer_debug = false;
-let content_filled = false;
+let _serializerDebug = true;
+let contentFilled = false;
 
 let namespaces = {
     1: 'http://www.w3.org/1999/xhtml',
@@ -9,15 +9,16 @@ let namespaces = {
     5: 'http://www.w3.org/1998/Math/MathML',
 };
 
-function se_log(message) {
-    if (_serializer_debug) console.log(message);
+function seLog(message) {
+    if (_serializerDebug)
+        console.log(`[${getCurrentTimeFormatted()}]: ${message}`);
 }
 
-function root_node() {
+function rootNode() {
     return document.getElementById('display');
 }
 
-function rebind_node(v, element) {
+function rebindNode(v, element) {
     let parent = element.parentNode;
     parent.removeChild(element);
     parent.appendChild(element);
@@ -32,16 +33,16 @@ const HTMLElementSerializer = {
             parent = OID.node(v.p);
             if (!parent) {
                 if (v.p === null)
-                    se_log(`element #${v.i} <${v.n}> created in root node`);
+                    seLog(`element #${v.i} <${v.n}> created in root node`);
                 else
-                    se_log(`element #${v.i} <${v.n}> created in root node (#${v.p} not found)`);
-                parent = root_node();
-                if (!content_filled) {
+                    seLog(`element #${v.i} <${v.n}> created in root node (#${v.p} not found)`);
+                parent = rootNode();
+                if (!contentFilled) {
                     parent.innerText = '';
-                    content_filled = true;
+                    contentFilled = true;
                 }
             } else {
-                se_log(`element #${v.i} <${v.n}> created with parent #${v.p}`);
+                seLog(`element #${v.i} <${v.n}> created with parent #${v.p}`);
             }
             if ('x' in v)
                 element = document.createElementNS(namespaces[v.x], v.n);
@@ -56,9 +57,9 @@ const HTMLElementSerializer = {
             if (v.type !== undefined)
                 element.type = v.type;
         } else if (v['#'])
-            rebind_node(v, element);
+            rebindNode(v, element);
         for (let at in v.a) {
-            if (!process_special_attribute(at, v.a[at], element, v.i, is_new))
+            if (!processSpecialAttribute(at, v.a[at], element, v.i, is_new))
                 if (v.a[at])
                     element.setAttribute(at, v.a[at]);
                 else
@@ -106,7 +107,7 @@ const TextSerializer = {
             OID.set(element, v.i);
             parent.appendChild(element);
         } else if (v['#'])
-            rebind_node(v, element);
+            rebindNode(v, element);
         element.textContent = v.t;
         return element;
     }
@@ -117,7 +118,7 @@ const EventSerializer = {
     decode: function (s, v) {
         for (let attr in v.a) {
             if (attr.startsWith('on:'))
-                process_event_attribute(v.ctx, v.a.selector || "", attr, v.a[attr], v.oid);
+                processEventAttribute(v.ctx, v.a.selector || "", attr, v.a[attr], v.oid);
         }
     }
 };
@@ -171,10 +172,10 @@ const ScriptSerializer = {
         if (!element) {
             let parent = OID.node(v.p);
             if (!parent) {
-                parent = root_node();
-                if (!content_filled) {
+                parent = rootNode();
+                if (!contentFilled) {
                     parent.innerText = '';
-                    content_filled = true;
+                    contentFilled = true;
                 }
             }
             element = document.createElement('script');

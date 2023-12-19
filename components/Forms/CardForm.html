@@ -1,6 +1,6 @@
 <form class:with-header="caption" spellcheck = "{spellcheck and '' or 'false'}" on:submit="default_action" css:width>
-    {{#if caption}}
-    <div class="header">{{caption}}</div>
+    !{{#if caption}}
+    <div class="header">!{{caption}}</div>
     <div ref:content class="content">
         <slot/>
     </div>

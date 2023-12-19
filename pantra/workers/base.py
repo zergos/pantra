@@ -137,7 +137,7 @@ class BaseWorkerServer(ABC):
             else:
                 if (session:=Session.sessions.get(session_id, None)) is None:
                     from ..protocol import Messages
-                    code = serializer.encode(Messages.restart())
+                    code = serializer.encode(Messages.reconnect())
                     await Session.server_worker.listener.send(session_id, code)
                 else:
                     session.last_touch = datetime.now()
