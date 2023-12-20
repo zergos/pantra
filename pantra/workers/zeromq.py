@@ -15,11 +15,11 @@ class WorkerServer(BaseWorkerServer):
         socket: zmqa.Socket
 
         async def send(self, session_id: str, message: bytes):
-            await self.socket.send_multipart([session_id, message])
+            await self.socket.send_multipart([session_id.encode(), message])
 
         async def receive(self) -> tuple[str, bytes]:
             session_id, message = await self.socket.recv_multipart()
-            return session_id, message
+            return session_id.decode(), message
 
         def close(self):
             self.socket.close()
