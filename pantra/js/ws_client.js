@@ -1,14 +1,5 @@
 let CONNECT_INTERVALS = [5,5,5,5,10,20,30,60,120,300,600];
 
-function getCurrentTimeFormatted() {
-  const now = new Date();
-  return now.toISOString();
-}
-
-function wsLog(message) {
-	console.log(`[${getCurrentTimeFormatted()}] - WSClient: ${message}`)
-}
-
 function showOnlineBar() {
 	let bar = document.getElementById('online-bar');
 	bar.removeAttribute('style');
@@ -25,7 +16,6 @@ class WSClient {
 		this.currentInterval = -1;
 		this.connected = false;
 		this.init = false;
-		this.show_logs = false;
 		this.want_refresh = false;
 	}
 	refresh(callback=null) {
@@ -59,8 +49,7 @@ class WSClient {
 		wsLog('refreshing connection')
 	}
 	onopen() {
-		if (this.show_logs)
-			wsLog('connected');
+		wsLog('connected');
 		this.connected = true;
 		this.currentInterval = 0;
 		showOnlineBar();
@@ -81,8 +70,7 @@ class WSClient {
 				this.reconnect();
 				break;
 			case 1000:
-				if (this.show_logs)
-					wsLog('connection suspended');
+				wsLog('connection suspended');
 				if (this.want_refresh) {
 					this.want_refresh = false;
 					this.refresh();

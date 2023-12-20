@@ -1,4 +1,3 @@
-let _serializerDebug = true;
 let contentFilled = false;
 
 let namespaces = {
@@ -8,11 +7,6 @@ let namespaces = {
     4: 'http://www.w3.org/1999/xlink',
     5: 'http://www.w3.org/1998/Math/MathML',
 };
-
-function seLog(message) {
-    if (_serializerDebug)
-        console.log(`[${getCurrentTimeFormatted()}]: ${message}`);
-}
 
 function rootNode() {
     return document.getElementById('display');
@@ -113,6 +107,33 @@ const TextSerializer = {
     }
 };
 
+const StubElementSerializer = {
+    name: 'd',
+    decode: function (s, v) {
+        let element = OID.node(v.i);
+        if (!element) {
+            parent = OID.node(v.p);
+            if (!parent) {
+                if (v.p === null)
+                    seLog(`stub #${v.i} created in root node`);
+                else
+                    seLog(`stub #${v.i} created in root node (#${v.p} not found)`);
+                parent = rootNode();
+                if (!contentFilled) {
+                    parent.innerText = '';
+                    contentFilled = true;
+                }
+            } else {
+                seLog(`stub #${v.i} created with parent #${v.p}`);
+            }
+            element = document.createElement('div');
+
+            OID.set(element, v.i);
+            parent.appendChild(element);
+        }
+    }
+};
+
 const EventSerializer = {
     name: 'e',
     decode: function (s, v) {
@@ -190,5 +211,6 @@ const ScriptSerializer = {
 
 
 const serializer = new bsdf.BsdfSerializer(
-    [DateSerializer, TimeSerializer, HTMLElementSerializer, TextSerializer, EventSerializer, ScriptSerializer]);
+    [DateSerializer, TimeSerializer, HTMLElementSerializer, TextSerializer, EventSerializer, ScriptSerializer,
+    StubElementSerializer]);
 

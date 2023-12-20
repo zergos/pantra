@@ -1,6 +1,7 @@
 [
 	"bsdf.js",
 	"oid.js",
+	"logger.js",
 	"serializer.js",
 	"events.js",
 	"ws_client.js",

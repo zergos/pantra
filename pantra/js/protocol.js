@@ -46,7 +46,7 @@ function process_message(obj) {
         }
 
         case 'dm':
-            seLog("drag mode active");
+            protoLog("drag mode active");
             drag_mode_active = true;
             break;
 
@@ -55,14 +55,14 @@ function process_message(obj) {
             break;
 
         case 'call':
-            seLog(`calling ${obj.method}`);
+            protoLog(`calling ${obj.method}`);
             let functionName = obj.method;
             if (typeof(window[functionName]) === "function")
                 window[functionName].apply(null, obj.args);
             break;
 
         case 'rst':
-            seLog("restart");
+            protoLog("restart");
             let root = rootNode();
             let parent = root.parentElement;
             root.remove();
@@ -76,7 +76,7 @@ function process_message(obj) {
             break;
 
         case 'recon':
-            seLog("reconnect");
+            protoLog("reconnect");
             wsConnection.reopen();
             break;
 
