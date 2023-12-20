@@ -16,7 +16,6 @@ description = "Python Full-stack Framework"
 dependencies = [
     'aiohttp>=3.7.4.post0',
     'aiofiles',
-    'pyzmq>=25.1.2',
     'antlr4-python3-runtime==4.10',
     'cssutils==2.3.0',
     'requests==2.31.0',
