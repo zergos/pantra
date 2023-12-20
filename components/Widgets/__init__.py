@@ -3,14 +3,20 @@ from __future__ import annotations
 import typing
 import enum
 
-from quazy import DBTable, UX
-from quazy.db_types import *
+try:
+    from quazy import DBTable
+    from quazy.db_types import *
+except ImportError:
+    DBTable = None
+    from pantra.models.db_types import *
+
 from pantra.components.context import Context
 from pantra.common import ADict, WebUnits
 
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.components.context import AnyNode
+    from quazy import UX
 
 
 class DBFieldType(enum.Enum):

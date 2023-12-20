@@ -4,14 +4,13 @@ import copy
 import typing
 from dataclasses import dataclass, field as dc_field
 
-from quazy import DBFactory
-
 from ..common import ADict
 from ..settings import config
 from .parser import parse_xml
 
 if typing.TYPE_CHECKING:
     from typing import *
+    from quazy import DBFactory
 
 
 @dataclass
@@ -25,6 +24,8 @@ dbinfo: Dict[str, Dict[str, DatabaseInfo]] = ADict()  # app / db / DatabaseInfo
 
 
 def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
+    from quazy import DBFactory
+
     if app in dbinfo:
         app_info = dbinfo[app]
         if db_name in app_info:

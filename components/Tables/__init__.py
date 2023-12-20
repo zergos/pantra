@@ -6,7 +6,10 @@ from dataclasses import dataclass, field
 
 from types import SimpleNamespace
 
-from quazy import UX
+try:
+    from quazy import UX
+except ImportError:
+    from pantra.models.quazy_mini import UX
 
 from pantra.common import DynamicStyles
 from pantra.components.context import HTMLElement

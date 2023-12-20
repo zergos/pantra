@@ -1,29 +1,27 @@
-<component>
-    <div ref:filters class="filters">
-        <div style="display: contents">
-            {{#if search}}
-                <TextField placeholder="#search..." buttons="X,O" action="@search_action" enter_action="@search_default_action"/>
-            {{/if}}
-            {{#for filter in filters_enabled()}}
-                <div class="filter">
-                    <span>{{filter.column.title}}</span>
-                    <span class="close-mark" data:filter="{filter}" on:click="remove_filter">🗙</span>
-                </div>
-            {{#else}}
-                <div class="nofilter">#Not filtered</div>
-            {{/for}}
-        </div>
-        <div class="spacer"/>
-        <div class="filter configure" on:click="toggle_form">#Filters</div>
+<div ref:filters class="filters">
+    <div style="display: contents">
+        {{#if search}}
+            <TextField placeholder="#search..." buttons="X,O" action="@search_action" enter_action="@search_default_action"/>
+        {{/if}}
+        {{#for filter in filters_enabled()}}
+            <div class="filter">
+                <span>{{filter.column.title}}</span>
+                <span class="close-mark" data:filter="{filter}" on:click="remove_filter">🗙</span>
+            </div>
+        {{#else}}
+            <div class="nofilter">#Not filtered</div>
+        {{/for}}
     </div>
-    <div ref:container class="container hidden">
-        <div ref:form class="filters-form" on:render="render_form"/>
-        <ToolBox>
-            <ToolButton caption="#Apply" action="@apply_filters"/>
-            <ToolButton caption="#Hide" action="@hide_form"/>
-        </ToolBox>
-    </div>
-</component>
+    <div class="spacer"/>
+    <div class="filter configure" on:click="toggle_form">#Filters</div>
+</div>
+<div ref:container class="container hidden">
+    <div ref:form class="filters-form" on:render="render_form"/>
+    <ToolBox>
+        <ToolButton caption="#Apply" action="@apply_filters"/>
+        <ToolButton caption="#Hide" action="@hide_form"/>
+    </ToolBox>
+</div>
 
 <style type="text/scss">
     @import "defaults";
@@ -82,8 +80,14 @@
 </style>
 
 <python>
-from quazy import DBTable
-from quazy.db_types import *
+
+try:
+    from quazy import DBTable
+    from quazy.db_types import *
+except ImportError:
+    DBTable = None
+    from pantra.models.db_types import *
+
 from components.Tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
