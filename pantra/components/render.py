@@ -32,9 +32,7 @@ class RenderNode(UniqueNode):
         self.shot: 'ContextShot' = shot or parent.shot
         self.session: Session = session or parent.session
         self.scope: ADict[str, Any] = ADict() if not parent else parent.scope
-        self.render_this: bool = render_this
-        if render_this:
-            self.shot(self)
+
         #if typename(self) == 'Context':
         #    self.context: Context = self
         #else:
@@ -45,6 +43,18 @@ class RenderNode(UniqueNode):
                 self.context = parent.context
         else:
             self.context: Context = self
+
+        if self.parent \
+                and self.index() < len(self.parent.children) \
+                and typename(self) in ('ConditionNode', 'LoopNode') \
+                and self in self.context.react_nodes:
+                    self.render_this = True
+        else:
+            self.render_this: bool = render_this
+
+        if render_this:
+            self.shot(self)
+
         self.name = ''
         self._rebind = False
 
@@ -605,6 +615,9 @@ class DefaultRenderer:
             return  # no children ever
 
         elif typename(node) == 'ConditionNode':
+            if node.render_this:
+                node.shot(node)
+
             state: int = -1
             condition: Optional[Condition] = None
             for i, c in enumerate(node.conditions):
@@ -626,6 +639,9 @@ class DefaultRenderer:
                 return  # prevent repeated updates
 
         elif typename(node) == 'LoopNode':
+            if node.render_this:
+                node.shot(node)
+
             if not node.index_func:
                 node.empty()
                 empty = True

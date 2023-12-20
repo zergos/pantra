@@ -3,7 +3,7 @@ from datetime import date, time, datetime, timezone
 
 from .contrib import bsdf_lite as bsdf
 from .common import DynamicString
-from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, AnyNode
+from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, AnyNode, ConditionNode, LoopNode
 
 __all__ = ['serializer']
 
@@ -66,6 +66,19 @@ class TextSerializer(bsdf.Extension):
         return res
 
 
+class StubElementSerializer(bsdf.Extension):
+    name = 'd'
+
+    def match(self, s, v):
+        return isinstance(v, ConditionNode) or isinstance(v, LoopNode)
+
+    def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
+        return {
+            'i': v.oid,
+            'p': get_parent_oid(v),
+        }
+
+
 class EventSerializer(bsdf.Extension):
     name = 'e'
 
@@ -110,6 +123,7 @@ class ScriptSerializer(bsdf.Extension):
 
 
 serializer = bsdf.BsdfLiteSerializer([HTMLElementSerializer, TextSerializer, EventSerializer,
-                                      DateSerializer, TimeSerializer, ScriptSerializer], compression='bz2')
+                                      DateSerializer, TimeSerializer, ScriptSerializer, StubElementSerializer],
+                                     compression='bz2')
 
 
