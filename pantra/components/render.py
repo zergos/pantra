@@ -51,8 +51,7 @@ class RenderNode(UniqueNode):
                 and self.parent \
                 and typename(self) in ('ConditionNode', 'LoopNode') \
                 and get_first_macro(self.template[0].macro).reactive \
-                and (self.template[-1].tag_name == '#else' \
-                    or self.index() < len(self.template.parent.children) - 1):
+                and self.index() < len(self.template.parent.children) - 1:
                     self.render_this = True
         else:
             self.render_this: bool = render_this
