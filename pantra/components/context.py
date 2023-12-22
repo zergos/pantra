@@ -372,9 +372,10 @@ class Condition:
 
 
 class ConditionNode(RenderNode):
-    __slots__ = ['state', 'conditions']
+    __slots__ = ['state', 'conditions', 'template']
 
-    def __init__(self, parent: RenderNode):
+    def __init__(self, parent: RenderNode, template: HTMLTemplate):
+        self.template = template
         super().__init__(parent, False)
         self.state = -1
         self.conditions: Optional[List[Condition]] = []
@@ -387,14 +388,15 @@ class ConditionNode(RenderNode):
 
 
 class LoopNode(RenderNode):
-    __slots__ = ['template', 'else_template', 'var_name', 'iterator', 'index_func', 'index_map']
+    __slots__ = ['template', 'loop_template', 'else_template', 'var_name', 'iterator', 'index_func', 'index_map']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
+        self.template: HTMLTemplate = template
         super().__init__(parent, False)
 
-        self.template: Optional[HTMLTemplate] = template
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
+        self.loop_template: HTMLTemplate = None
         self.else_template: Optional[HTMLTemplate] = None
         self.index_func: Optional[Callable[[], Any]] = None
         self.index_map: Dict[Hashable, List[AnyNode]] = {}

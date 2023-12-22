@@ -127,7 +127,9 @@ const StubElementSerializer = {
                 seLog(`stub #${v.i} created with parent #${v.p}`);
             }
             element = document.createElement('div');
-
+            if (v['$'])
+                element.setAttribute('class', v['$']);
+            
             OID.set(element, v.i);
             parent.appendChild(element);
         }

@@ -43,16 +43,21 @@ class RenderNode(UniqueNode):
                 self.context = parent.context
         else:
             self.context: Context = self
+            
+        def get_first_macro(code_or_list: MacroCode | list[MacroCode]) -> MacroCode:
+            return code_or_list[0] if type(code_or_list) is list else code_or_list
 
-        if self.parent \
-                and self.index() < len(self.parent.children) \
+        if not render_this \
+                and self.parent \
                 and typename(self) in ('ConditionNode', 'LoopNode') \
-                and self in self.context.react_nodes:
+                and get_first_macro(self.template[0].macro).reactive \
+                and (self.template[-1].tag_name == '#else' \
+                    or self.index() < len(self.template.parent.children) - 1):
                     self.render_this = True
         else:
             self.render_this: bool = render_this
 
-        if render_this:
+        if self.render_this:
             self.shot(self)
 
         self.name = ''
@@ -446,7 +451,7 @@ class DefaultRenderer:
 
         elif tag_name[0] == '#':
             if tag_name == '#if':
-                node = c.ConditionNode(parent)
+                node = c.ConditionNode(parent, template)
                 for child_template in template.children:  # type: HTMLTemplate
                     if child_template.tag_name != '#else':
                         item = c.Condition(self.build_func(child_template.macro, node), child_template)
@@ -456,13 +461,15 @@ class DefaultRenderer:
                 self.update(node)
 
             elif tag_name == '#for':
-                node: c.LoopNode = c.LoopNode(parent, template.children[0])
-                node.var_name = template.text
-                node.iterator = self.build_func(template.macro[0], node)
-                node.index_func = template.macro[1].code and self.build_func(template.macro[1], node)
+                node: c.LoopNode = c.LoopNode(parent, template)
+                loop_template = template[0]
+                node.var_name = loop_template.text
+                node.iterator = self.build_func(loop_template.macro[0], node)
+                node.index_func = loop_template.macro[1].code and self.build_func(loop_template.macro[1], node)
 
+                node.loop_template = loop_template
                 if len(template.children) > 1:
-                    node.else_template = template.children[1]
+                    node.else_template = template[1]
                 self.update(node)
 
             elif tag_name == '#set':
@@ -654,7 +661,7 @@ class DefaultRenderer:
                         self.ctx.locals[node.var_name] = value
                         self.ctx.locals['forloop'].counter = i + 1
                         self.ctx.locals['forloop'].counter0 = i
-                        for temp_child in node.template.children:
+                        for temp_child in node.loop_template:
                             self.build_node(temp_child, node)
                     if node.var_name in self.ctx.locals:
                         del self.ctx.locals[node.var_name]
@@ -689,7 +696,7 @@ class DefaultRenderer:
                                 del oldmap[index]
                             else:
                                 newmap[index] = []
-                                for temp_child in node.template.children:
+                                for temp_child in node.loop_template:
                                     sub = self.build_node(temp_child, node)
                                     node.move(len(node.children)-1, pos)
                                     newmap[index].append(sub)

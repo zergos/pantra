@@ -190,9 +190,9 @@ class HTMLVisitor(PMLParserVisitor):
             iterator = compile(chunks[1], f"<{parent.path()}:iterator>", "eval")
             index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
 
-            parent.macro = [MacroCode(reactive, iterator), MacroCode(reactive, index_func)]
-            parent.text = var_name
             self.current = HTMLTemplate('#loop', self.index, parent=parent)
+            self.current.macro = [MacroCode(reactive, iterator), MacroCode(reactive, index_func)]
+            self.current.text = var_name
         elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
             self.current.macro = macro

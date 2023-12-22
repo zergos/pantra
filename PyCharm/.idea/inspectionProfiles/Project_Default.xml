@@ -5,7 +5,7 @@
     <inspection_tool class="DockerFileAssignments" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="HtmlDeprecatedAttribute" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="HtmlDeprecatedTag" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="HtmlUnknownAttribute" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+    <inspection_tool class="HtmlUnknownAttribute" enabled="false" level="WEAK WARNING" enabled_by_default="false">
       <option name="myValues">
         <value>
           <list size="0" />
@@ -13,8 +13,7 @@
       </option>
       <option name="myCustomValuesEnabled" value="true" />
     </inspection_tool>
-    <inspection_tool class="HtmlUnknownBooleanAttribute" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="HtmlUnknownTag" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+    <inspection_tool class="HtmlUnknownTag" enabled="false" level="WEAK WARNING" enabled_by_default="false">
       <option name="myValues">
         <value>
           <list size="7">
@@ -30,5 +29,34 @@
       </option>
       <option name="myCustomValuesEnabled" value="true" />
     </inspection_tool>
+    <inspection_tool class="HtmlWrongAttributeValue" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyArgumentEqualDefaultInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyAugmentAssignmentInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyCompatibilityInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ourVersions">
+        <value>
+          <list size="0" />
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="10">
+            <item index="0" class="java.lang.String" itemvalue="watchdog" />
+            <item index="1" class="java.lang.String" itemvalue="Babel" />
+            <item index="2" class="java.lang.String" itemvalue="Django" />
+            <item index="3" class="java.lang.String" itemvalue="psycopg2-binary" />
+            <item index="4" class="java.lang.String" itemvalue="aiohttp" />
+            <item index="5" class="java.lang.String" itemvalue="antlr4-python3-runtime" />
+            <item index="6" class="java.lang.String" itemvalue="cssutils" />
+            <item index="7" class="java.lang.String" itemvalue="libsass" />
+            <item index="8" class="java.lang.String" itemvalue="pony" />
+            <item index="9" class="java.lang.String" itemvalue="aiohttp-session" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8Inspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
   </profile>
 </component>

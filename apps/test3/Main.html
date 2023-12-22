@@ -1,5 +1,5 @@
 <EntityForm entity="{entity1}"/>
-<EntityTable query="{query}" entity="{entity}">
+<DBQueryTable query="{query}" entity="{entity}">
     <!--columns>
         <col name="Column1"/>
         <col name="Column2"/>
@@ -7,7 +7,7 @@
         <col name="Column4"/>
         <col name="Column5"/>
     </columns-->
-</EntityTable>
+</DBQueryTable>
 
 <python>
 from pony.orm import db_session, make_proxy

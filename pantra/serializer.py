@@ -73,10 +73,13 @@ class StubElementSerializer(bsdf.Extension):
         return isinstance(v, ConditionNode) or isinstance(v, LoopNode)
 
     def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
-        return {
+        res = {
             'i': v.oid,
             'p': get_parent_oid(v),
         }
+        if v.context._restyle:
+            res['$'] = v.context.template.name
+        return res
 
 
 class EventSerializer(bsdf.Extension):
