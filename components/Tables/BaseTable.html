@@ -356,7 +356,9 @@ def enter_cell(node: HTMLElement):
     if not editable or node.data.col.readonly:
         return
 
-    node.render(node.data.col.widget, {'column': node.data.col, 'value': str(node.text)})
+    if (widget:=node.data.col.widget) is None:
+        widget = get_widget_default(node.data.col)
+    node.render(widget, {'column': node.data.col, 'value': str(node.text)})
     node.text = ''
     node.style.padding = 0
     ctx.shot(node)

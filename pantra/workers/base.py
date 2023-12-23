@@ -103,7 +103,7 @@ class BaseWorkerServer(ABC):
             now = datetime.now()
             for session_id in frozenset(Session.sessions):
                 session = Session.sessions[session_id]
-                if (now - session.last_touch).seconds >= config.SESSION_TTL:
+                if not getattr(session, "just_connected", True) and (now - session.last_touch).seconds >= config.SESSION_TTL:
                     logger.info(f'Session {session_id} killed by TTL limit {config.SESSION_TTL} seconds')
                     session.finish_flag = 1
                     del Session.sessions[session_id]

@@ -29,7 +29,7 @@ __all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template', 'g
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
 SPECIAL_ELEMENTS = 'slot event scope react component '.split()
 
-templates: typing.Dict[str, HTMLTemplate] = {}
+templates: typing.Dict[str, HTMLTemplate | None] = {}
 
 
 class MacroCode(typing.NamedTuple):
@@ -283,14 +283,20 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
     key = session.app +  '/' + name
     if key in templates:
         return templates[key]
-    elif name in templates:
-        return templates[name]
 
     path = _search_component(session.app_path, name)
     if not path:
+        if name in templates:
+            templates[key] = templates[name]
+            return templates[name]
+        elif config.PRODUCTIVE:
+            templates[key] = None
+            return None
+
         path = _search_component(config.COMPONENTS_PATH, name)
         if not path:
             # session.error(f'component {name} not found')
+            templates[key] = None
             return None
         key = name
 
