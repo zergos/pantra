@@ -55,3 +55,8 @@ WORKERS_MODULE = 'pantra.workers.memory'
 
 ZMQ_LISTEN = 'tcp://*:5555'
 ZMQ_HOST = 'tcp://localhost:5555'
+
+JS_SERIALIZER_LOGGING = False
+JS_WS_LOGGING = False
+JS_PROTO_LOGGING = False
+JS_ADD_IDS = False

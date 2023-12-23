@@ -1,23 +1,19 @@
-let _serializerDebug = false;
-let _wsDebug = false;
-let _protoDebug = false;
-
 function getCurrentTimeFormatted() {
   const now = new Date();
   return now.toISOString();
 }
 
 function seLog(message) {
-    if (_serializerDebug)
+    if (config.JS_SERIALIZER_LOGGING)
         console.log(`[${getCurrentTimeFormatted()}]: ${message}`);
 }
 
 function wsLog(message) {
-    if (_wsDebug)
+    if (config.JS_WS_LOGGING)
 	    console.log(`[${getCurrentTimeFormatted()}] - WSClient: ${message}`)
 }
 
 function protoLog(message) {
-    if (_protoDebug)
+    if (config.JS_PROTO_LOGGING)
 	    console.log(`[${getCurrentTimeFormatted()}] - Proto: ${message}`)
 }

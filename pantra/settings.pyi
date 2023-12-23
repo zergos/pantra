@@ -44,5 +44,10 @@ class Config:
     ZMQ_LISTEN: str
     ZMQ_HOST: str
 
+    JS_SERIALIZER_LOGGING: bool
+    JS_WS_LOGGING: bool
+    JS_PROTO_LOGGING: bool
+    JS_ADD_IDS: bool
+
 
 config: Config = Config()

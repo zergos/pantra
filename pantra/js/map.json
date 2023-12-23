@@ -1,4 +1,5 @@
 [
+	"config.js",
 	"bsdf.js",
 	"oid.js",
 	"logger.js",

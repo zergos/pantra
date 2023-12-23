@@ -23,8 +23,14 @@ class AllJSCache:
         self.map = None
 
     def _update(self):
+        import json
+
         logger.debug("Building JS bundle")
-        self.content, self.map = make(config.JS_PATH)
+        config_line = json.dumps({
+            k: v
+            for k, v in config.__dict__.items() if k.startswith('JS_') and type(v) in (str, int, float, bool)
+        })
+        self.content, self.map = make(config.JS_PATH, config_line=config_line)
 
     def __getattribute__(self, item: str):
         if item.startswith("_"):

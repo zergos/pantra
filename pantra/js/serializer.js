@@ -42,6 +42,8 @@ const HTMLElementSerializer = {
                 element = document.createElementNS(namespaces[v.x], v.n);
             else
                 element = document.createElement(v.n);
+            if (config.JS_ADD_IDS)
+                element.setAttribute('id',  `o${v.i}`);
 
             //element.typical = true;
             OID.set(element, v.i);
@@ -98,6 +100,8 @@ const TextSerializer = {
         if (!element) {
             let parent = OID.node(v.p);
             element = document.createElement('text');
+            if (config.JS_ADD_IDS)
+                element.setAttribute('id',  `o${v.i}`);
             OID.set(element, v.i);
             parent.appendChild(element);
         } else if (v['#'])
@@ -127,6 +131,8 @@ const StubElementSerializer = {
                 seLog(`stub #${v.i} created with parent #${v.p}`);
             }
             element = document.createElement('div');
+            if (config.JS_ADD_IDS)
+                element.setAttribute('id',  `o${v.i}`);
             if (v['$'])
                 element.setAttribute('class', v['$']);
             

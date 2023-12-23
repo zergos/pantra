@@ -9,7 +9,7 @@ OUT_NAME_MAP = 'all.js.map'
 sepa_tokens = string.ascii_letters + string.digits + '_$'
 
 
-def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False) -> tuple[str, str]:
+def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False, config_line: str | None = None) -> tuple[str, str]:
     with (path / MAP_CONFIG).open("rb") as f:
         src_names = json.load(f)
 
@@ -26,6 +26,9 @@ def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool =
     out = ""
     for src_idx, src_name in enumerate(src_names):
         src = (path / src_name).read_text()
+
+        if config_line is not None:
+            src = src.replace('let config = new Map();', f'let config = {config_line};')
 
         if with_content:
             dest['sourcesContent'].append(src)

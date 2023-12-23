@@ -53,6 +53,8 @@ class RenderNode(UniqueNode):
                 and get_first_macro(self.template[0].macro).reactive \
                 and self.index() < len(self.template.parent.children) - 1:
                     self.render_this = True
+                    # and (self.template[-1].tag_name == '#else' \
+                    #    or self.index() < len(self.template.parent.children) - 1):
         else:
             self.render_this: bool = render_this
 
@@ -79,15 +81,16 @@ class RenderNode(UniqueNode):
     def children(self) -> List[AnyNode]: return []
     del children
 
-    def _cleanup_node(self, node):
-        if node in self.context.react_nodes:
-            self.context.react_nodes.remove(node)
-            for v in self.context.react_vars.values():
+    @staticmethod
+    def _cleanup_node(node):
+        if node in node.context.react_nodes:
+            node.context.react_nodes.remove(node)
+            for v in list(node.context.react_vars.values()):
                 if node in v:
                     v.remove(node)
-        if node in self.context.refs.values():
-            k = next(k for k, v in self.context.refs.items() if v == node)
-            del self.context.refs[k]
+        if node in node.context.refs.values():
+            k = next(k for k, v in node.context.refs.items() if v == node)
+            del node.context.refs[k]
 
     def empty(self):
         for child in self.children:  # type: RenderNode
@@ -566,7 +569,7 @@ class DefaultRenderer:
                     return None
                 node = c.ReactNode(parent, var_name, action)
                 # take in account consumed contexts
-                self.ctx.locals._ctx.react_vars[var_name].add(node)
+                self.ctx.locals._ctx.react_vars[var_name].append(node)
 
         return node
 

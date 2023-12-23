@@ -100,7 +100,7 @@ class Context(RenderNode):
         self._restyle: bool = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
-        self.react_vars: Dict[str, Set[AnyNode]] = defaultdict(set)
+        self.react_vars: Dict[str, list[AnyNode]] = defaultdict(list)
         self.react_nodes: Set[AnyNode] = set()
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:

@@ -28,8 +28,13 @@ class WatchDict(ADict):
 
         old_value = self[key]
         self[key] = value
-        if value != old_value and key in self._ctx.react_vars:
-            for node in frozenset(self._ctx.react_vars[key]):
+        if value != old_value and (nodes:=self._ctx.react_vars.get(key, None)) is not None:
+            copy = nodes.copy()
+            for node in nodes:
+                # WARNING: `nodes` list is dynamically changed by updates, but we need to avoid new nodes
+                # as well as deleted ones
+                if node not in copy:
+                    continue
                 if typename(node) == 'ReactNode':
                     node.value = value
                     process_call(self._ctx.session, node.context, node.action, node)
@@ -48,7 +53,8 @@ class WatchDictActive(WatchDict):
         self._node = None
 
     def _record(self, item):
-        self._ctx.react_vars[item].add(self._node)
+        if self._node not in (nodes:=self._ctx.react_vars[item]):
+            nodes.append(self._node)
         self._ctx.react_nodes.add(self._node)
 
     def __getitem__(self, item):
