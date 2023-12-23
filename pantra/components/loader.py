@@ -289,9 +289,9 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
         if name in templates:
             templates[key] = templates[name]
             return templates[name]
-        elif config.PRODUCTIVE:
-            templates[key] = None
-            return None
+        #elif config.PRODUCTIVE:
+        #    templates[key] = None
+        #    return None
 
         path = _search_component(config.COMPONENTS_PATH, name)
         if not path:
