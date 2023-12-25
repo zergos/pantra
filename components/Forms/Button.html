@@ -1,4 +1,4 @@
-<button type="button" on:click="action" class:default set:disabled>{{caption}}</button>
+<button type="button" on:click="action" class:default set:disabled="!{disabled}">!{{caption}}</button>
 
 <style type="text/scss">
     @import "defaults";

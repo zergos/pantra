@@ -308,13 +308,14 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
 
 
 @lru_cache(maxsize=1000)
-def get_static_url(app: str, template_file_name: Path, sub_dir: str | None, file_name: str):
+def get_static_url(app: str, template_file_name: Path, sub_dir: str | None, file_name: str) -> str:
     if sub_dir and sub_dir in config.ALLOWED_DIRS:
         path = config.ALLOWED_DIRS[sub_dir] / file_name
         if path.exists():
             return config.WEB_PATH + '/'.join(['', '$' + sub_dir, '~', file_name])
         else:
-            raise FileExistsError(file_name)
+            #raise FileExistsError(file_name)
+            return '#'
 
     # omit 'static' part
     if sub_dir and sub_dir != config.STATIC_DIR:
@@ -339,7 +340,8 @@ def get_static_url(app: str, template_file_name: Path, sub_dir: str | None, file
             if path.exists():
                 return config.WEB_PATH + '/'.join(['', '~', web_name])
             else:
-                raise FileExistsError(search_name)
+                #raise FileExistsError(search_name)
+                return '#'
 
 
 class StyleVisitor(PMLParserVisitor):
