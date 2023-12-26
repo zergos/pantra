@@ -27,6 +27,7 @@ class Config:
     THREAD_TIMEOUT: int
 
     SOCKET_TIMEOUT: int
+    WS_HEARTBEAT_INTERVAL: float | None
     SESSION_TTL: int
     MAX_MESSAGE_SIZE: int
     LOCKS_TIMEOUT: int

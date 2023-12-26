@@ -107,7 +107,7 @@ async def get_media(request: web.Request):
 @routes.get(r'/{app:\w*}/ws/{local_id:\w+}/{session_id:\w+}')
 @wipe_logger
 async def get_ws(request: web.Request):
-    ws = web.WebSocketResponse(receive_timeout=config.SOCKET_TIMEOUT, max_msg_size=config.MAX_MESSAGE_SIZE)
+    ws = web.WebSocketResponse(receive_timeout=config.SOCKET_TIMEOUT, max_msg_size=config.MAX_MESSAGE_SIZE, heartbeat=config.WS_HEARTBEAT_INTERVAL)
     await ws.prepare(request)
 
     session_id = request.match_info['session_id']
