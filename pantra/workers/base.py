@@ -133,7 +133,7 @@ class BaseWorkerServer(ABC):
             data = serializer.decode(message)
 
             if data['C'] == "SESSION":
-                Session(session_id, data['app'], data['lang'])
+                Session(session_id, data['app'], data['lang'], data['params'])
             else:
                 if (session:=Session.sessions.get(session_id, None)) is None:
                     from ..protocol import Messages
@@ -182,20 +182,21 @@ class BaseWorkerClient(ABC):
                 await ws.send_bytes(message) #, compress=len(message)>=1000)
         self.sync_task = asyncio.create_task(task())
 
-    async def connect_session(self, session_id: str, app: str, lang: list[str]):
+    async def connect_session(self, session_id: str, app: str, lang: list[str], params: dict[str, str]):
         from ..serializer import serializer
 
         logger.debug("Initiate session")
         data = {
             "C": "SESSION",
             "app": app,
-            "lang": lang
+            "lang": lang,
+            "params": params,
         }
         message = serializer.encode(data)
         await self.connection.send(message)
 
     @typing.overload
-    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: list[str]): ...
+    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: list[str], params: dict[str, str]): ...
 
     def __init__(self, *args):
         self.args = args
@@ -208,7 +209,7 @@ class BaseWorkerClient(ABC):
         self.open_connection(self.args[0] + '/' + self.args[2])
         await Session.remind_errors_client(self.args[1])
         self.bind_to_websocket(self.args[1])
-        await self.connect_session(self.args[0], self.args[2], self.args[3])
+        await self.connect_session(self.args[0], self.args[2], self.args[3], self.args[4])
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

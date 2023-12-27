@@ -38,7 +38,7 @@ class Session:
     server_worker: ClassVar[BaseWorkerServer] = None
 
     __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
-                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag']
+                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params']
 
     @classmethod
     async def run_server_worker(cls):
@@ -47,19 +47,21 @@ class Session:
         cls.server_worker.start_listener()
         await cls.server_worker.run_processor()
 
-    def __new__(cls, session_id: str, app: str, lang: list[str]):
+    def __new__(cls, session_id: str, app: str, lang: list[str], params: dict[str, str]):
         key = f'{session_id}'
         if key in cls.sessions:
             logger.debug(f"Reuse session {key}")
+            cls.sessions[key].params = params
             return cls.sessions[key]
         logger.debug(f"New session {key}")
         self = super().__new__(cls)
         cls.sessions[key] = self
         return self
 
-    def __init__(self, session_id: str, app: str, lang: list[str]):
+    def __init__(self, session_id: str, app: str, lang: list[str], params: dict[str, str]):
         self.session_id = session_id
-        self.app: Optional[str] = app
+        self.app: str = app
+        self.params: dict[str, str] = params
         self.storage: SessionStorage | None = None
         self.last_touch: datetime = datetime.now()
         self.finish_flag: bool = False

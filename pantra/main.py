@@ -122,7 +122,7 @@ async def get_ws(request: web.Request):
 
     #session = Session(request.match_info['local_id'], session_id, ws, app, lang)
 
-    async with config.WORKER_CLIENT(session_id, ws, app, lang) as worker:
+    async with config.WORKER_CLIENT(session_id, ws, app, lang, dict(request.query)) as worker:
         while True:
             try:
                 async for msg in ws:  # type: WSMessage
