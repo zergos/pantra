@@ -27,6 +27,6 @@ from pantra.ctx import *
 chosen: str = _('Make a choice...')
 destiny_set = ('Good', 'Evil', 'Rich', 'Sexy')
 
-def choose(node):
+async def choose(node):
     ctx['chosen'] = node.data.value
 </python>

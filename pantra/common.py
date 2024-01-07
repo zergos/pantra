@@ -3,7 +3,6 @@ from __future__ import annotations
 import types
 import typing
 import ctypes
-from dataclasses import dataclass
 
 if typing.TYPE_CHECKING:
     from typing import *

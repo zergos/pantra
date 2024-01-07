@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from concurrent import futures
 import functools
+import threading
 import traceback
 import typing
 import uuid
@@ -13,7 +15,7 @@ from aiohttp import web
 
 from .protocol import Messages
 from .settings import config
-from .common import ADict, UniNode
+from .common import ADict, UniNode, raise_exception_in_thread
 from .patching import wipe_logger
 from .compiler import exec_restart
 from .workers.decorators import async_worker
@@ -30,6 +32,11 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger("pantra.system")
 
+class SessionTask(typing.NamedTuple):
+    task: threading.Thread | futures.Future
+    func: typing.Callable
+
+
 @wipe_logger
 class Session:
     pending_errors: ClassVar[Queue[str]] = Queue()
@@ -38,7 +45,7 @@ class Session:
     server_worker: ClassVar[BaseWorkerServer] = None
 
     __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
-                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params']
+                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks']
 
     @classmethod
     async def run_server_worker(cls):
@@ -65,6 +72,7 @@ class Session:
         self.storage: SessionStorage | None = None
         self.last_touch: datetime = datetime.now()
         self.finish_flag: bool = False
+        self.tasks: dict[str, SessionTask] = {}
         if not hasattr(self, "state"):
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
@@ -186,6 +194,32 @@ class Session:
         self._collect_children([self.root], lst)
         return self.send_message(Messages.update(lst))
 
+    def kill_task(self, task_name: str):
+        logger.debug(f"{{{self.app}}} Killing task {task_name}")
+        if (stask:=self.tasks.get(task_name, None)) is not None:
+            if isinstance(stask.task, threading.Thread):
+                if stask.task.is_alive():
+                    raise_exception_in_thread(stask.task.native_id)
+                del self.tasks[task_name]
+            elif isinstance(stask.task, futures.Future):
+                if not stask.task.cancelled():
+                    stask.task.cancel()
+            else:
+                raise RuntimeError('Unknown task type')
+            if hasattr(stask.func, "on_kill"):
+                try:
+                    stask.func.on_kill()
+                except:
+                    self.error(traceback.format_exc())
+                else:
+                    self.send_shot()
+
+    def kill_all_tasks(self):
+        for task_name, stask in list(self.tasks.items()):
+            if not isinstance(stask.task, threading.Thread) \
+                or isinstance(stask.task, threading.Thread) and stask.task != threading.current_thread():
+                self.kill_task(task_name)
+
     def request_metrics(self, node: RenderNode):
         logger.debug(f"{{{self.app}}} Request metrics for {node}")
         self.send_message(Messages.request_metrics(node.oid))
@@ -212,7 +246,7 @@ class Session:
 
     @staticmethod
     def get_apps() -> list[str]:
-        dirs = [app.name for app in config.APPS_PATH.glob("*")]
+        dirs = [app.name for app in config.APPS_PATH.glob("*") if app.is_dir() and app.joinpath('Main.html').exists()]
         return dirs
 
     def start_app(self, app: str):

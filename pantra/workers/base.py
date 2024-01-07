@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import typing
 import logging
 import time
@@ -9,6 +10,7 @@ from dataclasses import dataclass
 import threading
 import queue
 from datetime import datetime
+from enum import IntEnum, auto
 
 from ..common import raise_exception_in_thread
 from ..settings import config
@@ -20,12 +22,16 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger('pantra.system')
 
+class ThreadMode(IntEnum):
+    NORMAL = auto()
+    REDUCED = auto()
+
 @dataclass
 class WorkerStat:
     active: bool = False
-    last_time: float = 0
-    finish_flag: int = 0
-
+    last_tick: float = 0
+    mode: ThreadMode = ThreadMode.NORMAL
+    thread: threading.Thread = None
 
 @wipe_logger
 class BaseWorkerServer(ABC):
@@ -43,57 +49,78 @@ class BaseWorkerServer(ABC):
 
     workers: typing.ClassVar[dict[str, WorkerStat]] = {}
     task_queue: typing.ClassVar[queue.Queue | None] = queue.Queue()
+    thread_counter: typing.ClassVar[int] = 0
 
     listener: Listener
     async_loop: asyncio.AbstractEventLoop
 
-    def task_processor(self):
+    @classmethod
+    def task_processor(cls):
+        from ..session import Session, SessionTask
         try:
             ident = threading.current_thread().name
-            if ident not in BaseWorkerServer.workers:
-                BaseWorkerServer.workers[ident] = WorkerStat()
             while True:
                 try:
-                    func, args, kwargs = BaseWorkerServer.task_queue.get(timeout=5)
+                    func, args, kwargs = cls.task_queue.get(timeout=5)
                 except queue.Empty:
-                    if BaseWorkerServer.workers[ident].finish_flag:
-                        BaseWorkerServer.workers[ident].finish_flag = -1
+                    if cls.workers[ident].mode == ThreadMode.REDUCED:
                         break
                     continue
                 if func is None: break
-                BaseWorkerServer.workers[ident].last_time = time.perf_counter()
-                BaseWorkerServer.workers[ident].active = True
+                cls.workers[ident].last_tick = time.perf_counter()
+                cls.workers[ident].active = True
                 func(*args, **kwargs)
-                BaseWorkerServer.workers[ident].last_time = time.perf_counter()
-                BaseWorkerServer.workers[ident].active = False
+                cls.workers[ident].last_tick = time.perf_counter()
+                cls.workers[ident].active = False
         except SystemExit:
             logger.error(f'`{ident}` thread got exit signal')
 
-    def tasks_controller(self):
+    @staticmethod
+    @contextlib.contextmanager
+    def wrap_session_task(session: Session, func: typing.Callable):
+        from ..session import SessionTask
+        session.tasks[func.__name__] = SessionTask(threading.current_thread(), func)
+        yield
+        del session.tasks[func.__name__]
+
+    @staticmethod
+    def run_coroutine(session: Session, func: typing.Callable, coro: typing.Coroutine):
+        from ..session import SessionTask
+        task = asyncio.run_coroutine_threadsafe(coro, session.server_worker.async_loop)
+        def on_done(future):
+            del session.tasks[func.__name__]
+
+        session.tasks[func.__name__] = SessionTask(task, func)
+        task.add_done_callback(on_done)
+
+    @classmethod
+    def tasks_controller(cls):
         while True:
             time.sleep(1)
             tick = time.perf_counter()
             last_tick = 0
-            if len(BaseWorkerServer.workers) > config.MIN_TASK_THREADS:
-                for k, v in list(BaseWorkerServer.workers.items()):  # type: str, WorkerStat
-                    if v.finish_flag != 0:
-                        if v.finish_flag == -1:
-                            logger.warning(f"Thread killed `f{k}`")
-                            del BaseWorkerServer.workers[k]
-                        continue
-                    if v.active and tick - v.last_time > config.THREAD_TIMEOUT:
-                        if len(BaseWorkerServer.workers) > config.MIN_TASK_THREADS:
-                            logger.warning(f"Thread removing `f{k}`")
-                            raise_exception_in_thread(k)
-                            del BaseWorkerServer.workers[k]
-                    elif v.last_time and not v.active and tick - v.last_time > config.KILL_THREAD_LAG:
-                        logger.warning(f"Thread killing `f{k}`")
-                        v.finish_flag = 1
-                    if tick > last_tick:
-                        last_tick = tick
-            if not BaseWorkerServer.task_queue.empty() and last_tick and tick - last_tick > config.CREAT_THREAD_LAG:
-                logger.warning(f'New thread creation X#{len(BaseWorkerServer.workers)}')
-                threading.Thread(target=self.task_processor, name=f'X#{len(BaseWorkerServer.workers)}').start()
+            for k, v in list(cls.workers.items()):  # type: str, WorkerStat
+                if not v.thread.is_alive():
+                    logger.warning(f"Thread killed `{k}`")
+                    del cls.workers[k]
+                elif v.active and tick - v.last_tick > config.THREAD_TIMEOUT:
+                    logger.warning(f"Thread timeout `{k}`")
+                    raise_exception_in_thread(v.thread.native_id)
+                    del cls.workers[k]
+                elif len(cls.workers) > config.MIN_TASK_THREADS \
+                        and not v.active and v.last_tick and tick - v.last_tick > config.KILL_THREAD_LAG:
+                    logger.warning(f"Thread killing `{k}`")
+                    v.mode = ThreadMode.REDUCED
+                elif v.active and v.last_tick > last_tick:
+                    last_tick = v.last_tick
+            if len(cls.workers) < config.MIN_TASK_THREADS \
+                    or not cls.task_queue.empty() and last_tick and tick - last_tick > config.CREAT_THREAD_LAG:
+                cls.thread_counter += 1
+                thread_name = f'X#{cls.thread_counter}'
+                thread = threading.Thread(target=cls.task_processor, name=thread_name, daemon=True)
+                logger.warning(f'New thread created `{thread_name}`')
+                cls.workers[thread_name] = WorkerStat(thread=thread)
+                thread.start()
 
     @staticmethod
     def session_killer():
@@ -105,16 +132,20 @@ class BaseWorkerServer(ABC):
                 session = Session.sessions[session_id]
                 if not getattr(session, "just_connected", True) and (now - session.last_touch).seconds >= config.SESSION_TTL:
                     logger.info(f'Session {session_id} killed by TTL limit {config.SESSION_TTL} seconds')
-                    session.finish_flag = 1
+                    for task in list(session.tasks.keys()):
+                        session.kill_task(task)
                     del Session.sessions[session_id]
 
-    def start_task_workers(self):
+    @classmethod
+    def start_task_workers(cls):
         logger.debug("Starting task workers")
         BaseWorkerServer.task_queue = queue.Queue()
         for i in range(config.MIN_TASK_THREADS):
-            threading.Thread(target=self.task_processor, name=f'#{i}', daemon=True).start()
-        threading.Thread(target=self.tasks_controller, daemon=True).start()
-        threading.Thread(target=self.session_killer, daemon=True).start()
+            thread = threading.Thread(target=cls.task_processor, name=f'#{i}', daemon=True)
+            BaseWorkerServer.workers[thread.name] = WorkerStat(thread=thread)
+            thread.start()
+        threading.Thread(target=cls.tasks_controller, daemon=True).start()
+        threading.Thread(target=cls.session_killer, daemon=True).start()
 
     @abstractmethod
     def start_listener(self): ...
