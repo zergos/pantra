@@ -110,7 +110,8 @@ def process_call(session: Session, node: AnyNode, method: str, *args):
         if inspect.iscoroutinefunction(caller:=node[m]):
             session.server_worker.run_coroutine(session, caller, trace_errors_async(session, caller(*args)))
         elif callable(caller):
-            caller(*args)
+            with session.server_worker.wrap_session_task(session, caller):
+                caller(*args)
         else:
             node[m] = args[0]
 
