@@ -287,6 +287,8 @@ class WebUnits(str):
 
 
 class EmptyCaller(str):
+    #__name__ = 'EmptyCaller'
+
     def __new__(cls):
         return super().__new__(cls, '')
 
