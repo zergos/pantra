@@ -7,7 +7,7 @@ from .settings import config
 if typing.TYPE_CHECKING:
     import logging
     from pantra.common import ADict
-    from pantra.components.context import Context, HTMLElement, AnyNode
+    from pantra.components.context import Context, HTMLElement, AnyNode, ActionType
     from pantra.session import Session
     from typing import *
 
@@ -26,4 +26,5 @@ if typing.TYPE_CHECKING:
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
-               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML', 'config']
+               'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML',
+               'config', 'ActionType']

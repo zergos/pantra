@@ -112,8 +112,9 @@ def process_call(session: Session, node: AnyNode, method: str, *args):
         elif callable(caller):
             with session.server_worker.wrap_session_task(session, caller):
                 caller(*args)
-        else:
-            node[m] = args[0]
+        elif caller is not None:
+            raise ValueError(f"Can`t call type `{type(caller)}` ({caller})")
+        #    node[m] = args[0]
 
 
 @thread_worker

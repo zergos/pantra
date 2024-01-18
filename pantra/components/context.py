@@ -28,6 +28,7 @@ __all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'Loo
 AnyNode = typing.Union['Context', 'HTMLElement', 'NSElement', 'LoopNode', 'ConditionNode', 'TextNode', 'EventNode',
             'SetNode', 'ReactNode', 'ScriptNode']
 
+ActionType = typing.Callable[['HTMLElement'], None] | None
 
 class NSType(Enum):
     HTML = auto()       # http://www.w3.org/1999/xhtml
@@ -137,7 +138,7 @@ class Context(RenderNode):
     def __getitem__(self, item: Union[str, int]):
         if type(item) is int:
             return self.children[item]
-        return self.locals.get(item, EmptyCaller())
+        return self.locals.get(item, None)
 
     def __setitem__(self, key, value):
         setattr(self.locals, key, value)

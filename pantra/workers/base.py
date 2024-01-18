@@ -81,7 +81,8 @@ class BaseWorkerServer(ABC):
         from ..session import SessionTask
         session.tasks[func.__name__] = SessionTask(threading.current_thread(), func)
         yield
-        del session.tasks[func.__name__]
+        if func.__name__ in session.tasks: # other thread could stop this already, or we have similar callers names
+            del session.tasks[func.__name__]
 
     @staticmethod
     def run_coroutine(session: Session, func: typing.Callable, coro: typing.Coroutine):
