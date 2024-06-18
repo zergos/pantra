@@ -156,6 +156,14 @@ class RenderNode(UniqueNode):
             res += '\n' + ' ' * indent + c.describe(indent + 2)
         return res
 
+    def kill_task(self, func_name: str | Callable):
+        if callable(func_name):
+            func_name = func_name.__name__
+        self.session.kill_task(f'{self.oid}#{func_name}')
+
+    def kill_all_tasks(self):
+        self.session.kill_all_tasks(self)
+
 class DefaultRenderer:
     __slots__ = ['ctx']
 

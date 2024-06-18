@@ -19,6 +19,7 @@ from ..patching import wipe_logger
 if typing.TYPE_CHECKING:
     from aiohttp import web
     from ..session import Session
+    from ..components.context import AnyNode
 
 logger = logging.getLogger('pantra.system')
 
@@ -56,7 +57,6 @@ class BaseWorkerServer(ABC):
 
     @classmethod
     def task_processor(cls):
-        from ..session import Session, SessionTask
         try:
             ident = threading.current_thread().name
             while True:
@@ -77,21 +77,25 @@ class BaseWorkerServer(ABC):
 
     @staticmethod
     @contextlib.contextmanager
-    def wrap_session_task(session: Session, func: typing.Callable):
+    def wrap_session_task(node: AnyNode, func: typing.Callable):
         from ..session import SessionTask
-        session.tasks[func.__name__] = SessionTask(threading.current_thread(), func)
+        session = node.context.session
+        func_name = f'{node.oid}#{func.__name__}'
+        session.tasks[func_name] = SessionTask(threading.current_thread(), func)
         yield
         if func.__name__ in session.tasks: # other thread could stop this already, or we have similar callers names
-            del session.tasks[func.__name__]
+            del session.tasks[func_name]
 
     @staticmethod
-    def run_coroutine(session: Session, func: typing.Callable, coro: typing.Coroutine):
+    def run_coroutine(node: AnyNode, func: typing.Callable, coro: typing.Coroutine):
         from ..session import SessionTask
+        session = node.context.session
+        func_name = f'{node.oid}#{func.__name__}'
         task = asyncio.run_coroutine_threadsafe(coro, session.server_worker.async_loop)
         def on_done(future):
-            del session.tasks[func.__name__]
+            del session.tasks[func_name]
 
-        session.tasks[func.__name__] = SessionTask(task, func)
+        session.tasks[func_name] = SessionTask(task, func)
         task.add_done_callback(on_done)
 
     @classmethod

@@ -1,0 +1,32 @@
+<python>
+import time
+
+from pantra.ctx import *
+from pantra.workers.decorators import thread_worker
+from pantra.components.controllers import process_call
+
+enabled: bool = False
+action: typing.Optional[typing.Callable] = None
+ms: int = 1000
+
+@thread_worker
+def start():
+    global enabled
+    if not enabled and action:
+        enabled = True
+        process_call(ctx, 'loop')
+
+def loop():
+    global enabled
+    while enabled:
+        if action(ctx) is False:
+            enabled = False
+            break
+        session.send_shot()
+        time.sleep(ms / 1000)
+
+def stop():
+    global enabled
+    enabled = False
+
+</python>

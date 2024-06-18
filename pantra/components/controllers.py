@@ -105,12 +105,13 @@ def process_drag_stop(session: Session, x: int, y: int):
 
 
 @trace_errors
-def process_call(session: Session, node: AnyNode, method: str, *args):
+def process_call(node: AnyNode, method: str, *args):
+    session = node.context.session
     for m in method.split(' '):
         if inspect.iscoroutinefunction(caller:=node[m]):
-            session.server_worker.run_coroutine(session, caller, trace_errors_async(session, caller(*args)))
+            session.server_worker.run_coroutine(node, caller, trace_errors_async(session, caller(*args)))
         elif callable(caller):
-            with session.server_worker.wrap_session_task(session, caller):
+            with session.server_worker.wrap_session_task(node, caller):
                 caller(*args)
         elif caller is not None:
             raise ValueError(f"Can`t call type `{type(caller)}` ({caller})")
@@ -121,8 +122,7 @@ def process_call(session: Session, node: AnyNode, method: str, *args):
 def process_click(method: str, oid: int):
     node = get_node(oid)
     if node is None or not method: return
-    context = node.context
-    process_call(context.session, node, method, node)
+    process_call(node, method, node)
 
 
 @thread_worker
@@ -131,7 +131,7 @@ def process_select(method: str, oid: int, opts: List[int]):
     if not node or not method: return
     opts = [get_node(i) for i in opts]
     node._value = len(opts) == 1 and opts[0] or opts
-    process_call(node.context.session, node, method, node)
+    process_call(node, method, node)
 
 
 @thread_worker
@@ -146,7 +146,7 @@ def process_bind_value(oid: int, var_name: str, value: str):
 def process_key(method: str, oid: int, key: str):
     node = get_node(oid)
     if not node or not method: return
-    process_call(node.context.session, node, method, node, key)
+    process_call(node, method, node, key)
 
 
 @thread_worker
@@ -154,5 +154,5 @@ def process_direct_call(oid: int, method: str, args: list[Any]):
     node = get_node(oid)
     if not node or not method: return
     if node.is_call_allowed(method):
-        process_call(node.context.session, node, method, args)
+        process_call(node, method, args)
 

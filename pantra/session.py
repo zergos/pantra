@@ -15,7 +15,7 @@ from aiohttp import web
 
 from .protocol import Messages
 from .settings import config
-from .common import ADict, UniNode, raise_exception_in_thread
+from .common import ADict, UniNode, raise_exception_in_thread, UniqueNode
 from .patching import wipe_logger
 from .compiler import exec_restart
 from .workers.decorators import async_worker
@@ -214,10 +214,12 @@ class Session:
                 else:
                     self.send_shot()
 
-    def kill_all_tasks(self):
+    def kill_all_tasks(self, ctx: UniqueNode = None):
         for task_name, stask in list(self.tasks.items()):
             if not isinstance(stask.task, threading.Thread) \
                 or isinstance(stask.task, threading.Thread) and stask.task != threading.current_thread():
+                if ctx and not task_name.startswith(f'{ctx.oid}#'):
+                    continue
                 self.kill_task(task_name)
 
     def request_metrics(self, node: RenderNode):
@@ -307,16 +309,17 @@ class Session:
 def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)
     def res(*args, **kwargs):
+        from .components.context import RenderNode
         dont_refresh = kwargs.pop("dont_refresh", False)
-        if type(args[0]) is not Session:
+        if not isinstance(args[0], RenderNode):
             return
         try:
             func(*args, **kwargs)
         except:
-            args[0].error(traceback.format_exc())
+            args[0].context.session.error(traceback.format_exc())
         else:
             if not dont_refresh:
-                args[0].send_shot()
+                args[0].context.session.send_shot()
     res.call = func
     return res
 

@@ -1,0 +1,25 @@
+<GridX fullscreen>
+    <CardForm caption="Timer test">
+        <TextAreaField ref:text readonly/>
+        <InlineGroup>
+            <Button caption="Start" action="@start"/>
+            <Button caption="Stop" action="@stop"/>
+        </InlineGroup>
+    </CardForm>
+</GridX>
+<Timer cref:timer action="@action"/>
+
+<python>
+from pantra.ctx import *
+
+def start(node):
+    refs['timer'].start()
+
+def stop(node):
+    refs['timer'].stop()
+
+def action(node):
+    refs['text']['value'] += 'Z\n'
+
+
+</python>
