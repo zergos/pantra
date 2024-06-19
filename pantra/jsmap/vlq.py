@@ -6,13 +6,8 @@ import typing
 if typing.TYPE_CHECKING:
     from typing import *
 
-charToInteger: Dict[str, int] = {}
-integerToChar: Dict[int, str] = {}
-
-for i, char in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='):
-    charToInteger[char] = i
-    integerToChar[i] = char
-
+integerToChar: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
+charToInteger: Dict[str, int] = {char: i for i, char in enumerate(integerToChar)}
 
 def decode(string: str) -> List[int]:
     result = []
@@ -24,17 +19,15 @@ def decode(string: str) -> List[int]:
         if integer is None:
             raise ValueError(f'Invalid character ({sym})')
 
-        hasContinuationBit = integer & 32
         integer &= 31
         value += integer << shift
 
-        if hasContinuationBit:
+        if integer & 32:
             shift += 5
         else:
-            shouldNegate = value & 1
             value >>= 1
 
-            if shouldNegate:
+            if value & 1:
                 result.append(-0x80000000 if value == 0 else -value)
             else:
                 result.append(value)
@@ -49,15 +42,13 @@ def encode(value: Union[int, List[int]]) -> str:
     result: str
 
     if type(value) is int:
-        result = encodeInteger(value)
+        result = encode_integer(value)
     else:
-        result = ''
-        for v in value:
-            result += encodeInteger(v)
+        result = ''.join(encode_integer(v) for v in value)
     return result
 
 
-def encodeInteger(num: int) -> str:
+def encode_integer(num: int) -> str:
     result = ''
 
     if num < 0:

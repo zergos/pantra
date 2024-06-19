@@ -104,7 +104,7 @@ def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool =
         prev = content
         mappings.append(vlq.encode(line))
 
-    dest['mappings'] = ','.join(mappings) + ';'
+    dest['mappings'] = ','.join(mappings) + ';'  # noqa
 
     return out, json.dumps(dest)
 
