@@ -12,7 +12,8 @@
     <div ref:error class="message">!{{error}}</div>
 </label>
 
-<python use="inputs">
+<python>
+from components.Forms.inputs import *
 from pantra.ctx import *
 
 inline: bool = False

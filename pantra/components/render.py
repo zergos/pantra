@@ -448,6 +448,8 @@ class DefaultRenderer:
 
             if 'on:render' in template.attributes:
                 value = template.attributes['on:render']
+                if value not in self.ctx.locals:
+                    raise ValueError(f'No renderer named `{value}` found in `{self.ctx.template.name}`')
                 run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
 
         elif tag_name[0] == '$':
@@ -556,9 +558,10 @@ class DefaultRenderer:
                         node.attributes[k] = self.build_string(v, node)
 
             elif tag_name == '@scope':
-                scope = parent.scope
+                scope = {}
                 for k, v in template.attributes.items():
                     scope[k] = self.eval_string(v, parent)
+                parent.set_scope(scope)
 
             elif tag_name == '@text':
                 text = template.text

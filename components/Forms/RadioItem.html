@@ -1,0 +1,21 @@
+<label class="inline">
+    <input
+            type="radio"
+            name="{ctx.scope.radio_name}"
+            checked="{'checked' if checked else ''}"
+            set:disabled
+            data:value="{value}"
+            on:change="on_change"/>
+    <span>{{caption}}</span>
+</label>
+
+<python>
+from pantra.ctx import *
+
+checked: bool = False
+caption: str = ''
+
+def on_change(node):
+    ctx.scope.on_radio_change(node.data.value)
+
+</python>

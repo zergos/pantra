@@ -21,7 +21,6 @@
 
 <style type="text/scss">
     @import "defaults";
-    @import "mixins";
 
     label {
         display: flex;
@@ -63,7 +62,9 @@
     }
 </style>
 
-<python use="validators">
+<python>
+from components.Widgets.validators import *
+
 from pantra.ctx import *
 
 caption: str = ''

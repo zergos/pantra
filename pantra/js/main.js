@@ -69,13 +69,18 @@ function processBindValue(variable, oid, target) {
     else if (target.type === 'time') {
         value = target.valueAsDate;
         //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
-        value = value.getTime();
+        if (!!value)
+            value = value.getTime();
+        else
+            return;
     }
     else if (target.type === 'date') {
         value = target.valueAsDate;
+        if (value.valueOf() < 0)
+            return;
         //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
     }
-    else if (target.type === 'checkbox') {
+    else if (target.type === 'checkbox' || target.type === 'radio') {
         value = target.checked;
     }
     else value = target.value;

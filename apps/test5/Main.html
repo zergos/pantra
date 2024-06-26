@@ -1,4 +1,4 @@
-<GridX>
+<GridX fullscreen>
     <CardForm>
         <TextField ref:f1 caption="#Text" required placeholder="#some text" error="#something wrong"/>
         <NumberField ref:f2 caption="#Number" value="341"/>
@@ -7,6 +7,10 @@
         <DateTimeField ref:f5 caption="#Datetime" value="{datetime.utcnow()}"/>
         <TextAreaField ref:f6 caption="#Big text" value="happy monkey" error="check it up"/>
         <CheckField ref:f7 caption="Check this" error="Please, check"/>
+        <RadioBox ref:f8 caption="Gender" set:inline>
+            <RadioItem set:checked caption="Male" value="M"/>
+            <RadioItem caption="Female" value="F"/>
+        </RadioBox>
         <Button caption="Click" action="@click"/>
     </CardForm>
 </GridX>
@@ -23,5 +27,6 @@ def click(node):
     session.log(str(refs.f5['value']))
     session.log(str(refs.f6['value']))
     session.log(str(refs.f7['value']))
+    session.log(str(refs.f8['value']))
 
 </python>

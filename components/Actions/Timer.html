@@ -18,12 +18,15 @@ def start():
 
 def loop():
     global enabled
-    while enabled:
-        if action(ctx) is False:
-            enabled = False
-            break
-        session.send_shot()
-        time.sleep(ms / 1000)
+
+    time.sleep(ms / 1000)
+    if action(ctx) is False:
+        enabled = False
+
+    session.send_shot()
+
+    if enabled:
+        process_call(ctx, 'loop')
 
 def stop():
     global enabled

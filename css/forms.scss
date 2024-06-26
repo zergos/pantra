@@ -1,4 +1,4 @@
-label {
+label, .group {
   display: block;
   width: 100%;
   padding-top: .375rem;
@@ -100,6 +100,7 @@ input[type="radio"] {
   background-color: $color-passive;
   transition: all .2s ease-in-out;
   outline: 0;
+  margin-right: 0.5rem;
 
   &:checked {
     background-color: $color-active;

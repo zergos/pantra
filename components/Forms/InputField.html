@@ -17,7 +17,9 @@
     <div class="message">!{{error}}</div>
 </label>
 
-<python use="inputs">
+<python>
+from components.Forms.inputs import *
+
 id: str = ''
 name: str = ''
 inline: bool = False
