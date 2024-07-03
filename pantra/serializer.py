@@ -102,6 +102,8 @@ class DateSerializer(bsdf.Extension):
         return datetime(v.year, v.month, v.day, tzinfo=timezone.utc).timestamp()*1000
 
     def decode(self, s, v):
+        if v<0:
+            return None
         return datetime.utcfromtimestamp(v//1000).date()
 
 

@@ -70,6 +70,8 @@ class BaseWorkerServer(ABC):
                 cls.workers[ident].last_tick = time.perf_counter()
                 cls.workers[ident].active = True
                 func(*args, **kwargs)
+                if ident not in cls.workers:
+                    break
                 cls.workers[ident].last_tick = time.perf_counter()
                 cls.workers[ident].active = False
         except SystemExit:
@@ -119,7 +121,7 @@ class BaseWorkerServer(ABC):
                 elif v.active and v.last_tick > last_tick:
                     last_tick = v.last_tick
             if len(cls.workers) < config.MIN_TASK_THREADS \
-                    or not cls.task_queue.empty() and last_tick and tick - last_tick > config.CREAT_THREAD_LAG:
+                    or not cls.task_queue.empty() and last_tick and tick - last_tick > config.CREATE_THREAD_LAG:
                 cls.thread_counter += 1
                 thread_name = f'X#{cls.thread_counter}'
                 thread = threading.Thread(target=cls.task_processor, name=thread_name, daemon=True)
