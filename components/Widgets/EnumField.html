@@ -1,0 +1,13 @@
+<SelectField consume/>
+
+<python>
+from enum import Enum
+from pantra.ctx import *
+
+enum_type: type[Enum] | None = None
+
+def init():
+    if enum_type:
+        ctx['values'] = enum_type._member_map_
+
+</python>

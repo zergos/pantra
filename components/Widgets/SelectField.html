@@ -1,0 +1,39 @@
+<Field consume>
+    <select
+           ref:select
+           bind:value="on_field_change"
+           set:required
+           css:width
+           set:focus
+    >
+        {{#if not values or not value}}
+        <option value="-">#Empty</option>
+        {{/if}}
+        {{#for v in values}}
+        <option value="{v}" label="{v}"></option>
+        {{/for}}
+    </select>
+</Field>
+<react to="value" action="update_value"/>
+
+<python>
+from pantra.ctx import *
+values: dict[str, Any] = {}
+value: Any = None
+on_change: Callable[[Any], None] = EmptyCaller()
+
+def init():
+    if value:
+        update_value()
+
+def update_value():
+    if value in values.keys():
+        refs.select.value = next(k for k, v in values.items() if v == value)
+
+def on_field_change(node):
+    global value
+    if values:
+        value = values[node.value] if node.value != '-' else None
+        on_change(value)
+
+</python>
