@@ -1,0 +1,77 @@
+'''
+<ToolBox>
+    <ToolButton caption="#Refresh" action="@refresh"/>
+    <ToolButton caption="#Add" action="@add_object"/>
+    <ToolButton caption="#Copy" action="@copy_object" disabled="{not copy_enabled}"/>
+    <ToolButton caption="#Delete" danger action="@del_object"/>
+</ToolBox>
+
+<DBQueryTable cref:table consume="table,query" not:editable selectable callback="@open_object" on_select="@row_selected">
+    <columns reuse/>
+</DBQueryTable>
+
+<python># '''
+from quazy import DBTable
+
+from pantra.models import expose_database
+
+from components.DBTables import *
+from components.Dialogs import *
+from pantra.ctx import *
+
+db_name: str = 'db'
+name: str = ''
+
+table: type[DBTable] = None
+query: Any
+
+copy_enabled: bool = False
+
+
+def init():
+    global table
+    if not name:
+        return False
+    db = expose_database(session.app, db_name)
+    if name not in db:
+        session.error(_('Table `{name}` not found'))
+        return False
+    table = db[name]
+
+
+def refresh(node=None):
+    refs.table.refresh(True)
+
+
+def add_object(node):
+    render_form(session, ctx, table)
+
+
+def del_object(node):
+    row_id = refs.table.active_row_id
+    if not row_id: return
+    name = str(table[row_id])
+
+    def confirm_delete(command: str):
+        if command == 'Yes':
+            item = table[row_id]
+            item.delete()
+            refresh()
+
+    make_dialog(ctx, _('Confirm deletion of {name}'), callback=confirm_delete)
+
+
+def open_object(value):
+    ent = table[value]
+    render_form(session, ctx, ent)
+
+
+def row_selected(node):
+    ctx['copy_enabled'] = True
+
+
+def copy_object(node):
+    if refs.table.active_row:
+        render_form(session, ctx, table, refs.table.active_row)
+
+#</python>

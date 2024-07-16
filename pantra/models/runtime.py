@@ -56,6 +56,7 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
                 db: DBFactory = getattr(DBFactory, name)(**kwargs)
                 kwargs['provider'] = name
                 app_info[db_name] = DatabaseInfo(db, schema=schema, kwargs=kwargs)
+                db.use_module(f'apps.{app}.data')
 
     parse_xml(file_name, start_element)
 

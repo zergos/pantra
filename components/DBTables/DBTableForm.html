@@ -1,0 +1,77 @@
+'''
+<form on:render="render" on:keyup:Enter="default_click"/>
+<ToolBox>
+    <ToolButton caption="#Save" action="@save" default/>
+    <ToolButton caption="#Close" action="@close"/>
+</ToolBox>
+
+<style type="text/scss">
+    @import "defaults";
+
+    form {
+        line-height: 2em;
+        border: $form-border;
+        padding: $form-padding;
+        background: $form-bg;
+    }
+</style>
+
+<python>#'''
+import inspect
+
+from quazy import DBTable
+from components.Widgets import ValuesDict, make_widget
+from pantra.ctx import *
+
+row: DBTable | type[DBTable] | None = None
+caption: str = ''
+
+values: ValuesDict = ValuesDict()
+
+def init():
+    global entity, caption
+    if not caption:
+        caption = _(row.__name__ if inspect.isclass(row) else row.__class__.__name__)
+
+def render(node):
+    global values
+    if not ctx.slot:
+        is_new = inspect.isclass(row)
+        max_len = round(max(len(title) for name, field in row.DB.fields.items() for title in [_(field.ux.title)]) * 7)/10
+        predefined = dict(values)
+        values = ValuesDict()
+        for attr_name, field in row.DB.fields.items():
+            values[attr_name] = make_widget(node, field.ux, predefined.get(attr_name) if is_new else getattr(row, attr_name), caption_width=WebUnits(max_len, 'em'))
+
+
+def close(node=None):
+    session['taskbar'].close()
+
+
+def is_valid():
+    ok = True
+    for node in ctx.select('$Field'):
+        ok &= node['is_valid']()
+    return ok
+
+
+def save(node):
+    if not is_valid():
+        return
+
+    is_new = inspect.isclass(row) or not row.pk
+    if is_new:
+        r = row()
+    else:
+        r = row
+    for k, v in values.items():
+        setattr(r, k, v['value'])
+    r.save()
+    ctx.scope.caller['refresh']()
+    close()
+
+
+def default_click(node, key):
+    save(None)
+
+#</python>

@@ -33,6 +33,7 @@ class WorkerStat:
     last_tick: float = 0
     mode: ThreadMode = ThreadMode.NORMAL
     thread: threading.Thread = None
+    task_info: str = ""
 
 @wipe_logger
 class BaseWorkerServer(ABC):
@@ -69,11 +70,13 @@ class BaseWorkerServer(ABC):
                 if func is None: break
                 cls.workers[ident].last_tick = time.perf_counter()
                 cls.workers[ident].active = True
+                cls.workers[ident].task_info = func.__name__
                 func(*args, **kwargs)
                 if ident not in cls.workers:
                     break
                 cls.workers[ident].last_tick = time.perf_counter()
                 cls.workers[ident].active = False
+                cls.workers[ident].task_info = ''
         except SystemExit:
             logger.error(f'`{ident}` thread got exit signal')
 
@@ -108,15 +111,15 @@ class BaseWorkerServer(ABC):
             last_tick = 0
             for k, v in list(cls.workers.items()):  # type: str, WorkerStat
                 if not v.thread.is_alive():
-                    logger.warning(f"Thread killed `{k}`")
+                    logger.warning(f"Thread killed `{k}` ({v.task_info})")
                     del cls.workers[k]
                 elif v.active and tick - v.last_tick > config.THREAD_TIMEOUT:
-                    logger.warning(f"Thread timeout `{k}`")
+                    logger.warning(f"Thread timeout `{k}` ({v.task_info})")
                     raise_exception_in_thread(v.thread.native_id)
                     del cls.workers[k]
                 elif len(cls.workers) > config.MIN_TASK_THREADS \
                         and not v.active and v.last_tick and tick - v.last_tick > config.KILL_THREAD_LAG:
-                    logger.warning(f"Thread killing `{k}`")
+                    logger.warning(f"Thread killing `{k}` ({v.task_info})")
                     v.mode = ThreadMode.REDUCED
                 elif v.active and v.last_tick > last_tick:
                     last_tick = v.last_tick

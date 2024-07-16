@@ -23,15 +23,17 @@
 </GridR>
 
 <python>
-from components.Entities import *
-from pantra.ctx import *
+    from components.DBTables import *
+    from pantra.ctx import *
 
-catalogs = ['Storage', 'Good', 'Unit']
+    catalogs = ['Storage', 'Good', 'Unit']
 
-def init():
-    session.set_title(_('Storage management'))
 
-def open_catalog(node):
-    render_catalog_list(session, node['code'])
+    def init():
+        session.set_title(_('Storage management'))
+
+
+    def open_catalog(node):
+        render_catalog_list(session, node['code'])
 
 </python>

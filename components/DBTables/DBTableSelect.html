@@ -5,28 +5,28 @@
     <DBQueryTable cref:table entity="{entity}" not:editable selectable callback="@select_row"/>
 </component>
 <python>
-from pantra.models import expose_database, dbinfo
+from quazy import DBTable
+from pantra.models import expose_database
 from pantra.ctx import *
 
 db_name: str = 'db'
 name: str = ''
 callback: Callable[[Any], None] = lambda value: None
 
-entity: EntityMeta
+table: type[DBTable]
 
 def init():
-    global entity
+    global table
     if not name:
         return False
-    expose_database(session.app, db_name)
-    entity = dbinfo[session.app][db_name].entities[name].factory.cls
+    db = expose_database(session.app, db_name)
+    table = db[name]
 
 def select(node):
     select_row(refs.table.active_row_id)
 
 def select_row(value):
-    with db_session:
-        value = make_proxy(entity[value])
+    value = table[value]
     callback(value)
     session['taskbar'].close()
 

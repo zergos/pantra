@@ -1,27 +1,24 @@
-<component>
-    <Field consume>
-        <SingleInput
-                ref:input
-                consume="required,readonly"
-                on_change="@parse_input"
-                list="o{ctx.oid}"
-                value="{item_to_text(value)}"
-                buttons="...,O"
-                action="@button_action"
-        />
-        <datalist ref:lookups id="o{ctx.oid}">
-            {{#for item in lookup_items()}}
-            <option value="{item}"/>
-            {{/for}}
-        </datalist>
-    </Field>
-</component>
+<Field consume>
+    <SingleInput
+            ref:input
+            consume="required,readonly"
+            on_change="@parse_input"
+            list="o{ctx.oid}"
+            value="{item_to_text(value)}"
+            buttons="...,O"
+            action="@button_action"
+    />
+    <datalist ref:lookups id="o{ctx.oid}">
+        {{#for item in lookup_items()}}
+        <option value="{item}"/>
+        {{/for}}
+    </datalist>
+</Field>
 
 <python>
 from quazy import DBFactory
-from apps.system.data import Catalog, Document
 from components.Widgets import *
-from components.Entities import *
+from components.DBTables import *
 from pantra.ctx import *
 
 value: DBTable = None
@@ -32,6 +29,7 @@ lookup_min_chars = 3
 lookup_max_values = 10
 lookup_list: List = []
 
+
 def fill_value(node):
     if value is None:
         return
@@ -39,23 +37,18 @@ def fill_value(node):
     refs.input.update_tree()
     ctx.call('on_change', ctx)
 
+
 def item_to_text(v: Optional[DBTable]) -> str:
-    if not v:
-        return ''
-    if isinstance(v, Document):
-        return f'{_(type(v).__name__)} - {v.number} - {session.locale.datetime(v.date)}'
-    else:
-        return str(v)
+    return v and str(v) or ''
+
 
 def text_to_items(t: str) -> list[DBTable]:
     res = []
     if not t:
         return res
-    if issubclass(table, Catalog):
-        res = db.query(table).filter(lambda o: o.name.startswith(t)).set_window(limit=20).fetchall()
-    elif issubclass(table, Document):
-        res = db.query(table).filter(lambda o: o.number.startswith(t)).set_window(limit=20).fetchall()
+    res = db.query(table).filter(lambda o: table.get_lookup_field(o).startswith(t)).set_window(limit=20).fetchall()
     return res
+
 
 def lookup_items():
     limit = lookup_max_values
@@ -64,6 +57,7 @@ def lookup_items():
         limit -= 1
         if not limit:
             break
+
 
 def parse_input(node):
     global value, lookup_list
@@ -75,18 +69,21 @@ def parse_input(node):
             ctx.call('on_change', ctx)
         refs.lookups.update_tree()
 
+
 def button_action(node):
     if node.data.code == '...':
-        render_catalog_select(session, table.__name__, callback=select_value)
+        render_select(session, table.__name__, callback=select_value)
     elif node.data.code == 'O':
         if not value:
             return
-        render_catalog_form(session, ctx, value)
+        render_form(session, ctx, value)
+
 
 def select_value(selected_value):
     global value
     value = selected_value
     fill_value(None)
+
 
 def refresh():
     fill_value(None)

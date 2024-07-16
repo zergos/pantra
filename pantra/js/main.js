@@ -63,7 +63,7 @@ function processSelect(method, oid, options) {
     sendMessage(Messages.select(method, oid, opts));
 }
 
-function processBindValue(variable, oid, target) {
+function processBindValue(method, oid, target) {
     let value;
     if (target.type === 'number') value = target.valueAsNumber;
     else if (target.type === 'time') {
@@ -84,7 +84,7 @@ function processBindValue(variable, oid, target) {
         value = target.checked;
     }
     else value = target.value;
-    sendMessage(Messages.bindValue(variable, oid, value))
+    sendMessage(Messages.bindValue(method, oid, value))
 }
 
 function process_key(method, oid, key) {

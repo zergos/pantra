@@ -60,7 +60,7 @@ async def process_message(session: Session, data: dict):
 
     elif command == 'B':
         logger.debug("[B]ind value command")
-        process_bind_value(data['oid'], data['v'], data['x'])
+        process_bind_value(data['oid'], data['method'], data['x'])
 
     elif command == 'M':
         logger.debug(f"[M]etrics received for <{get_node(data['oid'])}:{data['oid']}>")

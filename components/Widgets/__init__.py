@@ -71,10 +71,13 @@ def make_widget(parent: AnyNode, ux: UX, value: Any = None, **kwargs) -> Optiona
     if isinstance(ux.type, DBTable):
         template = 'DBField'
         locals['table'] = ux.type
-    elif isinstance(ux.type, str) and ux.multiline:
+    elif issubclass(ux.type, str) and ux.multiline:
         template = 'TextAreaField'
+    elif issubclass(ux.type, enum.Enum):
+        locals['enum_type'] = ux.type
+        template = 'EnumField'
     else:
-        template = TEMPLATE_MAP[ux.type]
+        template = TEMPLATE_MAP.get(ux.type, None)
         if not template:
             return None
     c = Context(template, parent, locals=locals)

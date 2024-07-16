@@ -304,6 +304,7 @@ class HTMLElement(RenderNode):
     @value.setter
     def value(self, value):
         self._value = value
+        self.shot(self)
 
     def validate(self):
         if not hasattr(self, '_validity_ev'):

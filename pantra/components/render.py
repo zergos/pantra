@@ -290,12 +290,12 @@ class DefaultRenderer:
                 if attr == 'bind:value':
                     if value is None:
                         value = 'value'
-                    node.attributes[attr] = value
-                    # ctx = self.ctx
-                    node.value = self.ctx.locals.get(value)
-                    with self.ctx.record_reactions(node):
-                        _ = self.ctx.locals['value']
-                    return True
+                        node.attributes[attr] = value
+                        # ctx = self.ctx
+                        node.value = self.ctx.locals.get(value)
+                        with self.ctx.record_reactions(node):
+                            _ = self.ctx.locals[value]
+                        return True
                 if attr.startswith('set:'):
                     attr = attr.split(':')[1].strip()
                     if value is None:
@@ -414,7 +414,7 @@ class DefaultRenderer:
 
             if 'on:render' in template.attributes:
                 value = template.attributes['on:render']
-                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
+                run_safe(node, lambda: self.ctx[value](node), dont_refresh=True)
 
         elif tag_name[0].isupper():
             node_template = collect_template(self.ctx.session, tag_name)

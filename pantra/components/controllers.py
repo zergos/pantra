@@ -135,12 +135,14 @@ def process_select(method: str, oid: int, opts: List[int]):
 
 
 @thread_worker
-def process_bind_value(oid: int, var_name: str, value: str):
+def process_bind_value(oid: int, method: str, value: str):
     node: HTMLElement = get_node(oid)
     if not node: return
-    node.set_quietly(var_name, value)
-    #node[var_name] = value
     node.value = value
+    if method != 'value':
+        process_call(node, method, node)
+    else:
+        node.set_quietly('value', value)
 
 @thread_worker
 def process_key(method: str, oid: int, key: str):

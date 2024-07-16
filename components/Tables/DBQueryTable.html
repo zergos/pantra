@@ -10,9 +10,8 @@
 
 <python>
 #'''
-from quazy import DBQuery
+from quazy import DBQuery, DBTable
 from components.Tables import Columns, DBColumnInfo, Filter, OPER_MAP
-from apps.system.data import *
 from pantra.ctx import *
 
 query: DBQuery | None = None
@@ -29,7 +28,7 @@ def init():
     global query, columns, original_query, col_id
     # default query
     if query is None:
-        query = db.query(table)
+        query = table.select()
     fields = query.describe()
 
     if col_id == 'pk':
@@ -61,9 +60,9 @@ def save_value(field: Context, value):
     col = field['column']
 
     row_id = field.upto('tr').data.row_id
-    row = db.get(table.DB, row_id)
+    row = table[row_id]
     setattr(row, col.name, value)
-    db.update(row)
+    row.save()
 
 def apply_filters():
     global query

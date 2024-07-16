@@ -4,6 +4,8 @@ import hashlib
 from quazy.db import *
 from quazy.db_types import *
 
+from pantra.ctx import _, session
+
 _SCHEMA_ = "system"
 
 
@@ -40,10 +42,15 @@ class App(DBTable):
 
 
 class Document(DBTable):
+    _lookup_field_ = 'number'
+
     prefix: str = DBField(default="", ux=UX(width=2))
     number: int = DBField(ux=UX(width=6))
     date: datetime = DBField(default=datetime.now)
     body: dict = DBField(body=True)
+
+    def __str__(self):
+        return f'{_(type(self).__name__)} - {self.number} - {session.locale.datetime(self.date)}'
 
     class DocumentLine(DBTable):
         pos: int = DBField(ux=UX(width=5))
@@ -51,10 +58,15 @@ class Document(DBTable):
 
 
 class Catalog(DBTable):
+    _lookup_field_ = 'name'
+
     prefix: str = DBField(default="", ux=UX(width=2))
     number: int = DBField(ux=UX(width=6))
     name: str | None
     body: dict = DBField(body=True)
+
+    def __str__(self):
+        return self.name
 
     def _before_update(self, db: DBFactory):
         if not self.number:
