@@ -1,5 +1,6 @@
 <input type="{type}"
        bind:value
+       on:change="on_change"
        placeholder="{placeholder}"
        set:required
        set:readonly
@@ -26,7 +27,6 @@
     {{/for}}
 </span>
 {{/if}}
-<react to="value" action="on_change"/>
 
 <style type="text/scss">
     @import "defaults";

@@ -49,7 +49,7 @@ class Config:
     JS_WS_LOGGING: bool
     JS_PROTO_LOGGING: bool
     JS_ADD_IDS: bool
-
+    
     def __getattr__(self, item):
         ...
 

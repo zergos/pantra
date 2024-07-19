@@ -1,7 +1,8 @@
 <Field consume>
     <select
            ref:select
-           bind:value="on_field_change"
+           bind:value="field_value"
+           on:change="on_field_change"
            set:required
            css:width
            set:focus
@@ -19,6 +20,7 @@
 <python>
 from pantra.ctx import *
 values: dict[str, Any] = {}
+field_value: str = None
 value: Any = None
 on_change: Callable[[Any], None] = EmptyCaller()
 

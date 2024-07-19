@@ -1,12 +1,10 @@
 '''
-<component>
-    {{#if filters}}
-    <FilterTable filters="{filters}" search="search_fields" callback="@apply_filters" search_callback="@apply_search"/>
-    {{/if}}
-    <BaseTable ref:basetable consume>
+{{#if filters}}
+<FilterTable filters="{filters}" search="search_fields" callback="@apply_filters" search_callback="@apply_search"/>
+{{/if}}
+<BaseTable ref:basetable consume>
 
-    </BaseTable>
-</component>
+</BaseTable>
 
 <python>
 #'''
@@ -73,7 +71,7 @@ def apply_filters():
         if filter.operator in OPER_MAP:
             query.filter(eval(f'lambda x: x.{filter.column.field.name} {OPER_MAP[filter.operator]} filter.value'))
         elif filter.operator == 'contains':
-            query.filter(lambda x: getattr(x, filter.column.field.name) in filter.value)
+            query.filter(lambda x: getattr(x, filter.column.field.name).contains(filter.value))
         elif filter.operator == 'between':
             query.filter(lambda x: filter.value <= getattr(x, filter.column.field.name) <= filter.value2)
     if search_text and search_fields:

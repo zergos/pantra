@@ -1,5 +1,5 @@
 '''
-<form on:render="render" on:keyup:Enter="default_click"/>
+<form on:render="render" default_action="save"/>
 <ToolBox>
     <ToolButton caption="#Save" action="@save" default/>
     <ToolButton caption="#Close" action="@close"/>
@@ -69,9 +69,5 @@ def save(node):
     r.save()
     ctx.scope.caller['refresh']()
     close()
-
-
-def default_click(node, key):
-    save(None)
 
 #</python>

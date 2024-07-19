@@ -63,34 +63,38 @@ function processSelect(method, oid, options) {
     sendMessage(Messages.select(method, oid, opts));
 }
 
-function processBindValue(method, oid, target) {
+function extractValue(target) {
     let value;
     if (target.type === 'number') value = target.valueAsNumber;
-    else if (target.type === 'time') {
+    else if (target.type === 'date' || target.type === 'time') {
         value = target.valueAsDate;
-        //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
-        if (!!value)
-            value = value.getTime();
-        else
-            return;
-    }
-    else if (target.type === 'date') {
-        value = target.valueAsDate;
-        if (value.valueOf() < 0)
-            return;
+        if (!value || value.valueOf() < 0)
+            return null;
         //value.setMinutes(value.getMinutes() + value.getTimezoneOffset());
     }
     else if (target.type === 'checkbox' || target.type === 'radio') {
         value = target.checked;
     }
     else value = target.value;
-    sendMessage(Messages.bindValue(method, oid, value))
+    return value;
 }
 
-function process_key(method, oid, key) {
+function processBindValue(variable, oid, target) {
+    let value = extractValue(target);
+    if (value === null) return;
+    sendMessage(Messages.bindValue(variable, oid, value))
+}
+
+function processChange(method, oid, target) {
+    let value = extractValue(target);
+    if (value === null) return;
+    sendMessage(Messages.change(method, oid, value));
+}
+
+function processKey(method, oid, key) {
     sendMessage(Messages.key(method, oid, key));
 }
 
-function process_call(oid, method) {
+function processCall(oid, method) {
     sendMessage(Messages.call(oid, method, [...arguments].slice(2)));
 }

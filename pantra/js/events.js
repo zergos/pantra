@@ -16,7 +16,7 @@ class EventListener {
     }
 }
 
-class ClickListener extends EventListener {
+class DefaultListener extends EventListener {
     handleEvent(event) {
         super.handleEvent(event);
         processClick(this.method, this.getOid(event));
@@ -25,6 +25,13 @@ class ClickListener extends EventListener {
             event.preventDefault();
             return false;
         }
+    }
+}
+
+class ChangeListener extends EventListener {
+    handleEvent(event) {
+        super.handleEvent(event);
+        processChange(this.method, this.getOid(event), event.target);
     }
 }
 
@@ -59,7 +66,7 @@ class KeyListener extends EventListener {
                 visible = true;
             }
             if (visible)
-                process_key(this.method, this.getOid(event), event.key);
+                processKey(this.method, this.getOid(event), event.key);
         }
     }
 }
@@ -111,10 +118,12 @@ function addEvent(eventCode, selector, method, oid) {
         attachDragEvents();
     } else if (eventCode.startsWith('on:keyup') || eventCode.startsWith('on:keydown')) {
         let chunks = eventCode.split(':');
-        let key = chunks.length > 2 ? chunks[2]:null;
+        let key = chunks.length > 2 ? chunks[2] : null;
         addEventHandler(chunks[1], selector, new KeyListener(method, key, oid));
+    } else if (eventCode === "on:change") {
+        addEventHandler("change", selector, new ChangeListener(method, oid));
     } else if (eventCode.startsWith('on:')) {
-        addEventHandler(eventCode.slice(3), selector, new ClickListener(method, oid));
+        addEventHandler(eventCode.slice(3), selector, new DefaultListener(method, oid));
         /*if (attr === 'on:click')
             addEventHandler('mousedown', selector, doNothing);*/
     } else {

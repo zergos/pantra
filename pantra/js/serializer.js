@@ -18,6 +18,14 @@ function rebindNode(v, element) {
     parent.appendChild(element);
 }
 
+function localizeDate(flag, value) {
+    if (flag) {
+        v.setMinutes(v.getMinutes() - v.getTimezoneOffset());
+        return v;
+    }
+    return v;
+}
+
 const HTMLElementSerializer = {
     name: 'h',
     decode: function(s, v) {
@@ -85,8 +93,8 @@ const HTMLElementSerializer = {
         if (v.v !== undefined)
             if (v.v === '') element.value = '';
             else if (v.type === 'number') element.valueAsNumber = v.v;
-            else if (v.type === 'time') element.valueAsDate = v.v;
-            else if (v.type === 'date') element.valueAsDate = v.v;
+            else if (v.type === 'time') element.valueAsDate = localizeDate(v.l, v.v);
+            else if (v.type === 'date') element.valueAsDate = localizeDate(v.l, v.v);
             else if (v.type === 'checkbox') element.checked = v.v;
             else element.value = v.v;
         return element;
@@ -164,7 +172,7 @@ const DateSerializer = {
     },
     decode: function (s, v) {
         let d = new Date(v);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        //d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d;
     },
     encode: function (s, v) {
@@ -176,7 +184,7 @@ const TimeSerializer = {
     name: 'T',
     decode: function (s, v) {
         let d = new Date(v);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        //d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d;
     },
 };

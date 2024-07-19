@@ -9,10 +9,10 @@
         cols="{cols}"
         rows="{rows}"
         maxlength="{maxlength}"
+        on:change="on_change"
     />
     <help reuse not:render/>
 </Field>
-<react to="value" action="on_change"/>
 
 <python>
 value: str = ''

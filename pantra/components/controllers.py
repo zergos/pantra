@@ -133,16 +133,18 @@ def process_select(method: str, oid: int, opts: List[int]):
     node._value = len(opts) == 1 and opts[0] or opts
     process_call(node, method, node)
 
-
 @thread_worker
-def process_bind_value(oid: int, method: str, value: str):
-    node: HTMLElement = get_node(oid)
+def process_change(method: str, oid: int, value: Any):
+    node = get_node(oid)
     if not node: return
     node.value = value
-    if method != 'value':
-        process_call(node, method, node)
-    else:
-        node.set_quietly('value', value)
+    process_call(node, method, node)
+
+def process_bind_value(oid: int, variable: str, value: str):
+    node: HTMLElement = get_node(oid)
+    if not node: return
+    node._value = value
+    node.set_quietly(variable, value)
 
 @thread_worker
 def process_key(method: str, oid: int, key: str):

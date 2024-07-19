@@ -187,8 +187,8 @@ class ConditionalClasses(list):
 
 class HTMLElement(RenderNode):
     __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style', 'data',
-                 '_set_focus', '_metrics', '_metrics_ev', 'value_type', '_value', '_value_ev', '_validity', '_validity_ev'
-                 ]
+                 '_set_focus', '_metrics', '_metrics_ev', 'value_type', '_value', '_value_ev', '_validity', '_validity_ev',
+                 'localize']
 
     def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
         if parent:
@@ -215,6 +215,7 @@ class HTMLElement(RenderNode):
         self.data: ADict[str, Any] = ADict()
         self._set_focus = False
         self.value_type = None
+        self.localize: bool = False
 
     @classmethod
     def parse(cls, element: str, parent: RenderNode, text: str = '') -> Optional[HTMLElement]:
@@ -241,6 +242,7 @@ class HTMLElement(RenderNode):
         clone.text = self.text
         clone.classes = deepcopy(self.classes)
         clone.style = deepcopy(self.style)
+        clone.localize = self.localize
         return clone
 
     def render(self, template: Union[str, HTMLTemplate], locals: Dict = None, build: bool = True):

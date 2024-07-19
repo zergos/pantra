@@ -32,7 +32,7 @@ __all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default'
 OPERATORS = {
     'numbers': ('=', '≠', '>', '<', '≥', '≤'),
     'dates': ('between', ),
-    'strings': ('=', '≠', 'contains'),
+    'strings': ('contains', '=', '≠'),
     'booleans': ('=', ),
     'entities': ('=', '≠'),
 }

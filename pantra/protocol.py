@@ -19,7 +19,7 @@ logger = logging.getLogger('pantra.system')
 async def process_message(session: Session, data: dict):
     from .components.context import HTMLElement
     from .components.controllers import process_drag_start, process_drag_move, process_drag_stop, process_click, \
-        process_select, process_key, process_bind_value, process_direct_call
+        process_select, process_key, process_bind_value, process_direct_call, process_change
 
     command = data['C']
     if command in ('REFRESH', 'UP'):
@@ -54,13 +54,17 @@ async def process_message(session: Session, data: dict):
         logger.debug(f"[SELECT] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
         process_select(data['method'], data['oid'], data['opts'])
 
+    elif command == 'CHANGE':
+        logger.debug(f"[CHANGE] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
+        process_change(data['method'], data['oid'], data['x'])
+
     elif command == 'KEY':
         logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
         process_key(data['method'], data['oid'], data['key'])
 
     elif command == 'B':
         logger.debug("[B]ind value command")
-        process_bind_value(data['oid'], data['method'], data['x'])
+        process_bind_value(data['oid'], data['v'], data['x'])
 
     elif command == 'M':
         logger.debug(f"[M]etrics received for <{get_node(data['oid'])}:{data['oid']}>")

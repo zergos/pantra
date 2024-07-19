@@ -29,7 +29,8 @@ class HTMLElementSerializer(bsdf.Extension):
             'a': v.attributes,
             'C': v.classes + v.con_classes.cache,
             's': str(v.style),
-            'f': v._set_focus
+            'f': v._set_focus,
+            'l': v.localize,
         }
         if isinstance(v.text, DynamicString) and v.text.html:
             res['T'] = v.text
@@ -104,7 +105,10 @@ class DateSerializer(bsdf.Extension):
     def decode(self, s, v):
         if v<0:
             return None
-        return datetime.utcfromtimestamp(v//1000).date()
+        if v > 864000000:
+            return datetime.utcfromtimestamp(v//1000).date()
+        else:
+            return datetime.utcfromtimestamp(v//1000).time()
 
 
 class TimeSerializer(bsdf.Extension):

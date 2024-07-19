@@ -47,6 +47,7 @@ class RenderNode(UniqueNode):
         def get_first_macro(code_or_list: MacroCode | list[MacroCode]) -> MacroCode:
             return code_or_list[0] if type(code_or_list) is list else code_or_list
 
+        # we have to render control nodes as Stubs to hold middle DOM position
         if not render_this \
                 and self.parent \
                 and typename(self) in ('ConditionNode', 'LoopNode') \
@@ -290,12 +291,15 @@ class DefaultRenderer:
                 if attr == 'bind:value':
                     if value is None:
                         value = 'value'
-                        node.attributes[attr] = value
-                        # ctx = self.ctx
-                        node.value = self.ctx.locals.get(value)
-                        with self.ctx.record_reactions(node):
-                            _ = self.ctx.locals[value]
-                        return True
+                    node.attributes[attr] = value
+                    # ctx = self.ctx
+                    if value in self.ctx.locals:
+                        node.value = self.ctx.locals[value]
+                    else:
+                        self.ctx.locals[value] = None
+                    with self.ctx.record_reactions(node):
+                        _ = self.ctx.locals[value]
+                    return True
                 if attr.startswith('set:'):
                     attr = attr.split(':')[1].strip()
                     if value is None:
@@ -308,6 +312,12 @@ class DefaultRenderer:
                         value = self.build_func_or_local(value, node, '')
                     if attr == 'focus':
                         node._set_focus = bool(value())
+                    elif attr == 'type':
+                        node.value_type = value()
+                        return True
+                    elif attr == 'localize':
+                        node.localize = bool(value())
+                        return True
                     else:
                         node.attributes[attr] = DynamicString(lambda: value() or '')
                     return True
@@ -335,6 +345,9 @@ class DefaultRenderer:
                     return True
                 if attr == 'type':
                     node.value_type = self.eval_string(value, node)
+                    return True
+                if attr == 'localize':
+                    node.localize = self.eval_string(value, node)
                     return True
         else:
             # Context's only
