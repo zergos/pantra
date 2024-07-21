@@ -1,4 +1,11 @@
-<div class="group" class:inline class:block="{not inline}" class:error class:required>
+<div
+        reactive
+        class="group"
+        class:inline
+        class:block="{not inline}"
+        class:error
+        class:required
+>
     {{#if caption}}<span>{{caption}}</span>{{/if}}
     <scope radio_name="o{ctx.oid}" on_radio_change="{on_radio_change}">
     </scope>

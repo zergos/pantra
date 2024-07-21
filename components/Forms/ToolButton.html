@@ -1,4 +1,13 @@
-<button type="button" on:click="action" class:danger class:green class:default set:disabled>{{caption}}</button>
+<button
+        reactive
+        type="button"
+        on:click="action"
+        class:danger
+        class:green
+        class:default
+        set:disabled>
+    {{caption}}
+</button>
 
 <style type="text/scss">
     @import "basic";

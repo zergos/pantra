@@ -2,7 +2,7 @@
 <ToolBox>
     <ToolButton caption="#Refresh" action="@refresh"/>
     <ToolButton caption="#Add" action="@add_object"/>
-    <ToolButton caption="#Copy" action="@copy_object" disabled="{not copy_enabled}"/>
+    <ToolButton caption="#Copy" action="@copy_object" disabled="!{not copy_enabled}"/>
     <ToolButton caption="#Delete" danger action="@del_object"/>
 </ToolBox>
 
@@ -72,6 +72,8 @@ def row_selected(node):
 
 def copy_object(node):
     if refs.table.active_row:
-        render_form(session, ctx, table, refs.table.active_row)
+        row = refs.table.active_row.copy()
+        del row[table.DB.pk.name]
+        render_form(session, ctx, table, row)
 
 #</python>

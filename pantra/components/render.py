@@ -266,7 +266,7 @@ class DefaultRenderer:
             if attr == 'on:render':
                 return True
             if attr == 'on:init':
-                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
+                run_safe(self.ctx, lambda: self.ctx[value](node), dont_refresh=True)
                 return True
 
         # HTMLElement's only
@@ -331,6 +331,8 @@ class DefaultRenderer:
                     node.attributes[parts[0]] = self.ctx.static(subdir, self.trace_eval(self.ctx, value, node) if type(value) is MacroCode else value)
                     return True
             else:
+                if attr == 'reactive':
+                    return True
                 if attr == 'style':
                     if node.style:
                         self.ctx.session.error(f'Styles already set before {attr}={value}')
@@ -395,8 +397,7 @@ class DefaultRenderer:
 
             node = c.HTMLElement(tag_name, parent=parent)
 
-            #with self.ctx.record_reactions(node):
-            if True:
+            with self.ctx.record_reactions(node, 'reactive' in template.attributes):
                 # evaluate attributes
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
@@ -407,6 +408,7 @@ class DefaultRenderer:
                 # evaluate body
                 # element.text = self.build_string(template.text)
 
+            if True:
                 # evaluate children
                 if len(template.children) == 1:
                     if template.children[0].tag_name == '@text':
@@ -420,7 +422,7 @@ class DefaultRenderer:
                         return node
 
             if 'node_processor' in self.ctx.locals:
-                run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+                run_safe(node, lambda: self.ctx['node_processor'](node), dont_refresh=True)
 
             for child in template.children:
                 self.build_node(child, node)
@@ -451,7 +453,7 @@ class DefaultRenderer:
                         node.locals[attr] = data
 
             if 'node_processor' in self.ctx.locals:
-                run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+                run_safe(node, lambda: self.ctx['node_processor'](node), dont_refresh=True)
 
             try:
                 node.render.build()
@@ -463,7 +465,7 @@ class DefaultRenderer:
                 value = template.attributes['on:render']
                 if value not in self.ctx.locals:
                     raise ValueError(f'No renderer named `{value}` found in `{self.ctx.template.name}`')
-                run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
+                run_safe(node, lambda: self.ctx[value](node), dont_refresh=True)
 
         elif tag_name[0] == '$':
             node = self.ctx
@@ -472,7 +474,7 @@ class DefaultRenderer:
                 self.build_node(child, node)
 
             if "on_render" in self.ctx.locals:
-                run_safe(self.ctx.session, self.ctx["on_render"], dont_refresh=True)
+                run_safe(node, self.ctx["on_render"], dont_refresh=True)
 
         elif tag_name[0] == '#':
             if tag_name == '#if':

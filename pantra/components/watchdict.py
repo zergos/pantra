@@ -36,7 +36,7 @@ class WatchDict(ADict):
                 if node not in copy:
                     continue
                 if typename(node) == 'ReactNode':
-                    node.value = value
+                    node._value = value
                     process_call(self._ctx.session, node.context, node.action, node)
                 else:
                     node.update(True)

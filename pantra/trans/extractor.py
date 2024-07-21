@@ -275,3 +275,11 @@ def extract_data(fileobj, keywords, comment_tags, options):
                     title = subnode.value.s
                     yield subnode.lineno, 'ngettext', (title, plural(title)), [f'title of `{table.__qualname__}`']
                     yield subnode.lineno, '_', plural(title), [f'title of `{table.__qualname__}` plural']
+                elif type(subnode) == ast.ClassDef \
+                    and subnode.bases[0].id in ('StrEnum', 'IntEnum'):
+                    #print(subnode.lineno, '!')
+                    for subsubnode in ast.iter_child_nodes(subnode):
+                        if type(subsubnode) == ast.Assign \
+                            and type(subsubnode.targets[0]) == ast.Name:
+                            #print(subsubnode.lineno)
+                            yield subsubnode.lineno, '_', subsubnode.targets[0].id, [f'enum value for `{subnode.name}`']

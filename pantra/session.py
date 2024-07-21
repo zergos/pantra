@@ -19,7 +19,7 @@ from .common import ADict, UniNode, raise_exception_in_thread, UniqueNode
 from .patching import wipe_logger
 from .compiler import exec_restart
 from .workers.decorators import async_worker
-from .trans import get_locale, get_translation, zgettext
+from .trans import get_locale, get_translation, zgettext, Translations
 from .session_storage import SessionStorage
 
 if typing.TYPE_CHECKING:
@@ -267,6 +267,10 @@ class Session:
         logger.debug(f"{{{self.app}}} Set lang = {lang_name}")
         self.locale = get_locale(lang_name)
         self.translations = get_translation(self.app_path, lang)
+
+    def add_translation(self, app: str):
+        app_path = config.APPS_PATH / app
+        self.translations.merge(Translations.load(app_path / 'locale', (self.locale.language, 'en')))
 
     @typing.overload
     def gettext(self, message: str, *, plural: str = None, n: int = None, ctx: str = None, many: bool = False): ...

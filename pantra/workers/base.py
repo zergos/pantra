@@ -88,7 +88,7 @@ class BaseWorkerServer(ABC):
         func_name = f'{node.oid}#{func.__name__}'
         session.tasks[func_name] = SessionTask(threading.current_thread(), func)
         yield
-        if func.__name__ in session.tasks: # other thread could stop this already, or we have similar callers names
+        if func_name in session.tasks: # other thread could stop this already, or we have similar callers names
             del session.tasks[func_name]
 
     @staticmethod

@@ -34,6 +34,7 @@ def init():
 
     for field in fields:
         col = DBColumnInfo(field.ux)
+        col.title = _(col.title)
         if col.width:
             col.style.width = WebUnits(col.width, 'em')
         columns[field.name] = col
@@ -69,14 +70,13 @@ def apply_filters():
         if not filter.enabled:
             continue
         if filter.operator in OPER_MAP:
-            query.filter(eval(f'lambda x: x.{filter.column.field.name} {OPER_MAP[filter.operator]} filter.value'))
+            query.filter(lambda x: getattr(getattr(x, filter.column.field.name), OPER_MAP[filter.operator])(filter.value))
         elif filter.operator == 'contains':
             query.filter(lambda x: getattr(x, filter.column.field.name).contains(filter.value))
         elif filter.operator == 'between':
             query.filter(lambda x: filter.value <= getattr(x, filter.column.field.name) <= filter.value2)
     if search_text and search_fields:
-        ifs = ' or '.join(f'search_text in x.{field}' for field in search_fields)
-        query = query.filter(f'lambda x: {ifs}')
+        query = query.filter(lambda x: query.any(getattr(x, field).contains(search_text) for field in search_fields))
     ctx['refresh']()
 
 def apply_search(text: str):

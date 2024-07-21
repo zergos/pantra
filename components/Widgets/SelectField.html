@@ -1,6 +1,5 @@
 <Field consume>
     <select
-           ref:select
            bind:value="field_value"
            on:change="on_field_change"
            set:required
@@ -11,7 +10,7 @@
         <option value="-">#Empty</option>
         {{/if}}
         {{#for v in values}}
-        <option value="{v}" label="{v}"></option>
+        <option value="{v}" label="{_(v)}"></option>
         {{/for}}
     </select>
 </Field>
@@ -24,13 +23,13 @@ field_value: str = None
 value: Any = None
 on_change: Callable[[Any], None] = EmptyCaller()
 
-def init():
+def on_render():
     if value:
         update_value()
 
 def update_value():
-    if value in values.keys():
-        refs.select.value = next(k for k, v in values.items() if v == value)
+    if value in values.values():
+        ctx['field_value'] = next(k for k, v in values.items() if v == value)
 
 def on_field_change(node):
     global value
