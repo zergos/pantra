@@ -1,8 +1,9 @@
 <span class="inline">
     <input
+            reactive
             type="radio"
             name="{ctx.scope.radio_name}"
-            checked="{'checked' if checked else ''}"
+            bind:value="checked_value"
             set:disabled
             data:value="{value}"
             on:change="on_change"
@@ -14,11 +15,15 @@
 from pantra.ctx import *
 
 checked: bool = False
+checked_value: str = ''
+disabled: bool = False
 caption: str = ''
 value = None
 
 def init():
+    global checked_value
     if checked:
+        checked_value = 'checked'
         ctx.scope.on_radio_change(value)
 
 def on_change(node):

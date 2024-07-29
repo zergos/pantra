@@ -1,26 +1,28 @@
 from pantra.ctx import *
 
-caption: str = ''
-required: bool = False
-value: str = ''
-error: str = ''
-readonly: bool = False
+if reuse_this('inputs'):
 
-validators = []
+    caption: str = ''
+    required: bool = False
+    value: str = ''
+    error: str = ''
+    readonly: bool = False
 
-
-def validate(func, message):
-    validators.append((func, message))
+    validators = []
 
 
-def is_valid():
-    for f, m in validators:
-        if not f():
-            ctx['error'] = m
+    def validate(func, message):
+        validators.append((func, message))
+
+
+    def is_valid():
+        for f, m in validators:
+            if not f():
+                ctx['error'] = m
+                return False
+        if required and not value:
+            ctx['error'] = _('field is required')
             return False
-    if required and not value:
-        ctx['error'] = _('{caption} field is required')
-        return False
-    ctx['error'] = ''
-    return True
+        ctx['error'] = ''
+        return True
 

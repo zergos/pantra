@@ -102,7 +102,7 @@ class ExposeToArgs(dict):
             l = l.strip()
             if l.startswith(':param'):
                 chunks = l[7:].split(':')
-                params[chunks[0].strip()] = ArgParam(chunks[1].strip())
+                params[chunks[0].strip()] = ArgParam(':'.join(chunks[1:]).strip())
             elif l:
                 info.append(l.strip())
         return info, params

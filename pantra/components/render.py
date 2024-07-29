@@ -348,6 +348,9 @@ class DefaultRenderer:
                 if attr == 'type':
                     node.value_type = self.eval_string(value, node)
                     return True
+                if attr == 'value':
+                    node.value = self.eval_string(value, node)
+                    return True
                 if attr == 'localize':
                     node.localize = self.eval_string(value, node)
                     return True

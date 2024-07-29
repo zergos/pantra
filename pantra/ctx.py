@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 from .common import WebUnits, EmptyCaller, DynamicHTML
+from .compiler import reuse_this
 from .settings import config
 
 if typing.TYPE_CHECKING:
@@ -27,4 +28,4 @@ if typing.TYPE_CHECKING:
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
                'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML',
-               'config', 'ActionType']
+               'config', 'ActionType', 'reuse_this']

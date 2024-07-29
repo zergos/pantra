@@ -1,10 +1,10 @@
 <div
         reactive
+        ref:box
         class="group"
         class:inline
         class:block="{not inline}"
         class:error
-        class:required
 >
     {{#if caption}}<span>{{caption}}</span>{{/if}}
     <scope radio_name="o{ctx.oid}" on_radio_change="{on_radio_change}">
@@ -13,6 +13,7 @@
     <HelpMessage consume="help"/>
     <div ref:error class="message">!{{error}}</div>
 </div>
+<react to="value" action="update_value"/>
 
 <python>
 from components.Forms.inputs import *
@@ -21,6 +22,17 @@ from pantra.ctx import *
 on_change = EmptyCaller()
 inline: bool = False
 value = None
+
+def on_render():
+    global value
+    if value:
+        for node in refs.box.select("$RadioItem"):
+            node['checked_value'] = node['value'] == value and 'checked' or ''
+    elif required:
+        for node in refs.box.select("$RadioItem"):
+            node['checked_value'] = 'checked'
+            value = node['value']
+            break
 
 def on_radio_change(new_value):
     global value

@@ -43,6 +43,7 @@
 </style>
 
 <python>
+from pantra.components.context import Context
 from pantra.ctx import *
 
 caption: str = ''
@@ -50,7 +51,7 @@ spellcheck: bool = True
 
 def is_valid():
     ok = True
-    for node in ctx.select(['InputField', 'SelectBox']):
+    for node in ctx.select(lambda node: type(node) is Context and 'is_valid' in node.locals):
         ok &= node['is_valid']()
     return ok
 

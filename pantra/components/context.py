@@ -116,7 +116,7 @@ class Context(RenderNode):
 
     @contextmanager
     def record_reactions(self, node: AnyNode, do_record: bool = True):
-        if do_record:
+        if do_record and self.locals.__class__ != WatchDictActive:
             self.locals.__class__ = WatchDictActive
             self.locals.start_record(node)
             yield

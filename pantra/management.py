@@ -212,7 +212,7 @@ class Migrate:
         db, schema = self._expose_db()
         if not db:
             return
-        commands, _ = get_changes(db, schema, [(line.strip(':')[0], line.strip(':')[1]) for line in rename.split(" ") if line])
+        commands, _ = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
 
         if not commands:
             print("No changes")
@@ -251,7 +251,7 @@ class Migrate:
         db, schema = self._expose_db()
         if not db:
             return
-        commands, new_tables = get_changes(db, schema, [(line.strip(':')[0], line.strip(':')[1]) for line in rename.split(" ") if line])
+        commands, new_tables = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
         if not commands:
             print("No changes")
             return

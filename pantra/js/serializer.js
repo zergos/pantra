@@ -18,7 +18,7 @@ function rebindNode(v, element) {
     parent.appendChild(element);
 }
 
-function localizeDate(flag, value) {
+function localizeDate(flag, v) {
     if (flag) {
         v.setMinutes(v.getMinutes() - v.getTimezoneOffset());
         return v;
@@ -91,11 +91,11 @@ const HTMLElementSerializer = {
         if (v.f)
             element.focus();
         if (v.v !== undefined)
-            if (v.v === '') element.value = '';
+            if (v.type === 'checkbox' || v.type === 'radio') element.checked = v.v;
+            else if (v.v === '') element.value = '';
             else if (v.type === 'number') element.valueAsNumber = v.v;
             else if (v.type === 'time') element.valueAsDate = localizeDate(v.l, v.v);
             else if (v.type === 'date') element.valueAsDate = localizeDate(v.l, v.v);
-            else if (v.type === 'checkbox') element.checked = v.v;
             else element.value = v.v;
         return element;
     }
