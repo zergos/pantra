@@ -20,7 +20,7 @@ class DatabaseInfo:
     kwargs: Dict[str, str] = dc_field(default_factory=dict)
 
 
-dbinfo: Dict[str, Dict[str, DatabaseInfo]] = ADict()  # app / db / DatabaseInfo
+dbinfo: ADict[ADict[DatabaseInfo]] = ADict()  # app / db / DatabaseInfo
 
 
 def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:

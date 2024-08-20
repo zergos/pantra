@@ -17,15 +17,17 @@ def typename(t):
     return type(t).__name__
 
 
-T1 = typing.TypeVar('T1')
-T2 = typing.TypeVar('T2')
+T = typing.TypeVar('T')
 
 
-class ADict(dict, typing.Generic[T1, T2]):
+class ADict(dict, typing.Generic[T]):
     __setattr__ = dict.__setitem__  
-    __delattr__ = dict.__delitem__  
+    __delattr__ = dict.__delitem__
 
-    def __getattr__(self, item: T1) -> T2:
+    def __getitem__(self, item: str) -> T: ...
+    del __getitem__
+
+    def __getattr__(self, item: str) -> T:
         try:
             return self[item]
         except KeyError:
@@ -220,7 +222,7 @@ class DynamicClasses(str):
             return self + other
 
 
-class DynamicStyles(ADict):
+class DynamicStyles(ADict[str]):
     def __init__(self, style: dict | str | None = None):
         if style:
             if isinstance(style, dict):

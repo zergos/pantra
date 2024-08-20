@@ -82,7 +82,7 @@ class Context(RenderNode):
         if locals:
             self.locals.update(locals)
         self._executed: bool = False
-        self.refs: Dict[str, Union['Context', HTMLElement, WatchDict]] = ADict()
+        self.refs: ADict[Union['Context', HTMLElement, WatchDict]] = ADict()
         self.slot: Optional[Slot] = None
         self.source_attributes: Optional[Dict[str, Any]] = None
         self.allowed_call: set[str] = set()
@@ -161,6 +161,16 @@ class Context(RenderNode):
     def static(self, subdir: str, file_name: str) -> str:
         return get_static_url(self.session.app, self.template.filename, subdir, file_name)
 
+    def set_slot(self, template_name: str, locals: ADict[str] | None = None, slot_name: str = ''):
+        wrap_template = HTMLTemplate(f'{template_name}Slot', 0)
+        wrap_template.append(HTMLTemplate(template_name, 0, attributes=locals))
+
+        if not slot_name:
+            self.slot = Slot(self.parent.context, wrap_template)
+        else:
+            if not self.slot:
+                self.slot = {}
+            self.slot[slot_name] = Slot(self.parent.context, wrap_template)
 
 class ConditionalClass(typing.NamedTuple):
     condition: Callable[[], bool]
@@ -190,7 +200,7 @@ class HTMLElement(RenderNode):
                  '_set_focus', '_metrics', '_metrics_ev', 'value_type', '_value', '_value_ev', '_validity', '_validity_ev',
                  'localize']
 
-    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Optional[Union[Dict, ADict]] = None, text: str = ''):
+    def __new__(cls, tag_name: str, parent: AnyNode, attributes: Dict | ADict | None = None, text: str = ''):
         if parent:
             if type(parent) is NSElement or type(parent) is Context and parent.ns_type:
                 instance = super().__new__(NSElement)

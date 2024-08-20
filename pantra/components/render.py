@@ -31,7 +31,7 @@ class RenderNode(UniqueNode):
         super().__init__(parent)
         self.shot: 'ContextShot' = shot or parent.shot
         self.session: Session = session or parent.session
-        self.scope: ADict[str, Any] = ADict() if not parent else parent.scope
+        self.scope: ADict = ADict() if not parent else parent.scope
 
         #if typename(self) == 'Context':
         #    self.context: Context = self
@@ -119,6 +119,10 @@ class RenderNode(UniqueNode):
 
     def update_tree(self):
         self.context.render.update(self, True)
+
+    def rebuild(self):
+        self.empty()
+        self.render.build()
 
     def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
         return None

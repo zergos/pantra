@@ -41,7 +41,7 @@ class HTMLTemplate(UniNode):
     code_base: Dict[str, CodeType] = {}
     __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index', 'hex_digest')
 
-    def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Optional[Union[Dict, ADict]] = None, text: str = None):
+    def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Dict | ADict | None = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
         self.attributes: Dict[str, str | MacroCode | None] = attributes and ADict(attributes) or ADict()

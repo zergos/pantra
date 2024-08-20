@@ -9,10 +9,11 @@ if typing.TYPE_CHECKING:
     import logging
     from pantra.common import ADict
     from pantra.components.context import Context, HTMLElement, AnyNode, ActionType
+    from pantra.components.render import RenderNode
     from pantra.session import Session
     from typing import *
 
-    refs: ADict[str, Context]
+    refs: ADict[Context | RenderNode]
     ctx: Context
     session: Session
     logger: logging.Logger
