@@ -35,6 +35,7 @@ templates: typing.Dict[str, HTMLTemplate | None] = {}
 class MacroCode(typing.NamedTuple):
     reactive: bool
     code: CodeType | None
+    src: str
 
 
 class HTMLTemplate(UniNode):
@@ -129,14 +130,14 @@ class HTMLVisitor(PMLParserVisitor):
                 if text.startswith('{'):
                     text = text[1:-1]
                     if not self.cur_attr.startswith('set:'):
-                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
                     else:
                         text = f"({text} or '')"
-                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
                 else:
                     reactive = '`!{' in text or ' !{' in text
                     text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
-                    value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'))
+                    value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
         else:
             value = text
         self.current.attributes[self.cur_attr] = value
@@ -175,7 +176,7 @@ class HTMLVisitor(PMLParserVisitor):
             tag_name = macro_chunks.group(1).strip()
             text = macro_chunks.group(2).strip()
             if tag_name not in ('for', 'set'):
-                macro = MacroCode(reactive, compile(text, f"<{tag_name}>", "eval"))
+                macro = MacroCode(reactive, compile(text, f"<{tag_name}>", "eval"), text)
 
         # gen 'if' subtree
         if tag_name == 'if':
@@ -191,7 +192,7 @@ class HTMLVisitor(PMLParserVisitor):
             index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
 
             self.current = HTMLTemplate('#loop', self.index, parent=parent)
-            self.current.macro = [MacroCode(reactive, iterator), MacroCode(reactive, index_func)]
+            self.current.macro = [MacroCode(reactive, iterator, sides[0]), MacroCode(reactive, index_func, sides[1] if len(sides)>1 else None)]
             self.current.text = var_name
         elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
@@ -205,7 +206,7 @@ class HTMLVisitor(PMLParserVisitor):
                 raise IllegalStateException("set command should contains `:=` marker")
             var_name = chunks[0].strip()
             expr = compile(chunks[1].strip(), f"<{self.current.path()}>", "eval")
-            self.current.macro = MacroCode(reactive, expr)
+            self.current.macro = MacroCode(reactive, expr, chunks[1].strip())
             self.current.text = var_name
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
@@ -224,7 +225,7 @@ class HTMLVisitor(PMLParserVisitor):
         macro = HTMLTemplate('@macro', self.index, parent=self.current)
         text = ctx.children[1].getText()
         code = compile(text, f'<{self.current}:macro>', 'eval')
-        macro.macro = MacroCode(ctx.children[0].getText().startswith('!'), code)
+        macro.macro = MacroCode(ctx.children[0].getText().startswith('!'), code, text)
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')
@@ -256,7 +257,7 @@ def load(filename: Path, error_callback: typing.Callable[[str], None]) -> typing
         error_callback(f'{filename}> {e}')
         return None
     except SyntaxError as e:
-        error_callback(f'{filename}> {e}')
+        error_callback(f'{filename}> {e} column:{e.args[1][2]} {{{e.args[1][3]}}}')
         return None
 
     # find external code file

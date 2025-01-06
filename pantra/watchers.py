@@ -42,7 +42,7 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
                 module_name = '.'.join(filename.relative_to(config.BASE_PATH).parts).removesuffix('.py').removesuffix('.__init__')
                 if module_name in sys.modules:
                     del sys.modules[module_name]
-
+                    del sys.modules[module_name.rsplit('.', 1)[0]]
 
     def on_modified(self, event):
         self.refresh_template(Path(event.src_path))

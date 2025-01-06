@@ -94,6 +94,7 @@ def compile_context_code(ctx: Context, template: HTMLTemplate):
 
         for module in reused_modules:
             del sys.modules[module]
+            del sys.modules[module.rsplit('.', 1)[0]]
 
     ctx.locals.update(initial_locals)
     if 'init' in ctx.locals:

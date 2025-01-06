@@ -274,7 +274,7 @@ class DefaultRenderer:
                 return True
 
         # HTMLElement's only
-        if typename(node) == 'HTMLElement':
+        if typename(node) in ('HTMLElement', 'NSElement'):
             if ':' in attr:
                 if attr.startswith('class:'):
                     cls = attr.split(':')[1].strip()
@@ -456,7 +456,12 @@ class DefaultRenderer:
             if True:
                 for attr, value in template.attributes.items():
                     if not self.process_special_attribute(attr, value, node):
-                        data = self.eval_string_i10n(value, node) if value is not None else True
+                        if isinstance(value, str) or isinstance(value, MacroCode):
+                            data = self.eval_string_i10n(value, node)
+                        elif value is None:
+                            data = True
+                        else:
+                            data = value
                         node.locals[attr] = data
 
             if 'node_processor' in self.ctx.locals:

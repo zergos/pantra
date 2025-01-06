@@ -165,7 +165,7 @@ class DynamicString(str):
     def __add__(self, other):
         if not other:
             return self.__class__(self.func)
-        return self+other
+        return self.__class__(str.__add__(self, " "+other))
 
     def __getstate__(self):
         return str(self)
@@ -289,7 +289,7 @@ class WebUnits(str):
 
 
 class EmptyCaller(str):
-    #__name__ = 'EmptyCaller'
+    __name__ = 'EmptyCaller'
 
     def __new__(cls):
         return super().__new__(cls, '')
