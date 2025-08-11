@@ -6,7 +6,7 @@ label, .group {
   &.inline {
     display: flex;
     align-items: center;
-    flex-flow: row nowrap;
+    flex-flow: row wrap;
     padding-right: .3rem;
 
     > span {
@@ -58,6 +58,7 @@ label, .group {
     > .message {
       color: $color-error;
       font-size: .75rem;
+      width: 100%;
 
       &::before {
         page-break-before: always;

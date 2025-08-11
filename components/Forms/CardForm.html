@@ -1,4 +1,12 @@
-<form class:with-header="caption" spellcheck = "{spellcheck and '' or 'false'}" on:submit="default_action" css:width>
+<form
+        class:with-header="caption"
+        spellcheck = "{spellcheck and '' or 'false'}"
+        on:submit="default_action"
+        css:width
+>
+    {{#if default_action}}
+    <button type="submit" hidden="hidden"/>
+    {{/if}}
     !{{#if caption}}
     <div class="header">!{{caption}}</div>
     <div ref:content class="content">
@@ -10,7 +18,7 @@
 </form>
 
 <style type="text/scss">
-    @import "defaults";
+    @import "css/defaults";
 
     form {
         border: $form-border;
@@ -48,6 +56,7 @@ from pantra.ctx import *
 
 caption: str = ''
 spellcheck: bool = True
+default_action: EmptyCaller | None = None
 
 def is_valid():
     ok = True

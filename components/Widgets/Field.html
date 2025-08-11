@@ -5,14 +5,14 @@
                 <help reuse/>
             </HelpMessage>
         </div>
-        <div class="message">!{{error}}</div>
         <slot/>
+        <div class="message">!{{error}}</div>
     {{#else}}
         {{#if caption}}
             <div class="cap" css:width="{caption_width}">{{caption}}</div>
         {{/if}}
-        <div class="message">!{{error}}</div>
         <slot/>
+        <div class="message">!{{error}}</div>
         <HelpMessage consume="help">
             <help reuse/>
         </HelpMessage>
@@ -20,7 +20,7 @@
 </label>
 
 <style type="text/scss">
-    @import "defaults";
+    @import "css/defaults";
 
     label {
         display: flex;
@@ -62,9 +62,7 @@
     }
 </style>
 
-<python>
-from components.Widgets.validators import *
-
+<python use="validators">
 from pantra.ctx import *
 
 value: Any = None
@@ -75,7 +73,7 @@ error: str = ''
 caption_width: int = ''
 
 def is_valid():
-    if not check_validators():
+    if not ctx['check_validators']():
         return False
     if required and not value:
         ctx['error'] = _('field is empty')

@@ -1,8 +1,15 @@
-<button type="button" on:click="action" class:default set:disabled="!{disabled}">!{{caption}}</button>
+<button
+        type="button"
+        on:click="action"
+        class:default
+        set:disabled="!{disabled}"
+        style:width="{width}">
+    !{{caption}}
+</button>
 
 <style type="text/scss">
-    @import "defaults";
-    @import "mixins";
+    @import "css/defaults";
+    @import "css/mixins";
 
     button {
         display: block;
@@ -40,4 +47,5 @@ caption: str = ''
 default: bool = False
 action: str = ''
 disabled: bool = False
+width: str = ''
 </python>

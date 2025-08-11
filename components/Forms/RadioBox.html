@@ -15,8 +15,7 @@
 </div>
 <react to="value" action="update_value"/>
 
-<python>
-from components.Forms.inputs import *
+<python use="inputs">
 from pantra.ctx import *
 
 on_change = EmptyCaller()
@@ -28,7 +27,7 @@ def on_render():
     if value:
         for node in refs.box.select("$RadioItem"):
             node['checked_value'] = node['value'] == value and 'checked' or ''
-    elif required:
+    elif ctx['required']:
         for node in refs.box.select("$RadioItem"):
             node['checked_value'] = 'checked'
             value = node['value']
