@@ -14,7 +14,7 @@ BASE_PATH = get_proj_path()
 WEB_PATH = ''
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
-CSS_PATH = BASE_PATH / 'css'
+CSS_PATH = BASE_PATH
 JS_PATH = Path(pkg_resources.resource_filename('pantra', "js"))
 APPS_PATH = BASE_PATH / 'apps'
 STATIC_DIR = 'static'
@@ -39,6 +39,7 @@ BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 APP_TITLE = "Pantra Web App"
 
 ENABLE_LOGGING = False
+ENABLE_WATCHDOG = False
 
 def setup_logger(level: int = logging.DEBUG):
     logger = logging.getLogger("pantra.system")

@@ -177,7 +177,7 @@ async def get_static_scss(request: web.Request):
     file_name = request.match_info['name']
     logger.debug(f"Compiling SCSS {file_name}")
     try:
-        file_name = config.CSS_PATH / file_name
+        file_name = config.CSS_PATH / 'css' / file_name
         text = file_name.with_suffix('.scss').read_text(encoding='utf-8')
         css = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH)])
     except Exception as e:
@@ -201,7 +201,7 @@ routes.static('/js', config.JS_PATH)
 
 async def startup(app):
     if config.WORKER_SERVER.run_with_web:
-        if not config.PRODUCTIVE:
+        if not config.PRODUCTIVE and config.ENABLE_WATCHDOG:
             from pantra.watchers import start_observer
             start_observer()
         asyncio.create_task(Session.run_server_worker())

@@ -122,6 +122,10 @@ class Messages:
         return Messages.CommandArg(m="e", l=text)
 
     @staticmethod
+    def noop():
+        return Messages.Command(m="0")
+
+    @staticmethod
     def send_context(ctx: Context):
         return Messages.CommandArg(m="c", l=ctx)
 

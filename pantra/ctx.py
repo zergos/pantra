@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing
 from .common import WebUnits, EmptyCaller, DynamicHTML
-from .compiler import reuse_this
 from .settings import config
 
 if typing.TYPE_CHECKING:

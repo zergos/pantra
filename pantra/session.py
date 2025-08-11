@@ -262,6 +262,9 @@ class Session:
         self.title = title
         return self.send_title(title)
 
+    def send_noop(self):
+        return self.send_message(Messages.noop())
+
     def set_locale(self, lang: Union[str, list]):
         lang_name = lang if isinstance(lang, str) else lang[0]
         logger.debug(f"{{{self.app}}} Set lang = {lang_name}")

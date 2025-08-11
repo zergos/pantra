@@ -101,6 +101,7 @@ function process_message(obj) {
             keyEventsDisabled = false;
             break;
     }
+    document.getElementById('progress-spinner').style.display = 'none';
 }
 
 let Messages = {

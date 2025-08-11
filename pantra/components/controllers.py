@@ -115,6 +115,8 @@ def process_call(node: AnyNode, method: str, *args):
                 caller(*args)
         elif caller is not None:
             raise ValueError(f"Can`t call type `{type(caller)}` ({caller})")
+        else:
+            session.send_noop()
         #    node[m] = args[0]
 
 

@@ -40,6 +40,7 @@ class Config:
     WORKER_CLIENT: type[BaseWorkerClient]
 
     ENABLE_LOGGING: bool
+    ENABLE_WATCHDOG: bool
     SETUP_LOGGER: typing.Callable[[], None]
 
     ZMQ_LISTEN: str

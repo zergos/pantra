@@ -296,7 +296,8 @@ def collect_template(session: Session, name: str) -> typing.Optional[HTMLTemplat
 
         path = _search_component(config.COMPONENTS_PATH, name)
         if not path:
-            # session.error(f'component {name} not found')
+            if not config.PRODUCTIVE:
+                session.error(f'component {name} not found')
             templates[key] = None
             return None
         key = name

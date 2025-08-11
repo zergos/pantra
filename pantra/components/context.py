@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
 from dataclasses import dataclass
+from pathlib import Path
+import importlib
 
 from .loader import collect_template, HTMLTemplate, get_static_url
 from ..common import DynamicStyles, EmptyCaller, DynamicClasses, WebUnits, ADict
@@ -145,6 +147,13 @@ class Context(RenderNode):
 
     def set_quietly(self, key, value):
         self.locals[key] = value
+
+    def update_from(self, module_name: str):
+        module_path = (Path(self.template.filename).relative_to(config.BASE_PATH).parent / module_name).with_suffix('.py')
+        initial_locals = ADict(self.locals)
+        code = compile(module_path.read_text(), str(module_path), 'exec')
+        exec(code, self.locals) #, {'__file__': str(module_path)})
+        self.locals.update(initial_locals)
 
     def __str__(self):
         return f'${self.template.name}' + (f':{self.name}' if self.name else '')
