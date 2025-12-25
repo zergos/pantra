@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 import typing
+from enum import IntEnum, auto
 
 import cssutils
 import sass
@@ -24,12 +25,126 @@ if typing.TYPE_CHECKING:
     from typing import *
     from types import CodeType
 
-__all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template', 'get_static_url']
+__all__ = ['MacroCode', 'HTMLTemplate', 'collect_styles', 'collect_template', 'get_static_url', 'NodeType', 'AttrType']
 
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
-SPECIAL_ELEMENTS = 'slot event scope react component '.split()
+SPECIAL_ELEMENTS = 'slot event scope react component'.split()
+FORMATTED_EXPRESSION = re.compile(r'^([^{]|\{\{)*\{([^}]|\{\{|}})*}(?!})')
 
 templates: typing.Dict[str, HTMLTemplate | None] = {}
+
+class NodeType(IntEnum):
+    HTML_TAG = auto()
+    TEMPLATE_TAG = auto()
+    ROOT_NODE = auto()
+    MACRO_IF = auto()
+    MACRO_FOR = auto()
+    MACRO_SET = auto()
+    MACRO_INTERNAL = auto()
+    AT_COMPONENT = auto()
+    AT_SLOT = auto()
+    AT_PYTHON = auto()
+    AT_SCRIPT = auto()
+    AT_STYLE = auto()
+    AT_EVENT = auto()
+    AT_SCOPE = auto()
+    AT_TEXT = auto()
+    AT_MACRO = auto()
+    AT_REACT = auto()
+
+    @staticmethod
+    def detect(tag_name: str) -> NodeType:
+        if tag_name[0].islower():
+            return NodeType.HTML_TAG
+        if tag_name[0].isupper():
+            return NodeType.TEMPLATE_TAG
+        if tag_name[0] == '$':
+            return NodeType.ROOT_NODE
+        if tag_name[0] == '#':
+            if tag_name == '#if':
+                return NodeType.MACRO_IF
+            if tag_name == '#for':
+                return NodeType.MACRO_FOR
+            if tag_name == '#set':
+                return NodeType.MACRO_SET
+            return NodeType.MACRO_INTERNAL
+        if tag_name[0] == '@':
+            return getattr(NodeType, 'AT_' + tag_name[1:].upper())
+        raise ValueError(f"Undetected TAG `{tag_name}`")
+
+class AttrType(IntEnum):
+    NO_SPECIAL = auto()
+    REF_NAME = auto()
+    CREF_NAME = auto()
+    SCOPE = auto()
+    ON_RENDER = auto()
+    ON_INIT = auto()
+    CLASS_SWITCH = auto()
+    DYNAMIC_STYLE = auto()
+    BIND_VALUE = auto()
+    DYNAMIC_SET = auto()
+    DATA = auto()
+    SRC_HREF = auto()
+    REACTIVE = auto()
+    STYLE = auto()
+    CLASS = auto()
+    TYPE = auto()
+    VALUE = auto()
+    LOCALIZE = auto()
+    SET_FALSE = auto()
+    CONSUME = auto()
+
+    @staticmethod
+    def detect(attr: str) -> tuple[AttrType, str | None]:
+        if ':' in attr:
+            if attr.startswith('ref:'):
+                name = attr.split(':')[1].strip()
+                return AttrType.REF_NAME, name
+            if attr.startswith('cref:'):
+                name = attr.split(':')[1].strip()
+                return AttrType.CREF_NAME, name
+            if attr.startswith('scope:'):
+                name = attr.split(':')[1].strip()
+                return AttrType.SCOPE, name
+            if attr == 'on:render':
+                return AttrType.ON_RENDER, None
+            if attr == 'on:init':
+                return AttrType.ON_INIT, None
+            if attr.startswith('class:'):
+                cls = attr.split(':')[1].strip()
+                return AttrType.CLASS_SWITCH, cls
+            if attr.startswith('css:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.DYNAMIC_STYLE, attr
+            if attr == 'bind:value':
+                return AttrType.BIND_VALUE, None
+            if attr.startswith('set:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.SET_FALSE, attr
+            if attr.startswith('data:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.DATA, attr
+            if attr.startswith('src:') or attr.startswith('href:'):
+                return AttrType.SRC_HREF, attr
+            if attr.startswith('not:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.SET_FALSE, attr
+        else:
+            if attr == 'reactive':
+                return AttrType.REACTIVE, None
+            if attr == 'style':
+                return AttrType.STYLE, None
+            if attr == 'class':
+                return AttrType.CLASS, None
+            if attr == 'type':
+                return AttrType.TYPE, None
+            if attr == 'value':
+                return AttrType.VALUE, None
+            if attr == 'localize':
+                return AttrType.LOCALIZE, None
+            if attr == 'consume':
+                return AttrType.CONSUME, None
+        return AttrType.NO_SPECIAL, None
 
 
 class MacroCode(typing.NamedTuple):
@@ -40,12 +155,15 @@ class MacroCode(typing.NamedTuple):
 
 class HTMLTemplate(UniNode):
     code_base: Dict[str, CodeType] = {}
-    __slots__ = ('tag_name', 'attributes', 'text', 'macro', 'name', 'filename', 'code', 'index', 'hex_digest')
+    __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'text', 'macro', 'name', 'filename', 'code', 'index', 'hex_digest')
 
     def __init__(self, tag_name: str, index: int, parent: Optional['HTMLTemplate'] = None, attributes: Dict | ADict | None = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
+        self.node_type: NodeType = NodeType.detect(tag_name)
         self.attributes: Dict[str, str | MacroCode | None] = attributes and ADict(attributes) or ADict()
+        self.attr_specs: Dict[str, tuple[AttrType, str | None]] = \
+            {k: AttrType.detect(k) for k in self.attributes}
         self.text: str = text
         self.macro: MacroCode | list[MacroCode] | None = None
         self.name: Optional[str] = None
@@ -56,6 +174,10 @@ class HTMLTemplate(UniNode):
 
     def __str__(self):
         return self.tag_name
+
+    def set_attr(self, attr_name: str, attr_value: Any):
+        self.attributes[attr_name] = attr_value
+        self.attr_specs[attr_name] = AttrType.detect(attr_name)
 
 
 class HTMLVisitor(PMLParserVisitor):
@@ -115,32 +237,27 @@ class HTMLVisitor(PMLParserVisitor):
     def visitAttrName(self, ctx: PMLParser.AttrNameContext):
         self.cur_attr = ctx.getText()
         if self.cur_attr != 'class':
-            self.current.attributes[self.cur_attr] = None
+            self.current.set_attr(self.cur_attr, None)
 
     def visitAttrValue(self, ctx: PMLParser.AttrValueContext):
         text = ctx.getText().strip('"\'')
-        if re.search(r'^([^{]|\{\{)*\{([^}]|\{\{|\}\})*\}(?!\})', text):
-            reactive = False
-            if text == '{}':
-                value = '{}'
+        if text == '{}':
+            value = '{}'
+        elif (text.startswith('{') or text.startswith('!{')) and text.endswith('}'):
+            reactive = text[0] == '{'
+            text = text[text.index('{') + 1:-1]
+            if not self.cur_attr.startswith('set:'):
+                value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
             else:
-                if text.startswith('!{'):
-                    reactive = True
-                    text = text[1:]
-                if text.startswith('{'):
-                    text = text[1:-1]
-                    if not self.cur_attr.startswith('set:'):
-                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
-                    else:
-                        text = f"({text} or '')"
-                        value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
-                else:
-                    reactive = '`!{' in text or ' !{' in text
-                    text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
-                    value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+                text = f"({text} or '')"
+                value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+        elif FORMATTED_EXPRESSION.search(text):
+            reactive = '`!{' in text or ' !{' in text
+            text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
+            value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
         else:
             value = text
-        self.current.attributes[self.cur_attr] = value
+        self.current.set_attr(self.cur_attr, value)
 
     def visitRawName(self, ctx:PMLParser.RawNameContext):
         self.cur_attr = ctx.getText()
@@ -153,13 +270,11 @@ class HTMLVisitor(PMLParserVisitor):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
-        match = False
         while self.current:
             if tag_name == self.current.tag_name:
-                match = True
                 break
             self.current = self.current.parent
-        if not match:
+        else:
             raise IllegalStateException(f"close tag don't match {tag_name}")
         self.current = self.current.parent
 
@@ -211,13 +326,11 @@ class HTMLVisitor(PMLParserVisitor):
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
-        match = False
         while self.current:
             if macro_tag == self.current.tag_name:
-                match = True
                 break
             self.current = self.current.parent
-        if not match:
+        else:
             raise IllegalStateException(f"macro close tag don't match {macro_tag}")
         self.current = self.current.parent
 
