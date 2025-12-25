@@ -1,9 +1,0 @@
-<models xmlns="app.models">
-    <entity name="TestTable" title="Random test table">
-        <attr name="column1" type="str" title="Колонка 1"/>
-        <attr name="column2" type="str" title="Строка"/>
-        <attr name="column3" type="int" title="Число"/>
-        <attr name="column4" type="float" title="Вещ. число"/>
-        <attr name="column5" type="datetime" title="Дата/время"/>
-    </entity>
-</models>

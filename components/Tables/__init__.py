@@ -22,8 +22,8 @@ if typing.TYPE_CHECKING:
     MapsRows = List[List['ColumnMap | None']]
     Columns = Dict[str, 'ColumnInfo']
 else:
-    MapsRows = type
-    Columns = None
+    MapsRows = list[list[...]]
+    Columns = dict[str, ...]
 
 __all__ = ['ColumnMap', 'build_maps', 'collect_col_styles', 'get_widget_default', 'MapsRows', 'Columns', 'ColumnInfo',
            'DBColumnInfo', 'Filter', 'OPER_MAP']

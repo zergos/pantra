@@ -1084,23 +1084,23 @@
 
 
 <!--COMPONENTS-->
-<!ENTITY % components "BaseTable|Button|CardForm|CatalogList|CatalogSelect|CellNumber|CellString|CheckField|DBField|DBQueryTable|DataTable|DateField|DateTimeField|Dialog|DocumentList|EntityForm|FBLoginButton|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|HelpMessage|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|Properties|QuestionForm|QuestionList|SVG|Screen1|Screen2|Screen3|SelectBox|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
+<!ENTITY % components "BaseTable|Button|CardForm|CellNumber|CellString|CheckField|DBField|DBQueryTable|DBTableForm|DBTableList|DBTableSelect|DataTable|DateField|DateTimeField|Dialog|EnumField|FBLoginButton|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|HelpMessage|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|RadioBox|RadioItem|SVG|Screen1|Screen2|Screen3|SelectBox|SelectField|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|Timer|ToolBox|ToolButton|ToolSpace|UserForm|UserList">
 <!ELEMENT BaseTable %Flow;>
 <!ELEMENT Button %Flow;>
 <!ELEMENT CardForm %Flow;>
-<!ELEMENT CatalogList %Flow;>
-<!ELEMENT CatalogSelect %Flow;>
 <!ELEMENT CellNumber %Flow;>
 <!ELEMENT CellString %Flow;>
 <!ELEMENT CheckField %Flow;>
 <!ELEMENT DBField %Flow;>
 <!ELEMENT DBQueryTable %Flow;>
+<!ELEMENT DBTableForm %Flow;>
+<!ELEMENT DBTableList %Flow;>
+<!ELEMENT DBTableSelect %Flow;>
 <!ELEMENT DataTable %Flow;>
 <!ELEMENT DateField %Flow;>
 <!ELEMENT DateTimeField %Flow;>
 <!ELEMENT Dialog %Flow;>
-<!ELEMENT DocumentList %Flow;>
-<!ELEMENT EntityForm %Flow;>
+<!ELEMENT EnumField %Flow;>
 <!ELEMENT FBLoginButton %Flow;>
 <!ELEMENT Field %Flow;>
 <!ELEMENT FilterTable %Flow;>
@@ -1121,14 +1121,16 @@
 <!ELEMENT MenuItem %Flow;>
 <!ELEMENT NumberField %Flow;>
 <!ELEMENT PopupMenu %Flow;>
-<!ELEMENT Properties %Flow;>
 <!ELEMENT QuestionForm %Flow;>
 <!ELEMENT QuestionList %Flow;>
+<!ELEMENT RadioBox %Flow;>
+<!ELEMENT RadioItem %Flow;>
 <!ELEMENT SVG %Flow;>
 <!ELEMENT Screen1 %Flow;>
 <!ELEMENT Screen2 %Flow;>
 <!ELEMENT Screen3 %Flow;>
 <!ELEMENT SelectBox %Flow;>
+<!ELEMENT SelectField %Flow;>
 <!ELEMENT SelectItem %Flow;>
 <!ELEMENT SideMenu %Flow;>
 <!ELEMENT SingleInput %Flow;>
@@ -1137,6 +1139,7 @@
 <!ELEMENT TextAreaField %Flow;>
 <!ELEMENT TextField %Flow;>
 <!ELEMENT TimeField %Flow;>
+<!ELEMENT Timer %Flow;>
 <!ELEMENT ToolBox %Flow;>
 <!ELEMENT ToolButton %Flow;>
 <!ELEMENT ToolSpace %Flow;>

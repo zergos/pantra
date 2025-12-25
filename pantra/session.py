@@ -349,10 +349,10 @@ def trace_errors_async(session: Session, func: Coroutine):
 
 
 @typing.overload
-def run_safe(session: Session, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
+def run_safe(node: RenderNode, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
 
 
 @trace_errors
-def run_safe(session: Session, func: Callable, *args, **kwargs):
+def run_safe(node: RenderNode, func: Callable, *args, **kwargs):
     func(*args, **kwargs)
 

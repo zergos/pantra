@@ -1,3 +1,0 @@
-<databases xmlns="app.datebases">
-    <reuse name="db" app="system" schema="test3"/>
-</databases>
