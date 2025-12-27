@@ -14,7 +14,7 @@ def start():
     global enabled
     if not enabled and action:
         enabled = True
-        process_call(ctx, 'loop')
+        process_call(session, ctx, 'loop')
 
 def loop():
     global enabled

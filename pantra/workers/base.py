@@ -60,6 +60,7 @@ class BaseWorkerServer(ABC):
     def task_processor(cls):
         try:
             ident = threading.current_thread().name
+            logger.debug('Task thread started')
             while True:
                 try:
                     func, args, kwargs = cls.task_queue.get(timeout=5)
@@ -78,7 +79,7 @@ class BaseWorkerServer(ABC):
                 cls.workers[ident].active = False
                 cls.workers[ident].task_info = ''
         except SystemExit:
-            logger.error(f'`{ident}` thread got exit signal')
+            logger.info('Task thread got exit signal')
 
     @staticmethod
     @contextlib.contextmanager
@@ -88,7 +89,7 @@ class BaseWorkerServer(ABC):
         func_name = f'{node.oid}#{func.__name__}'
         session.tasks[func_name] = SessionTask(threading.current_thread(), func)
         yield
-        if func_name in session.tasks: # other thread could stop this already, or we have similar callers names
+        if func_name in session.tasks: # other thread is stopped this already, or we have similar funcs names
             del session.tasks[func_name]
 
     @staticmethod
@@ -117,7 +118,7 @@ class BaseWorkerServer(ABC):
                     logger.warning(f"Thread timeout `{k}` ({v.task_info})")
                     raise_exception_in_thread(v.thread.native_id)
                     del cls.workers[k]
-                elif len(cls.workers) > config.MIN_TASK_THREADS \
+                elif len(cls.workers) > config.MAX_TASK_THREADS \
                         and not v.active and v.last_tick and tick - v.last_tick > config.KILL_THREAD_LAG:
                     logger.warning(f"Thread killing `{k}` ({v.task_info})")
                     v.mode = ThreadMode.REDUCED

@@ -21,14 +21,16 @@ from .compiler import exec_restart
 from .workers.decorators import async_worker
 from .trans import get_locale, get_translation, zgettext, Translations
 from .session_storage import SessionStorage
+from .components.shot import ContextShot
 
 if typing.TYPE_CHECKING:
+    from typing import Self, ClassVar, Optional, Any, Callable, Coroutine
     from pathlib import Path
-    from typing import *
 
-    from .components.context import Context, ContextShot, RenderNode, HTMLElement, AnyNode
+    from .components.context import Context, HTMLElement, AnyNode
+    from .components.render.render_node import RenderNode
     from .workers.base import BaseWorkerServer
-
+    from .trans.locale import Locale
 
 logger = logging.getLogger("pantra.system")
 
@@ -42,7 +44,7 @@ class Session:
     pending_errors: ClassVar[Queue[str]] = Queue()
     states: ClassVar[dict[str, ADict]] = defaultdict(ADict)
     sessions: ClassVar[dict[str, Self]] = dict()
-    server_worker: ClassVar[BaseWorkerServer] = None
+    server_worker: ClassVar[BaseWorkerServer | None] = None
 
     __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
                  'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks']
@@ -73,6 +75,9 @@ class Session:
         self.last_touch: datetime = datetime.now()
         self.finish_flag: bool = False
         self.tasks: dict[str, SessionTask] = {}
+
+        self.locale: Locale | None = None
+        self.translations: Translations | None = None
         if not hasattr(self, "state"):
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
@@ -103,7 +108,6 @@ class Session:
         return uuid.uuid4().hex
 
     def restart(self):
-        from .components.render import ContextShot
         from .components.context import Context
         logger.debug(f"{{{self.app}}} Going to restart...")
         self.send_message(Messages.restart())
@@ -113,7 +117,7 @@ class Session:
             if ctx.template:
                 self.root = ctx
                 logger.debug(f"{{{self.app}}} Build [Main] context")
-                ctx.render.build()
+                ctx.renderer.build()
                 self.send_shot()
         except:
             # print(traceback.format_exc())
@@ -153,9 +157,9 @@ class Session:
             data = serializer.encode(Messages.error(text))
             await ws.send_bytes(data)
 
-    async def recover_messages(self):
-        while not self.pending_messages.empty():
-            await self.server_worker.listener.send(self.session_id, self.pending_messages.get())
+    #async def recover_messages(self):
+    #    while not self.pending_messages.empty():
+    #        await self.server_worker.listener.send(self.session_id, self.pending_messages.get())
 
     def send_context(self, ctx: Context):
         return self.send_message(Messages.send_context(ctx))
@@ -166,15 +170,14 @@ class Session:
             logger.error('Shot not prepared yet')
             return
         shot: ContextShot = self.root.shot
-        updated, deleted = shot.pop()
-        logger.debug(f"{{{self.app}}} Sending shot UPD:{len(updated)} DEL:{len(deleted)}")
-        #if ENABLE_LOGGING:
-        #    import traceback
-        #    logger.debug(''.join(traceback.format_stack(limit=3)))
+        created, updated, deleted = shot.pop()
+        logger.debug(f"{{{self.app}}} Sending shot NEW:{len(created)} UPD:{len(updated)} DEL:{len(deleted)}")
         if deleted:
             await self.send_message(Messages.delete(deleted))
         if updated:
             await self.send_message(Messages.update(updated))
+        if created:
+            await self.send_message(Messages.update(created))
 
     def _collect_children(self, children: list[UniNode], lst: list[UniNode]):
         for child in children:  # type: AnyNode
@@ -265,7 +268,7 @@ class Session:
     def send_noop(self):
         return self.send_message(Messages.noop())
 
-    def set_locale(self, lang: Union[str, list]):
+    def set_locale(self, lang: str | list):
         lang_name = lang if isinstance(lang, str) else lang[0]
         logger.debug(f"{{{self.app}}} Set lang = {lang_name}")
         self.locale = get_locale(lang_name)
@@ -315,18 +318,17 @@ class Session:
 
 def trace_errors(func: Callable[[Session, ...], None]):
     @functools.wraps(func)
-    def res(*args, **kwargs):
-        from .components.context import RenderNode
+    def res(session, *args, **kwargs):
         dont_refresh = kwargs.pop("dont_refresh", False)
-        if not isinstance(args[0], RenderNode):
+        if type(session) is not Session:
             return
         try:
-            func(*args, **kwargs)
+            func(session, *args, **kwargs)
         except:
-            args[0].context.session.error(traceback.format_exc())
+            session.error(traceback.format_exc())
         else:
             if not dont_refresh:
-                args[0].context.session.send_shot()
+                session.send_shot()
     res.call = func
     return res
 

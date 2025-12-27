@@ -153,7 +153,7 @@
             }
         }
 
-        .resizing {
+        &.resizing {
             background-color: $color-active;
             background: linear-gradient(180deg, rgba($color-active, 1) 0%, rgba($color-active, 0) 100%);
         }
@@ -293,7 +293,7 @@ class DragResize(DragController):
         th = node.upto('th')
         self.source_index = th.index()
         self.source_node = th
-        self.drag_node = ctx.div('resizing', node)
+        self.drag_node = ctx.div('Table resizing', node)
         self.drag_node.set_metrics([self.x, node.metrics.top, 3, '100vh'])
         return True
 
@@ -358,10 +358,11 @@ def enter_cell(node: HTMLElement):
 
     if (widget:=node.data.col.widget) is None:
         widget = get_widget_default(node.data.col)
-    node.render(widget, {'column': node.data.col, 'value': str(node.text)})
+    text = node.text
     node.text = ''
     node.style.padding = 0
     ctx.shot(node)
+    node.render(widget, {'column': node.data.col, 'value': str(text)})
 
 
 def remove_field(field: Context, value):

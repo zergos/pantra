@@ -13,12 +13,11 @@ except ImportError:
 
 from pantra.common import DynamicStyles
 from pantra.components.context import HTMLElement
-from pantra.components.loader import HTMLTemplate
+from pantra.components.template import HTMLTemplate
 
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.components.context import Context
-    from pantra.components.render import RenderNode
     MapsRows = List[List['ColumnMap | None']]
     Columns = Dict[str, 'ColumnInfo']
 else:
@@ -98,7 +97,7 @@ def build_maps(ctx: Context, template: HTMLTemplate, columns: Columns) -> MapsRo
     def set_cell(x, y, i, name):
         nonlocal H, W
         item = ColumnMap(columns[name], hspan=max(W - x, 1), vspan=max(H - y, 1))
-        item.node = ctx.render.build_node(i, ctx)
+        item.node = ctx.renderer.build_node(i, ctx)
         if y >= H:
             # span rows on left cells
             for kx in range(x):

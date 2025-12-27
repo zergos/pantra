@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import typing
-import asyncio
 import inspect
 
 from ..oid import get_node
@@ -11,7 +10,7 @@ from ..workers.decorators import thread_worker
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from ..components.context import Context, RenderNode, HTMLElement, AnyNode
+    from .context import HTMLElement, AnyNode
 
 __all__ = ['DragOptions', 'DragController']
 
@@ -105,8 +104,7 @@ def process_drag_stop(session: Session, x: int, y: int):
 
 
 @trace_errors
-def process_call(node: AnyNode, method: str, *args):
-    session = node.context.session
+def process_call(session: Session, node: AnyNode, method: str, *args):
     for m in method.split(' '):
         if inspect.iscoroutinefunction(caller:=node[m]):
             session.server_worker.run_coroutine(node, caller, trace_errors_async(session, caller(*args)))
@@ -121,26 +119,26 @@ def process_call(node: AnyNode, method: str, *args):
 
 
 @thread_worker
-def process_click(method: str, oid: int):
+def process_click(session: Session, method: str, oid: int):
     node = get_node(oid)
     if node is None or not method: return
-    process_call(node, method, node)
+    process_call(session, node, method, node)
 
 
 @thread_worker
-def process_select(method: str, oid: int, opts: List[int]):
+def process_select(session: Session, method: str, oid: int, opts: List[int]):
     node = get_node(oid)
     if not node or not method: return
     opts = [get_node(i) for i in opts]
     node._value = len(opts) == 1 and opts[0] or opts
-    process_call(node, method, node)
+    process_call(session, node, method, node)
 
 @thread_worker
-def process_change(method: str, oid: int, value: Any):
+def process_change(session: Session, method: str, oid: int, value: Any):
     node = get_node(oid)
     if not node: return
     node.value = value
-    process_call(node, method, node)
+    process_call(session, node, method, node)
 
 def process_bind_value(oid: int, variable: str, value: str):
     node: HTMLElement = get_node(oid)
@@ -149,16 +147,16 @@ def process_bind_value(oid: int, variable: str, value: str):
     node.set_quietly(variable, value)
 
 @thread_worker
-def process_key(method: str, oid: int, key: str):
+def process_key(session: Session, method: str, oid: int, key: str):
     node = get_node(oid)
     if not node or not method: return
-    process_call(node, method, node, key)
+    process_call(session, node, method, node, key)
 
 
 @thread_worker
-def process_direct_call(oid: int, method: str, args: list[Any]):
+def process_direct_call(session: Session, oid: int, method: str, args: list[Any]):
     node = get_node(oid)
     if not node or not method: return
     if node.is_call_allowed(method):
-        process_call(node, method, args)
+        process_call(session, node, method, args)
 

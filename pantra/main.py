@@ -6,18 +6,16 @@ import mimetypes
 import logging
 from importlib import import_module
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import aiofiles
 from aiohttp import web, WSMsgType, WSMessage
 import sass
 
-from .components.loader import collect_styles, templates
-from .serializer import serializer
+from .components.template import collect_styles, collect_template
 from .settings import config
 from .patching import wipe_logger
 from .session import Session
-from .protocol import Messages
 from . import jsmap
 
 __all__ = ['run']
@@ -63,7 +61,7 @@ async def get_media(request: web.Request):
     if '..' in Path(file_name).parts:
         return web.Response(body='`..` not allowed', status=403)
 
-    if not app:
+    if app is None:
         search_path = config.COMPONENTS_PATH / config.STATIC_DIR
     elif app[0] == '$':
         if app[1:] not in config.ALLOWED_DIRS:
@@ -71,7 +69,9 @@ async def get_media(request: web.Request):
             return web.Response(body=f'Directory `{app}` not found', status=404)
         search_path = config.ALLOWED_DIRS[app[1:]]
     elif app[0].isupper():
-        search_path = templates[app].filename.parent / config.STATIC_DIR
+        if (template:=collect_template(None, app)) is None:
+            return web.Response(body=f'`{app}` not found', status=404)
+        search_path = template.filename.parent / config.STATIC_DIR
     else:
         search_path = config.APPS_PATH / app / config.STATIC_DIR
 
@@ -249,7 +249,7 @@ async def main(host, port):
     site = web.TCPSite(runner, host=host, port=port, shutdown_timeout=0)
     await site.start()
     # wait for finish signal
-    print(f'Running wild at {host}:{port}')
+    print(f'Running gently at {host}:{port}')
     try:
         while True:
             await asyncio.sleep(3600)

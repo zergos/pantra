@@ -1,246 +1,21 @@
 from __future__ import annotations
 
-import re
 import typing
-import traceback
-from contextlib import contextmanager
-from types import CodeType
-from queue import Queue
-import logging
 
-from ..common import DynamicString, DynamicStyles, DynamicClasses, UniqueNode, typename, ADict
-from ..components.loader import collect_template, HTMLTemplate, MacroCode, NodeType, AttrType
-from ..compiler import compile_context_code, ContextInitFailed
-from ..session import Session, run_safe
-from ..settings import config
+from pantra.common import DynamicString, typename, DynamicStyles, DynamicClasses, ADict
+from pantra.compiler import ContextInitFailed, compile_context_code
+from pantra.session import run_safe
+from ..template import AttrType, NodeType, collect_template, MacroCode
+from ..context import HTMLElement, Context, AnyNode, Slot, ConditionNode, Condition, LoopNode, SetNode, ScriptNode, \
+    EventNode, TextNode, ReactNode
+from .renderer_base import RendererBase, StrOrCode
+from .render_node import RE_JS_VARS
 
 if typing.TYPE_CHECKING:
-    from typing import *
-    from .context import AnyNode, Context, HTMLElement, Condition, TextNode, Slot
-    StrOrCode = MacroCode | str | None
+    from typing import Callable, Any, Self, Union, Optional
+    from ..template import HTMLTemplate
 
-__all__ = ['RenderNode', 'DefaultRenderer', 'ContextShot']
-
-re_js_vars = re.compile(r"`?\{\{(.*?)\}\}`?")
-logger = logging.getLogger("pantra.system")
-
-class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
-
-    def __init__(self: AnyNode, parent: Optional[AnyNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
-        super().__init__(parent)
-        self.shot: 'ContextShot' = shot or parent.shot
-        self.session: Session = session or parent.session
-        self.scope: ADict = ADict() if not parent else parent.scope
-
-        #if typename(self) == 'Context':
-        #    self.context: Context = self
-        #else:
-        if parent:
-            if typename(parent) == 'Context':
-                self.context = parent
-            else:
-                self.context = parent.context
-        else:
-            self.context: Context = self
-            
-        def get_first_macro(code_or_list: MacroCode | list[MacroCode]) -> MacroCode:
-            return code_or_list[0] if type(code_or_list) is list else code_or_list
-
-        # we have to render control nodes as Stubs to hold middle DOM position
-        if not render_this \
-                and self.parent \
-                and typename(self) in ('ConditionNode', 'LoopNode') \
-                and get_first_macro(self.template[0].macro).reactive \
-                and self.index() < len(self.template.parent.children) - 1:
-                    self.render_this = True
-                    # and (self.template[-1].tag_name == '#else' \
-                    #    or self.index() < len(self.template.parent.children) - 1):
-        else:
-            self.render_this: bool = render_this
-
-        if self.render_this:
-            self.shot(self)
-
-        self.name = ''
-        self._rebind = False
-
-    def add(self, tag_name: str, attributes: dict = None, text: str = None) -> HTMLElement | Context | None:
-        from .context import HTMLElement
-        if tag_name[0].isupper():
-            node_template = collect_template(self.context.session, tag_name)
-            if not node_template: return None
-            return self.context.render(node_template, self, locals=attributes)
-        else:
-            return HTMLElement(tag_name, self, attributes, text)
-
-    @property
-    def parent(self) -> Optional[AnyNode]: return None
-    del parent
-
-    @property
-    def children(self) -> List[AnyNode]: return []
-    del children
-
-    @staticmethod
-    def _cleanup_node(node):
-        if node in node.context.react_nodes:
-            node.context.react_nodes.remove(node)
-            for v in list(node.context.react_vars.values()):
-                if node in v:
-                    v.remove(node)
-        if node in node.context.refs.values():
-            k = next(k for k, v in node.context.refs.items() if v == node)
-            del node.context.refs[k]
-
-    def empty(self):
-        for child in self.children:  # type: RenderNode
-            self.shot -= child
-            self._cleanup_node(child)
-            child.empty()
-        self.children.clear()
-
-    def remove(self, node=None):
-        if node:
-            node.context._cleanup_node(node)
-            super().remove(node)
-        else:
-            self.empty()
-            self.shot -= self
-            self._cleanup_node(self)
-            if self.parent:
-                self.parent.remove(self)
-
-    def update(self, with_attrs: bool = False):
-        if with_attrs:
-            self.context.render.update(self)
-        else:
-            self.shot(self)
-
-    def update_tree(self):
-        self.context.render.update(self, True)
-
-    def rebuild(self):
-        self.empty()
-        self.render.build()
-
-    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
-        return None
-
-    def clone(self, new_parent: Optional[AnyNode] = None) -> Optional[HTMLElement, TextNode]:
-        if new_parent is None:
-            new_parent = self.context
-
-        clone: Optional[AnyNode] = self._clone(new_parent)
-        if clone:
-            for child in self.children:
-                sub = child.clone(clone)
-                if sub:
-                    clone.append(sub)
-        return clone
-
-    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> Generator[AnyNode]:
-        if isinstance(predicate, str):
-            yield from super().select(lambda node: str(node) == predicate, depth)
-        elif isinstance(predicate, typing.Iterable):
-            yield from super().select(lambda node: str(node) in predicate, depth)
-        else:
-            yield from super().select(predicate, depth)
-
-    def contains(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> bool:
-        return next(self.select(predicate, depth), None) is not None
-
-    def set_scope(self, data: Union[Dict, str], value: Any = None):
-        if isinstance(data, str):
-            data = {data: value}
-        self.scope = ADict(self.scope) | data
-
-    def describe(self, indent: int = 0) -> str:
-        res = ' ' * indent + str(self) + ':' + str(self.oid)
-        for c in self.children:
-            res += '\n' + ' ' * indent + c.describe(indent + 2)
-        return res
-
-    def kill_task(self, func_name: str | Callable):
-        if callable(func_name):
-            func_name = func_name.__name__
-        self.session.kill_task(f'{self.oid}#{func_name}')
-
-    def kill_all_tasks(self):
-        self.session.kill_all_tasks(self)
-
-class DefaultRenderer:
-    __slots__ = ['ctx']
-
-    def __init__(self, ctx: Context):
-        self.ctx: Context = ctx
-
-    def __call__(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
-        return self.render(template, parent, locals, build)
-
-    def build(self):
-        try:
-            self.build_node(self.ctx.template, self.ctx)
-        except ContextInitFailed:
-            self.ctx.remove()
-
-    def trace_eval(self, ctx: Context, macro: MacroCode, node: AnyNode):
-        try:
-            with self.ctx.record_reactions(node, macro.reactive):
-                return eval(macro.code, {'ctx': ctx, 'this': node}, ctx.locals)
-        except:
-            ctx.session.error(f'{ctx.template.path()}/{node}: evaluation error: {traceback.format_exc(-3)}')
-            return None
-
-    def build_func(self, macro: MacroCode | None, node: AnyNode) -> Callable[[], Any] | None:
-        # return lambda: eval(text, {'ctx': self.ctx, 'this': node}, self.ctx.locals)
-        ctx = self.ctx  # save ctx to lambda instead of self, as ctx could be temporarily changed by slot
-        return macro and (lambda: self.trace_eval(ctx, macro, node))
-
-    def translate(self, s):
-        if s.startswith('\\'):
-            return s[1:]
-        if s.startswith('#'):
-            return self.ctx.session.gettext(s[1:])
-        return s
-
-    def build_string(self, source: StrOrCode, node: AnyNode) -> Optional[Union[str, DynamicString]]:
-        if type(source) is MacroCode:
-            return DynamicString(self.build_func(source, node))
-        return source
-
-    def build_string_i10n(self, source: StrOrCode, node: AnyNode) -> Optional[Union[str, DynamicString]]:
-        if source is None:
-            return None
-        if type(source) is MacroCode:
-            return DynamicString(self.build_func(source, node))
-        return self.translate(source)
-
-    def eval_string(self, source: StrOrCode, node: AnyNode) -> Any:
-        if type(source) is MacroCode:
-            return self.trace_eval(self.ctx, source, node)
-        return source
-
-    def eval_string_i10n(self, source: StrOrCode, node: AnyNode) -> Any:
-        if source is None:
-            return None
-
-        if type(source) is MacroCode:
-            return self.trace_eval(self.ctx, source, node)
-        if source.startswith('@'):
-            if ' ' in source:
-                callers = [self.ctx[var] for var in source[1:].split(' ')]
-                return lambda *args: [caller(*args) for caller in callers]
-            return self.ctx[source[1:]]
-        return self.translate(source)
-
-    def build_func_or_local(self, source: StrOrCode, node: AnyNode, default: Any = None) -> Callable[[], Any]:
-        if type(source) is MacroCode:
-            return self.build_func(source, node)
-        else:
-            ctx = self.ctx
-            return lambda: ctx.locals.get(source, default)
-
+class RendererHTML(RendererBase):
     #region Attribute processors
     @staticmethod
     def _return_false(*args):
@@ -282,8 +57,9 @@ class DefaultRenderer:
             self.ctx.session.error(f'Can not combine dynamic style with expressions {attr_name}={value}')
             return True
         if value is None:
-            value = attr_name
-        node.style[attr_name] = DynamicString(self.build_func_or_local(value, node, ''))
+            node.style[attr_name] = DynamicString(self.build_func_or_local(attr_name, node, ''))
+        else:
+            node.style[attr_name] = DynamicString(self.build_string(value, node))
         return True
 
     def _process_attr_bind_value(self, attr_name, value, node):
@@ -379,68 +155,66 @@ class DefaultRenderer:
                         node[at] = node.context[at]
         return True
 
-    PROCESS_HTML_ATTR: dict[AttrType, Callable[[Self, str, Any, HTMLElement], bool]] = {
-        AttrType.NO_SPECIAL: _return_false,
-        AttrType.REF_NAME: _process_attr_ref_name,
-        AttrType.CREF_NAME: _process_attr_cref_name,
-        AttrType.SCOPE: _process_attr_scope,
-        AttrType.ON_RENDER: _return_true,
-        AttrType.ON_INIT: _process_attr_on_init,
-        AttrType.CLASS_SWITCH: _process_attr_class_switch,
-        AttrType.DYNAMIC_STYLE: _process_attr_dynamic_style,
-        AttrType.BIND_VALUE: _process_attr_bind_value,
-        AttrType.DYNAMIC_SET: _process_attr_dynamic_set,
-        AttrType.DATA: _process_attr_data,
-        AttrType.SRC_HREF: _process_attr_src_href,
-        AttrType.REACTIVE: _return_true,
-        AttrType.STYLE: _process_attr_style,
-        AttrType.CLASS: _process_attr_class,
-        AttrType.TYPE: _process_attr_type,
-        AttrType.VALUE: _process_attr_value,
-        AttrType.LOCALIZE: _process_attr_localize,
-        AttrType.SET_FALSE: _return_false,
-        AttrType.CONSUME: _return_false,
+    PROCESS_HTML_ATTR: dict[int, Callable[[Self, str, Any, HTMLElement], bool]] = {
+        AttrType.NO_SPECIAL.value: _return_false,
+        AttrType.REF_NAME.value: _process_attr_ref_name,
+        AttrType.CREF_NAME.value: _process_attr_cref_name,
+        AttrType.SCOPE.value: _process_attr_scope,
+        AttrType.ON_RENDER.value: _return_true,
+        AttrType.ON_INIT.value: _process_attr_on_init,
+        AttrType.CLASS_SWITCH.value: _process_attr_class_switch,
+        AttrType.DYNAMIC_STYLE.value: _process_attr_dynamic_style,
+        AttrType.BIND_VALUE.value: _process_attr_bind_value,
+        AttrType.DYNAMIC_SET.value: _process_attr_dynamic_set,
+        AttrType.DATA.value: _process_attr_data,
+        AttrType.SRC_HREF.value: _process_attr_src_href,
+        AttrType.REACTIVE.value: _return_true,
+        AttrType.STYLE.value: _process_attr_style,
+        AttrType.CLASS.value: _process_attr_class,
+        AttrType.TYPE.value: _process_attr_type,
+        AttrType.VALUE.value: _process_attr_value,
+        AttrType.LOCALIZE.value: _process_attr_localize,
+        AttrType.SET_FALSE.value: _return_false,
+        AttrType.CONSUME.value: _return_false,
     }
 
-    PROCESS_CTX_ATTR: dict[AttrType, Callable[[Self, str, Any, Context], bool]] = {
-        AttrType.NO_SPECIAL: _return_false,
-        AttrType.REF_NAME: _process_attr_ref_name,
-        AttrType.CREF_NAME: _process_attr_cref_name,
-        AttrType.SCOPE: _process_attr_scope,
-        AttrType.ON_RENDER: _return_true,
-        AttrType.ON_INIT: _process_attr_on_init,
-        AttrType.CLASS_SWITCH: _return_false,
-        AttrType.DYNAMIC_STYLE: _return_false,
-        AttrType.BIND_VALUE: _return_false,
-        AttrType.DYNAMIC_SET: _process_attr_dynamic_set_ctx,
-        AttrType.DATA:  _return_false,
-        AttrType.SRC_HREF:  _return_false,
-        AttrType.REACTIVE: _return_false,
-        AttrType.STYLE: _return_false,
-        AttrType.CLASS: _return_false,
-        AttrType.TYPE: _return_false,
-        AttrType.VALUE: _return_false,
-        AttrType.LOCALIZE: _return_false,
-        AttrType.SET_FALSE: _process_attr_set_false_ctx,
-        AttrType.CONSUME: _process_attr_consume,
+    PROCESS_CTX_ATTR: dict[int, Callable[[Self, str, Any, Context], bool]] = {
+        AttrType.NO_SPECIAL.value: _return_false,
+        AttrType.REF_NAME.value: _process_attr_ref_name,
+        AttrType.CREF_NAME.value: _process_attr_cref_name,
+        AttrType.SCOPE.value: _process_attr_scope,
+        AttrType.ON_RENDER.value: _return_true,
+        AttrType.ON_INIT.value: _process_attr_on_init,
+        AttrType.CLASS_SWITCH.value: _return_false,
+        AttrType.DYNAMIC_STYLE.value: _return_false,
+        AttrType.BIND_VALUE.value: _return_false,
+        AttrType.DYNAMIC_SET.value: _process_attr_dynamic_set_ctx,
+        AttrType.DATA.value:  _return_false,
+        AttrType.SRC_HREF.value:  _return_false,
+        AttrType.REACTIVE.value: _return_false,
+        AttrType.STYLE.value: _return_false,
+        AttrType.CLASS.value: _return_false,
+        AttrType.TYPE.value: _return_false,
+        AttrType.VALUE.value: _return_false,
+        AttrType.LOCALIZE.value: _return_false,
+        AttrType.SET_FALSE.value: _process_attr_set_false_ctx,
+        AttrType.CONSUME.value: _process_attr_consume,
     }
     #endregion
 
     def process_special_attribute_html(self, attr: tuple[AttrType, str | None], value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
-        return self.PROCESS_HTML_ATTR[attr[0]](self, attr[1], value, node)
+        return self.PROCESS_HTML_ATTR[attr[0].value](self, attr[1], value, node)
 
     def process_special_attribute_ctx(self, attr: tuple[AttrType, str | None], value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
-        return self.PROCESS_CTX_ATTR[attr[0]](self, attr[1], value, node)
+        return self.PROCESS_CTX_ATTR[attr[0].value](self, attr[1], value, node)
 
     #region Node builders
     def _build_html_tag(self, template, parent):
-        from . import context as c
-
         if 'not:render' in template.attributes:
             # forget it
             return None
 
-        node = c.HTMLElement(template.tag_name, parent=parent)
+        node = HTMLElement(template.tag_name, parent=parent)
 
         with self.ctx.record_reactions(node, 'reactive' in template.attributes):
             # evaluate attributes
@@ -479,11 +253,9 @@ class DefaultRenderer:
         return node
 
     def _build_template_tag(self, template, parent):
-        from . import context as c
-
         node_template = collect_template(self.ctx.session, template.tag_name)
         if not node_template: return None
-        node = c.Context(node_template, parent)
+        node = Context(node_template, parent)
         node.source_attributes = template.attributes
         if 'consume' in template.attributes and template.attributes['consume'] is None:
             node.locals = node.context.locals
@@ -491,7 +263,7 @@ class DefaultRenderer:
 
         # attach slots
         if template.children:
-            node.slot = c.Slot(self.ctx, template)
+            node.slot = Slot(self.ctx, template)
 
         # evaluate attributes
         # with self.ctx.record_reactions(node):
@@ -510,7 +282,7 @@ class DefaultRenderer:
             run_safe(node, lambda: self.ctx['node_processor'](node), dont_refresh=True)
 
         try:
-            node.render.build()
+            node.renderer.build()
         except ContextInitFailed:
             node.remove()
             return None
@@ -535,20 +307,18 @@ class DefaultRenderer:
         return node
 
     def _build_macro_if(self, template, parent):
-        from . import context as c
-        node = c.ConditionNode(parent, template)
+        node = ConditionNode(parent, template)
         for child_template in template.children:  # type: HTMLTemplate
             if child_template.tag_name != '#else':
-                item = c.Condition(self.build_func(child_template.macro, node), child_template)
+                item = Condition(self.build_func(child_template.macro, node), child_template)
             else:
-                item = c.Condition((lambda: True), child_template)
+                item = Condition((lambda: True), child_template)
             node.conditions.append(item)
         self.update(node)
         return node
 
     def _build_macro_for(self, template, parent):
-        from . import context as c
-        node: c.LoopNode = c.LoopNode(parent, template)
+        node: LoopNode = LoopNode(parent, template)
         loop_template = template[0]
         node.var_name = loop_template.text
         node.iterator = self.build_func(loop_template.macro[0], node)
@@ -561,8 +331,7 @@ class DefaultRenderer:
         return node
 
     def _build_macro_set(self, template, parent):
-        from . import context as c
-        node: c.SetNode = c.SetNode(parent, template)
+        node: SetNode = SetNode(parent, template)
         node.var_name = template.text
         node.expr = self.build_func(template.macro, node)
         self.update(node)
@@ -613,14 +382,12 @@ class DefaultRenderer:
         return self
 
     def _build_at_script(self, template, parent):
-        from . import context as c
-
         def subst(matchobj) -> str:
             expr = matchobj.group(1)
             return self.ctx.locals.get(expr, str(self.trace_eval(self.ctx, expr, self.ctx)))
 
-        text = re_js_vars.sub(subst, template.text) if template.text else ""
-        node = c.ScriptNode(parent, f'{self.ctx.template.name}_{template.index}', attributes=template.attributes.copy(),
+        text = RE_JS_VARS.sub(subst, template.text) if template.text else ""
+        node = ScriptNode(parent, f'{self.ctx.template.name}_{template.index}', attributes=template.attributes.copy(),
                             text=text)
         return node
 
@@ -631,8 +398,7 @@ class DefaultRenderer:
         return self
 
     def _build_at_event(self, template, parent):
-        from . import context as c
-        node = c.EventNode(parent)
+        node = EventNode(parent)
         for k, v in template.attributes.items():
             if k == 'selector':
                 if 'global' in template.attributes:
@@ -652,66 +418,49 @@ class DefaultRenderer:
         return self
 
     def _build_at_text(self, template, parent):
-        from . import context as c
         text = template.text
         if text and text.startswith('#'):
             text = self.ctx.session.gettext(text[1:])
-        node = c.TextNode(parent, text)
+        node = TextNode(parent, text)
         return node
 
     def _build_at_macro(self, template, parent):
-        from . import context as c
-        node = c.TextNode(parent, DynamicString(self.build_func(template.macro, parent)))
+        node = TextNode(parent, DynamicString(self.build_func(template.macro, parent)))
         return node
 
     def _build_at_react(self, template, parent):
-        from . import context as c
         var_name = template.attributes.get('to')
         action = template.attributes.get('action')
         if not var_name or not action:
             self.ctx.session.error('<react> tag must have attributes `to` and `action`')
             return None
-        node = c.ReactNode(parent, var_name, action)
+        node = ReactNode(parent, var_name, action)
         # take in account consumed contexts
         self.ctx.locals._ctx.react_vars[var_name].append(node)
         return node
 
-    NODE_BUILDERS: dict[NodeType, Callable[[Self, HTMLTemplate, AnyNode], AnyNode]] = {
-        NodeType.HTML_TAG: _build_html_tag,
-        NodeType.TEMPLATE_TAG: _build_template_tag,
-        NodeType.ROOT_NODE: _build_root_node,
-        NodeType.MACRO_IF: _build_macro_if,
-        NodeType.MACRO_FOR: _build_macro_for,
-        NodeType.MACRO_SET: _build_macro_set,
-        NodeType.AT_COMPONENT: _build_at_component,
-        NodeType.AT_SLOT: _build_at_slot,
-        NodeType.AT_PYTHON: _build_at_python,
-        NodeType.AT_SCRIPT: _build_at_script,
-        NodeType.AT_STYLE: _build_at_style,
-        NodeType.AT_EVENT: _build_at_event,
-        NodeType.AT_SCOPE: _build_at_scope,
-        NodeType.AT_TEXT: _build_at_text,
-        NodeType.AT_MACRO: _build_at_macro,
-        NodeType.AT_REACT: _build_at_react,
+    NODE_BUILDERS: dict[int, Callable[[Self, HTMLTemplate, AnyNode], AnyNode]] = {
+        NodeType.HTML_TAG.value: _build_html_tag,
+        NodeType.TEMPLATE_TAG.value: _build_template_tag,
+        NodeType.ROOT_NODE.value: _build_root_node,
+        NodeType.MACRO_IF.value: _build_macro_if,
+        NodeType.MACRO_FOR.value: _build_macro_for,
+        NodeType.MACRO_SET.value: _build_macro_set,
+        NodeType.AT_COMPONENT.value: _build_at_component,
+        NodeType.AT_SLOT.value: _build_at_slot,
+        NodeType.AT_PYTHON.value: _build_at_python,
+        NodeType.AT_SCRIPT.value: _build_at_script,
+        NodeType.AT_STYLE.value: _build_at_style,
+        NodeType.AT_EVENT.value: _build_at_event,
+        NodeType.AT_SCOPE.value: _build_at_scope,
+        NodeType.AT_TEXT.value: _build_at_text,
+        NodeType.AT_MACRO.value: _build_at_macro,
+        NodeType.AT_REACT.value: _build_at_react,
     }
     #endregion
 
     def build_node(self, template: HTMLTemplate, parent: Optional[AnyNode] = None) -> Optional[AnyNode]:
-        return self.NODE_BUILDERS[template.node_type](self, template, parent)
-
-    def rebind(self, node: AnyNode):
-        if node.render_this:
-            self.ctx.shot(node)
-        else:
-            for child in node.children:
-                self.rebind(child)
-
-    def update_children(self, node: AnyNode):
-        for child in node.children:  # type: AnyNode
-            if child.context == self.ctx:
-                self.update(child, True)
-            else:
-                child.update_tree()
+        return self.NODE_BUILDERS[template.node_type.value](self, template, parent)
 
     #region Node updaters
     def _update_html_node(self, node, recursive):
@@ -872,66 +621,3 @@ class DefaultRenderer:
     def update(self, node: AnyNode, recursive: bool = False):
         if self.NODE_UPDATERS[typename(node)](self, node, recursive) and recursive:
             self.update_children(node)
-
-    def render(self, template: Union[str, HTMLTemplate], parent: AnyNode = None, locals: Dict = None, build: bool = True):
-        from .context import Context
-        if not parent:
-            parent = self.ctx
-        c = Context(template, parent, locals=locals)
-        if build:
-            c.render.build()
-        return c
-
-
-class ContextShot:
-    __slots__ = ['updated', 'deleted', '_frozen', '_freeze_list', '_rebind']
-
-    def __init__(self):
-        self.updated: Queue[AnyNode] = Queue()
-        self.deleted: Queue[int] = Queue()
-        self._frozen = False
-        self._rebind = False
-        self._freeze_list = None
-
-    def pop(self) -> tuple[list[AnyNode], list[int]]:
-        deleted = []
-        while not self.deleted.empty():
-            deleted.append(self.deleted.get())
-        updated = []
-        while not self.updated.empty():
-            item = self.updated.get()
-            if item.oid not in deleted:
-                updated.append(item)
-        return updated, deleted
-
-    @contextmanager
-    def freeze(self):
-        self._frozen = True
-        self._freeze_list = []
-        yield
-        for node in self._freeze_list:
-            node.parent.remove(node)
-        self._freeze_list = None
-        self._frozen = False
-
-    @contextmanager
-    def rebind(self):
-        self._rebind = True
-        yield
-        self._rebind = False
-
-    def __call__(self, node):
-        if not self._frozen:
-            if self._rebind:
-                node._rebind = True
-            self.updated.put(node)
-        else:
-            self._freeze_list.append(node)
-
-    def __add__(self, other):
-        self.__call__(other)
-        return self
-
-    def __sub__(self, other):
-        self.deleted.put(other.oid)
-        return self

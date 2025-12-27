@@ -46,8 +46,8 @@ function process_message(obj) {
         }
 
         case 'dm':
-            protoLog("drag mode active");
-            drag_mode_active = true;
+            seLog("drag mode enabled");
+            dragModeActive = true;
             break;
 
         case 'log':
@@ -70,8 +70,8 @@ function process_message(obj) {
             root = document.createElement('div');
             root.id = 'display';
             parent.appendChild(root);
-            drag_mode_active = false;
-            drag_events_attached = false;
+            dragModeActive = false;
+            dragEventsAttached = false;
             resetEvents();
             break;
 

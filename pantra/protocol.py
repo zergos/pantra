@@ -48,19 +48,19 @@ async def process_message(session: Session, data: dict):
             ctx = getattr(get_node(data['oid']), 'context', None)
             oid = ctx and ctx.oid or data['oid']
             logger.debug(f"[CLICK] command `{data['method']}` to <{ctx}:{oid}>")
-        process_click(data['method'], data['oid'])
+        process_click(session, data['method'], data['oid'])
 
     elif command == 'SELECT':
         logger.debug(f"[SELECT] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
-        process_select(data['method'], data['oid'], data['opts'])
+        process_select(session, data['method'], data['oid'], data['opts'])
 
     elif command == 'CHANGE':
         logger.debug(f"[CHANGE] command `{data['method']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
-        process_change(data['method'], data['oid'], data['x'])
+        process_change(session, data['method'], data['oid'], data['x'])
 
     elif command == 'KEY':
         logger.debug(f"[KEY] command `{data['method']}` - `{data['key']}` to <{getattr(get_node(data['oid']), 'context', None)}>")
-        process_key(data['method'], data['oid'], data['key'])
+        process_key(session, data['method'], data['oid'], data['key'])
 
     elif command == 'B':
         logger.debug("[B]ind value command")
@@ -92,7 +92,7 @@ async def process_message(session: Session, data: dict):
 
     elif command == 'CALL':
         logger.debug(f"[CALL] command `{data['method']}` to  <{getattr(get_node(data['oid']), 'context', 'none')}>")
-        process_direct_call(data['oid'], data['method'], data['args'])
+        process_direct_call(session, data['oid'], data['method'], data['args'])
 
 
 class Messages:

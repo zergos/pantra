@@ -5,6 +5,7 @@ from pathlib import Path
 
 if typing.TYPE_CHECKING:
     from .workers.base import BaseWorkerClient, BaseWorkerServer
+    from .components.render.renderer_base import RendererBase
 
 class Config:
     BASE_PATH: Path
@@ -34,6 +35,7 @@ class Config:
 
     BOOTSTRAP_FILENAME: Path
     APP_TITLE: str
+    DEFAULT_RENDERER: str | type[RendererBase]
 
     WORKERS_MODULE: str
     WORKER_SERVER: type[BaseWorkerServer]

@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     import logging
     from pantra.common import ADict
     from pantra.components.context import Context, HTMLElement, AnyNode, ActionType
-    from pantra.components.render import RenderNode
+    from pantra.components.render.render_node import RenderNode
     from pantra.session import Session
     from typing import *
 
@@ -28,4 +28,4 @@ if typing.TYPE_CHECKING:
                'ValuesView', 'Awaitable', 'AsyncIterator', 'AsyncIterable', 'Coroutine', 'Collection', 'AsyncGenerator',
                'AsyncContextManager', 'Deque', 'Dict', 'DefaultDict', 'List', 'Set', 'FrozenSet', 'NamedTuple',
                'Generator', 'NewType', 'NoReturn', 'typing', 'WebUnits', 'logger', 'EmptyCaller', 'DynamicHTML',
-               'config', 'ActionType', 'reuse_this']
+               'config', 'ActionType']

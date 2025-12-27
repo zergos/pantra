@@ -29,10 +29,10 @@ function localizeDate(flag, v) {
 const HTMLElementSerializer = {
     name: 'h',
     decode: function(s, v) {
-        let element =  OID.node(v.i);
+        let element = OID.node(v.i);
         let is_new = false;
         if (!element) {
-            parent = OID.node(v.p);
+            let parent = OID.node(v.p);
             if (!parent) {
                 if (v.p === null)
                     seLog(`element #${v.i} <${v.n}> created in root node`);

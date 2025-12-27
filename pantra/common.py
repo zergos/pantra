@@ -5,7 +5,7 @@ import typing
 import ctypes
 
 if typing.TYPE_CHECKING:
-    from typing import *
+    from typing import Self, Iterable, Optional, Callable, Generator, Any, Union
 
 __all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
            'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue', 'raise_exception_in_thread']
@@ -17,17 +17,16 @@ def typename(t):
     return type(t).__name__
 
 
-T = typing.TypeVar('T')
+ValueT = typing.TypeVar('ValueT')
 
-
-class ADict(dict, typing.Generic[T]):
+class ADict(typing.Generic[ValueT], dict[str, ValueT]):
     __setattr__ = dict.__setitem__  
     __delattr__ = dict.__delitem__
 
-    def __getitem__(self, item: str) -> T: ...
+    def __getitem__(self, item: str) -> ValueT: ...
     del __getitem__
 
-    def __getattr__(self, item: str) -> T:
+    def __getattr__(self, item: str) -> ValueT:
         try:
             return self[item]
         except KeyError:
@@ -45,7 +44,7 @@ class ADict(dict, typing.Generic[T]):
                 del res[k]
         return res
 
-    def __truediv__(self, other: Iterable) -> Tuple[Self, Self]:
+    def __truediv__(self, other: Iterable) -> tuple[Self, Self]:
         res = self.__class__(self)
         res2 = self.__class__()
         for k in other:
@@ -255,15 +254,17 @@ class WebUnits(str):
     __slots__ = ['value', 'unit']
 
     def __new__(cls, value: int | float | str, unit: str = 'px'):
-        if type(value) != str:
+        if not isinstance(value, str):
             return super().__new__(cls, f'{value}{unit}')
         else:
             return super().__new__(cls, value)
 
     def __init__(self, value: int | float | str, unit: str = 'px'):
-        if type(value) != str:
+        if not isinstance(value, str):
             self.value = value
             self.unit = unit
+        elif not value:
+            raise ValueError('value cannot be empty')
         else:
             pos = next((i for i, c in enumerate(value) if not c.isdigit()), len(value))
             self.value = int(value[:pos])

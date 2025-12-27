@@ -37,6 +37,7 @@ LOCKS_TIMEOUT = 5
 
 BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 APP_TITLE = "Pantra Web App"
+DEFAULT_RENDERER = 'pantra.components.render.renderer_html.RendererHTML'
 
 ENABLE_LOGGING = False
 ENABLE_WATCHDOG = False
