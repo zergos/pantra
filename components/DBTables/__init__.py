@@ -19,7 +19,7 @@ def get_table_by_name(session: Session, table_name: str, db_name: str) -> type[D
 
 
 def find_template(session: Session, table: type[DBTable], suffix: str) -> HTMLTemplate | None:
-    template = collect_template(session, f'{table.__qualname__}{suffix}')
+    template = collect_template(f'{table.__qualname__}{suffix}', session)
     if not template:
         for base in table.__bases__:
             if issubclass(base, DBTable):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import types
 import typing
 import ctypes
+import inspect
 
 if typing.TYPE_CHECKING:
     from typing import Self, Iterable, Optional, Callable, Generator, Any, Union
@@ -110,6 +111,13 @@ class UniNode:
             return str(self)
         return f'{self._parent.path()}/{self}'
 
+    @property
+    def root(self):
+        res = self
+        while res.parent:
+            res = res.parent
+        return res
+
     def select(self, predicate: Callable[[Self], bool], depth: int = None) -> Generator[Self]:
         for child in self._children:
             if predicate(child):  
@@ -142,49 +150,33 @@ class UniqueNode(UniNode):
         self.oid = gen_id(self)
         super().__init__(parent)
 
-
 class DynamicString(str):
     __slots__ = ['func', 'html']
 
     def __new__(cls, func: Callable[[], str] | str):
-        value = func() if isinstance(func, types.FunctionType) else func
-        instance = super().__new__(cls, value)
+        value = func() if callable(func) else func
         if isinstance(value, DynamicString):
-            instance.html = value.html
+            return value
+        instance = super().__new__(cls, value)
+        instance.func = func
+        instance.html = False
         return instance
 
-    def __init__(self, func: Callable[[], str] | str):
-        self.func: Callable[[], str] = func
-        if not hasattr(self, "html"):
-            self.html = False
-
-    def __call__(self, *args, **kwargs) -> Self:
+    def update(self) -> Self:
         return self.__class__(self.func)
 
-    def __add__(self, other):
-        if not other:
-            return self.__class__(self.func)
-        return self.__class__(str.__add__(self, " "+other))
-
-    def __getstate__(self):
-        return str(self)
-
-    def __setstate__(self, state):
-        self.func = lambda: state
-
-
 class DynamicHTML(DynamicString):
-    def __init__(self, func: Callable[[], str] | str):
-        super().__init__(func)
-        self.html = True
-
+    def __new__(cls, func):
+        instance = super().__new__(cls, func)
+        instance.html = True
+        return instance
 
 class DynamicValue:
     __slots__ = ['func', 'value']
 
     def __init__(self, func: Callable[[], Any]):
         self.func: Callable[[], Any] = func
-        self.value = func()
+        self.value = None
 
     def update(self):
         self.value = self.func()

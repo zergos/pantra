@@ -49,7 +49,7 @@ class ButtonCommand(typing.NamedTuple):
     command: str
     title: str
 
-button_commands: List[ButtonType] = []
+button_commands: List[ButtonCommand] = []
 
 def init():
     for btn in buttons.split(','):

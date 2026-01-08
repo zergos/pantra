@@ -69,7 +69,7 @@ async def get_media(request: web.Request):
             return web.Response(body=f'Directory `{app}` not found', status=404)
         search_path = config.ALLOWED_DIRS[app[1:]]
     elif app[0].isupper():
-        if (template:=collect_template(None, app)) is None:
+        if (template:=collect_template(app)) is None:
             return web.Response(body=f'`{app}` not found', status=404)
         search_path = template.filename.parent / config.STATIC_DIR
     else:

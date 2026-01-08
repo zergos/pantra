@@ -27,7 +27,7 @@ if typing.TYPE_CHECKING:
     from typing import Self, ClassVar, Optional, Any, Callable, Coroutine
     from pathlib import Path
 
-    from .components.context import Context, HTMLElement, AnyNode
+    from .components.context import Context, HTMLElement
     from .components.render.render_node import RenderNode
     from .workers.base import BaseWorkerServer
     from .trans.locale import Locale
@@ -47,7 +47,7 @@ class Session:
     server_worker: ClassVar[BaseWorkerServer | None] = None
 
     __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
-                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks']
+                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks', '_in_node']
 
     @classmethod
     async def run_server_worker(cls):
@@ -78,6 +78,7 @@ class Session:
 
         self.locale: Locale | None = None
         self.translations: Translations | None = None
+        self._in_node: RenderNode | None = None
         if not hasattr(self, "state"):
             self.state: ADict = ADict() # Session.states['browser_id']
             self.just_connected: bool = True
@@ -135,7 +136,18 @@ class Session:
             self.last_touch = datetime.now()
             await self.server_worker.listener.send(self.session_id, code)
 
+    def node_context(self, node: RenderNode):
+        class CtxClass:
+            def __enter__(self):
+                node.context.session._in_node = node
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                if exc_type is None:
+                    node.context.session._in_node = None
+        return CtxClass()
+
     def error(self, text: str):
+        if self._in_node is not None:
+            text = f'Error in: {self._in_node.path()}\n{text}'
         return self.send_message(Messages.error(text))
 
     @staticmethod
@@ -180,7 +192,7 @@ class Session:
             await self.send_message(Messages.update(created))
 
     def _collect_children(self, children: list[UniNode], lst: list[UniNode]):
-        for child in children:  # type: AnyNode
+        for child in children:  # type: RenderNode
             if not child:
                 continue
             if not child.render_this:

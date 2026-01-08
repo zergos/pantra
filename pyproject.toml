@@ -18,11 +18,12 @@ dependencies = [
     'aiofiles',
     'antlr4-python3-runtime==4.10',
     'cssutils==2.3.0',
-    'requests==2.31.0',
+    'requests>=2.31.0',
     'libsass==0.22.0',
     'Babel>=2.9.1',
     'watchdog>=2.1.6',
     'hsluv>=5.0.2',
+    'setuptools',
 ]
 requires-python = ">=3.10"
 dynamic = ["version", "readme"]

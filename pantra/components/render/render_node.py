@@ -5,13 +5,12 @@ import typing
 import logging
 
 from pantra.common import UniqueNode, ADict, typename
-from pantra.settings import config
 from ..template import collect_template
 
 if typing.TYPE_CHECKING:
     from typing import *
     from pantra.session import Session
-    from ..context import AnyNode, Context, HTMLElement, TextNode
+    from ..context import Context, HTMLElement, TextNode
     from ..template import MacroCode, HTMLTemplate
     from ..shot import ContextShot
 
@@ -21,26 +20,23 @@ RE_JS_VARS = re.compile(r"`?\{\{(.*?)}}`?")
 logger = logging.getLogger("pantra.system")
 
 class RenderNode(UniqueNode):
-    __slots__ = ['renderer', 'context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
+    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
 
-    def __init__(self: AnyNode, parent: Optional[AnyNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+    def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
-        self.renderer = config.DEFAULT_RENDERER(self)
         self.shot: ContextShot = shot or parent.shot
         self.session: Session = session or parent.session
         self.scope: ADict = ADict() if not parent else parent.scope
 
-        #if typename(self) == 'Context':
-        #    self.context: Context = self
-        #else:
         if parent:
+            # slot contents (as well as root contents) belongs to sub-context
             if typename(parent) == 'Context':
-                self.context = parent
+                self.context: Context = parent
             else:
-                self.context = parent.context
+                self.context: Context = parent.context
         else:
             self.context: Context = self
-            
+
         def get_first_macro(code_or_list: MacroCode | list[MacroCode]) -> MacroCode:
             return code_or_list[0] if type(code_or_list) is list else code_or_list
 
@@ -68,19 +64,11 @@ class RenderNode(UniqueNode):
     def add(self, tag_name: str, attributes: dict = None, text: str = None) -> HTMLElement | Context | None:
         from ..context import HTMLElement
         if tag_name[0].isupper():
-            node_template = collect_template(self.context.session, tag_name)
+            node_template = collect_template(tag_name, self.context.session)
             if not node_template: return None
             return self.context.render(node_template, self, locals=attributes)
         else:
             return HTMLElement(tag_name, self, attributes, text)
-
-    @property
-    def parent(self) -> Optional[AnyNode]: return None
-    del parent
-
-    @property
-    def children(self) -> List[AnyNode]: return []
-    del children
 
     @staticmethod
     def _cleanup_node(node):
@@ -101,7 +89,7 @@ class RenderNode(UniqueNode):
             child.empty()
         self.children.clear()
 
-    def remove(self, node: AnyNode=None):
+    def remove(self, node: Optional[RenderNode] = None):
         if node is not None:
             node.context._cleanup_node(node)
             super().remove(node)
@@ -126,14 +114,14 @@ class RenderNode(UniqueNode):
         self.empty()
         self.renderer.build()
 
-    def _clone(self, new_parent: AnyNode) -> Optional[HTMLElement, TextNode]:
+    def _clone(self, new_parent: RenderNode) -> Optional[HTMLElement, TextNode]:
         return None
 
-    def clone(self, new_parent: Optional[AnyNode] = None) -> Optional[HTMLElement, TextNode]:
+    def clone(self, new_parent: Optional[RenderNode] = None) -> Optional[HTMLElement, TextNode]:
         if new_parent is None:
             new_parent = self.context
 
-        clone: Optional[AnyNode] = self._clone(new_parent)
+        clone = self._clone(new_parent)
         if clone:
             for child in self.children:
                 sub = child.clone(clone)
@@ -141,7 +129,7 @@ class RenderNode(UniqueNode):
                     clone.append(sub)
         return clone
 
-    def select(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> Generator[AnyNode]:
+    def select(self, predicate: Union[str, Iterable[str], Callable[[RenderNode], bool]], depth: int = None) -> Generator[RenderNode]:
         if isinstance(predicate, str):
             yield from super().select(lambda node: str(node) == predicate, depth)
         elif isinstance(predicate, typing.Iterable):
@@ -149,7 +137,7 @@ class RenderNode(UniqueNode):
         else:
             yield from super().select(predicate, depth)
 
-    def contains(self, predicate: Union[str, Iterable[str], Callable[[AnyNode], bool]], depth: int = None) -> bool:
+    def contains(self, predicate: Union[str, Iterable[str], Callable[[RenderNode], bool]], depth: int = None) -> bool:
         return next(self.select(predicate, depth), None) is not None
 
     def set_scope(self, data: Union[Dict, str], value: Any = None):

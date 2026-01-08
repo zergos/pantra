@@ -6,12 +6,12 @@
         set:readonly
         spellcheck = "{spellcheck and '' or 'false'}"
         css:width
-        cols="{cols}"
-        rows="{rows}"
-        maxlength="{maxlength}"
+        cols="@cols"
+        rows="@rows"
+        maxlength="@maxlength"
         on:change="on_change"
     />
-    <help reuse not:render/>
+    <section reuse/>
 </Field>
 
 <python>

@@ -1,4 +1,4 @@
-<label class:inline class:block="{not inline}" class:required class:error="!{error}">
+<label class:inline class:block="{not inline}" class:required class:error="!@error">
     <span css:width="{caption_width}">{{caption}}</span>
     <input
             set:id
@@ -12,7 +12,7 @@
             spellcheck = "{spellcheck and '' or 'false'}"
     >
     <HelpMessage consume="help">
-        <help reuse/>
+        <section name="help" reuse/>
     </HelpMessage>
     <div class="message">!{{error}}</div>
 </label>

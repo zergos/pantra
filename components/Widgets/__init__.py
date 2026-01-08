@@ -15,7 +15,7 @@ from pantra.common import ADict, WebUnits
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from pantra.components.context import AnyNode
+    from pantra.components.render.render_node import RenderNode
     from quazy import UX
 
 
@@ -55,7 +55,7 @@ TEMPLATE_MAP = {
 }
 
 
-def make_widget(parent: AnyNode, ux: UX, value: Any = None, **kwargs) -> Optional[Context]:
+def make_widget(parent: RenderNode, ux: UX, value: Any = None, **kwargs) -> Optional[Context]:
     locals = ADict(
         caption=parent.session.gettext(ux.title),
         readonly=ux.readonly,
@@ -81,6 +81,6 @@ def make_widget(parent: AnyNode, ux: UX, value: Any = None, **kwargs) -> Optiona
         if not template:
             return None
     c = Context(template, parent, locals=locals)
-    c.render.build()
+    c.renderer.build()
     return c
 

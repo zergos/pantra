@@ -10,6 +10,6 @@ def make_dialog(ctx: Context, text: str, buttons: str = None, callback: Callable
         c['buttons'] = buttons
     if callback:
         c['callback'] = callback
-    c.render.build()
+    c.renderer.build()
     return c
 

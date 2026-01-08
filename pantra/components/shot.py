@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from queue import Queue
 
 if typing.TYPE_CHECKING:
-    from .context import AnyNode
+    from .render.render_node import RenderNode
 
 __all__ = ['ContextShot']
 
@@ -14,14 +14,14 @@ class ContextShot:
     __slots__ = ['created', 'updated', 'deleted', '_frozen', '_freeze_list', '_rebind']
 
     def __init__(self):
-        self.created: Queue[AnyNode] = Queue()
-        self.updated: Queue[AnyNode] = Queue()
+        self.created: Queue[RenderNode] = Queue()
+        self.updated: Queue[RenderNode] = Queue()
         self.deleted: Queue[int] = Queue()
         self._frozen = False
         self._rebind = False
         self._freeze_list = None
 
-    def pop(self) -> tuple[list[AnyNode], list[AnyNode], list[int]]:
+    def pop(self) -> tuple[list[RenderNode], list[RenderNode], list[int]]:
         deleted = []
         while not self.deleted.empty():
             deleted.append(self.deleted.get())

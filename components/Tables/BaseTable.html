@@ -186,7 +186,7 @@ col_styles: Optional[List[Dict[str, Any]]] = []
 
 order_col: Optional[str] = None
 order_dir: int = 0
-order_node: Optional[AnyNode] = None
+order_node: Optional[RenderNode] = None
 
 active_row_id: Optional[int] = None
 active_row: Optional[Dict[str, Any]] = None
@@ -227,7 +227,7 @@ def init():
                         setattr(col.info, opt, False)
                     elif opt in attrs:
                         setattr(col.info, opt, attrs[opt])
-                col.widget = collect_template(ctx.session, get_widget(col.info))
+                col.widget = collect_template(get_widget(col.info), ctx.session)
         col_styles, css = collect_col_styles(ctx, maps)
         if css:
             HTMLElement('style', ctx, text=css)

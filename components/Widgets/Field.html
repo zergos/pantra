@@ -1,20 +1,20 @@
-<label class:block class:required class:error="!{error}">
+<label class:block class:required class:error="!@error">
     {{#if block}}
-        <div class="cap" css:width="{caption_width}">{{caption}}
+        <div class="cap" css:width="@caption_width">{{caption}}
             <HelpMessage consume="help">
-                <help reuse/>
+                <section name="help" reuse/>
             </HelpMessage>
         </div>
         <slot/>
         <div class="message">!{{error}}</div>
     {{#else}}
         {{#if caption}}
-            <div class="cap" css:width="{caption_width}">{{caption}}</div>
+            <div class="cap" css:width="@caption_width">{{caption}}</div>
         {{/if}}
         <slot/>
         <div class="message">!{{error}}</div>
         <HelpMessage consume="help">
-            <help reuse/>
+            <section name="help" reuse/>
         </HelpMessage>
     {{/if}}
 </label>

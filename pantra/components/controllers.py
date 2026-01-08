@@ -10,7 +10,8 @@ from ..workers.decorators import thread_worker
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from .context import HTMLElement, AnyNode
+    from .context import HTMLElement
+    from .render.render_node import RenderNode
 
 __all__ = ['DragOptions', 'DragController']
 
@@ -81,7 +82,7 @@ class DragController(ABC):
 @thread_worker
 @trace_errors
 def process_drag_start(session: Session, method: str, oid: int, x: int, y: int, button: int):
-    node: AnyNode = get_node(oid)
+    node: RenderNode = get_node(oid)
     if node is None: return
 
     func = node[method]
@@ -104,7 +105,7 @@ def process_drag_stop(session: Session, x: int, y: int):
 
 
 @trace_errors
-def process_call(session: Session, node: AnyNode, method: str, *args):
+def process_call(session: Session, node: RenderNode, method: str, *args):
     for m in method.split(' '):
         if inspect.iscoroutinefunction(caller:=node[m]):
             session.server_worker.run_coroutine(node, caller, trace_errors_async(session, caller(*args)))

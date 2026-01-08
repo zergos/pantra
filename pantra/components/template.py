@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import typing
-from enum import IntEnum, auto
+from enum import Enum, IntEnum, auto
 from pathlib import Path
+import re
+from dataclasses import dataclass
 
 from pantra.common import UniNode, ADict
 from pantra.settings import config
@@ -12,10 +14,23 @@ if typing.TYPE_CHECKING:
     from types import CodeType
 
     from pantra.session import Session
+    from pantra.compiler import CodeMetrics
 
-__all__ = ['HTMLTemplate', 'MacroCode', 'collect_styles', 'collect_template', 'NodeType', 'AttrType']
+__all__ = ['HTMLTemplate', 'MacroCode', 'collect_styles', 'collect_template', 'NodeType', 'AttrType', 'MacroType']
 
 templates: dict[str, HTMLTemplate | None] = {}
+
+def is_expression_id(expr: str) -> str:
+    # check expression is field "name"
+    return is_expression_id.r.fullmatch(expr) is not None
+
+is_expression_id.r = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+")
+
+def is_expression_canonical(expr: str) -> bool:
+    # check expression is "some.field.name"
+    return is_expression_canonical.r.fullmatch(expr) is not None
+
+is_expression_canonical.r = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+([.][a-zA-Z_][a-zA-Z0-9_]+)+$")
 
 class NodeType(IntEnum):
     HTML_TAG = auto()
@@ -57,7 +72,7 @@ class NodeType(IntEnum):
         raise ValueError(f"Undetected TAG `{tag_name}`")
 
 class AttrType(IntEnum):
-    NO_SPECIAL = auto()
+    ATTR = auto()
     REF_NAME = auto()
     CREF_NAME = auto()
     SCOPE = auto()
@@ -128,18 +143,32 @@ class AttrType(IntEnum):
                 return AttrType.LOCALIZE, None
             if attr == 'consume':
                 return AttrType.CONSUME, None
-        return AttrType.NO_SPECIAL, None
+        return AttrType.ATTR, attr
 
+class MacroType(Enum):
+    STRING = auto()
+    TEMPLATE = auto()
+    BOOLEAN = auto()
+    VALUE = auto()
+    ITERATOR = auto()
+    INDEX = auto()
 
-class MacroCode(typing.NamedTuple):
+@dataclass(slots=True)
+class MacroCode:
+    type: MacroType
     reactive: bool
-    code: CodeType | None
+    code: CodeType | list[str] | None
     src: str
 
+    def __post_init__(self) -> None:
+        if is_expression_id(self.src):
+            self.code = [self.src]
+        elif is_expression_canonical(self.src):
+            self.code = self.src.split('.')
 
 class HTMLTemplate(UniNode):
     __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'text', 'macro', 'name', 'filename', 'code',
-                 'index', 'hex_digest')
+                 'index', 'hex_digest', 'code_metrics')
 
     def __init__(self, tag_name: str, index: int, parent: Self | None = None, attributes: dict | None = None, text: str = None):
         super().__init__(parent)
@@ -152,8 +181,18 @@ class HTMLTemplate(UniNode):
         self.name: str | None = None
         self.filename: Optional[Path] = None
         self.code: str | CodeType | None = None
+        self.code_metrics: Optional[CodeMetrics] = None
         self.index: int = index
         self.hex_digest: str = ''
+
+    def fold(self) -> Self:
+        res = HTMLTemplate('@component', 0, None)
+        res._parent = self
+        res._children = self._children
+        self._children = [res]
+        for child in res._children:
+            child._parent = res
+        return res
 
     def __str__(self):
         return self.tag_name
@@ -169,14 +208,16 @@ def _search_component(path: Path, name: str) -> Path | None:
     return None
 
 
-def collect_template(session: Optional[Session], name: str) -> typing.Optional[HTMLTemplate]:
+def collect_template(name: str, session: Optional[Session] = None, app: Optional[str] = None) -> Optional[HTMLTemplate]:
     global templates
 
-    key = session.app +  '/' + name
+    key = session.app +  '/' + name if session is not None else name
     if key in templates:
         return templates[key]
 
-    path = _search_component(session.app_path, name)
+    path = _search_component(session.app_path, name) if session is not None \
+        else _search_component(config.APPS_PATH / app, name) if app is not None \
+        else None
     if not path:
         if name in templates:
             templates[key] = templates[name]

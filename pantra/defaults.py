@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-import pkg_resources
+import importlib.util
 
 def get_proj_path():
     cwd = Path('.').absolute()
@@ -15,7 +15,7 @@ WEB_PATH = ''
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
 CSS_PATH = BASE_PATH
-JS_PATH = Path(pkg_resources.resource_filename('pantra', "js"))
+JS_PATH = Path(importlib.util.find_spec('pantra').origin).parent / 'js'
 APPS_PATH = BASE_PATH / 'apps'
 STATIC_DIR = 'static'
 ALLOWED_DIRS = {}

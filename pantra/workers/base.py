@@ -19,7 +19,7 @@ from ..patching import wipe_logger
 if typing.TYPE_CHECKING:
     from aiohttp import web
     from ..session import Session
-    from ..components.context import AnyNode
+    from ..components.render.render_node import RenderNode
 
 logger = logging.getLogger('pantra.system')
 
@@ -83,7 +83,7 @@ class BaseWorkerServer(ABC):
 
     @staticmethod
     @contextlib.contextmanager
-    def wrap_session_task(node: AnyNode, func: typing.Callable):
+    def wrap_session_task(node: RenderNode, func: typing.Callable):
         from ..session import SessionTask
         session = node.context.session
         func_name = f'{node.oid}#{func.__name__}'
@@ -93,7 +93,7 @@ class BaseWorkerServer(ABC):
             del session.tasks[func_name]
 
     @staticmethod
-    def run_coroutine(node: AnyNode, func: typing.Callable, coro: typing.Coroutine):
+    def run_coroutine(node: RenderNode, func: typing.Callable, coro: typing.Coroutine):
         from ..session import SessionTask
         session = node.context.session
         func_name = f'{node.oid}#{func.__name__}'

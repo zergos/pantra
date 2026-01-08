@@ -4,14 +4,14 @@
     <input type="checkbox"
            bind:value
            set:required
-           set:disabled = "{readonly}"
+           set:disabled = "@readonly"
            class:error
            on:change="on_change"
     >
     <span>{{caption}}</span>
 </label>
     <HelpMessage consume="help">
-        <help reuse/>
+        <section name="help" reuse/>
     </HelpMessage>
 </div>
 

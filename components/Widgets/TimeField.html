@@ -11,8 +11,6 @@ value: time = time(0, 0, 1)
 def parse_input(node):
     global value
     value = refs.time.value
-    value = datetime.utcfromtimestamp(value/1000).time() if value else time()
-    refs.time['value'] = value
     ctx.call('on_change', ctx)
 
 </python>

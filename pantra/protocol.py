@@ -11,7 +11,8 @@ from .workers.decorators import thread_worker
 
 if TYPE_CHECKING:
     from .session import Session
-    from .components.context import Context, AnyNode
+    from .components.context import Context
+    from .components.render.render_node import RenderNode
 
 logger = logging.getLogger('pantra.system')
 
@@ -134,7 +135,7 @@ class Messages:
         return Messages.CommandArg(m="d", l=indices)
 
     @staticmethod
-    def update(items: list[AnyNode]):
+    def update(items: list[RenderNode]):
         return Messages.CommandArg(m="u", l=items)
 
     @staticmethod

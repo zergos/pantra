@@ -1,18 +1,18 @@
 <GridR fullscreen fixed_header>
-    <header>
+    <section name="header">
         <h1>System configuration</h1>
         <Taskbar ref:taskbar/>
-    </header>
-    <leftcol>
+    </section>
+    <section name="leftcol">
         <SideMenu>
             <MenuItem caption="Users" action="@edit_users"/>
             <MenuItem caption="Apps"/>
             <MenuItem caption="Test" action="@test"/>
         </SideMenu>
-    </leftcol>
-    <main>
+    </section>
+    <section name="main">
         <div class="main" ref:main on:render="bind_to_taskbar"/>
-    </main>
+    </section>
 </GridR>
 
 <style>

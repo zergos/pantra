@@ -4,7 +4,8 @@ from ..common import ADict, typename
 from .controllers import process_call
 
 if typing.TYPE_CHECKING:
-    from ..components.context import Context, AnyNode
+    from .context import Context
+    from .render.render_node import RenderNode
     from typing import *
 
 
@@ -46,7 +47,7 @@ class WatchDict(ADict):
 
 
 class WatchDictActive(WatchDict):
-    def start_record(self, node: AnyNode):
+    def start_record(self, node: RenderNode):
         self._node = node
 
     def stop_record(self):

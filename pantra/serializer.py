@@ -3,12 +3,13 @@ from datetime import date, time, datetime, timezone
 
 from .contrib import bsdf_lite as bsdf
 from .common import DynamicString
-from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, AnyNode, ConditionNode, LoopNode
+from .components.render.render_node import RenderNode
+from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, ConditionNode, LoopNode
 
 __all__ = ['serializer']
 
 
-def get_parent_oid(node: AnyNode) -> typing.Optional[int]:
+def get_parent_oid(node: RenderNode) -> typing.Optional[int]:
     parent = node.parent
     while parent and not parent.render_this:
         parent = parent.parent
@@ -27,7 +28,7 @@ class HTMLElementSerializer(bsdf.Extension):
             'i': v.oid,
             'p': get_parent_oid(v),
             'a': v.attributes,
-            'C': v.classes + v.con_classes.cache,
+            'C': v.classes + str(v.con_classes),
             's': str(v.style),
             'f': v._set_focus,
             'l': v.localize,

@@ -16,7 +16,7 @@ from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
 from pantra.settings import config
-from .template import HTMLTemplate, MacroCode
+from .template import HTMLTemplate, MacroCode, MacroType
 from .static import get_static_url
 
 __all__ = ['load', 'load_styles']
@@ -88,18 +88,23 @@ class HTMLVisitor(PMLParserVisitor):
         text = ctx.getText().strip('"\'')
         if text == '{}':
             value = '{}'
-        elif (text.startswith('{') or text.startswith('!{')) and text.endswith('}'):
-            reactive = text[0] == '{'
-            text = text[text.index('{') + 1:-1]
-            if not self.cur_attr.startswith('set:'):
-                value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+        elif ((text.startswith('{') or text.startswith('!{')) and text.endswith('}')
+              or text.startswith('@') or text.startswith('!@')):
+            if reactive := text[0] == '!':
+                text = text[1:]
+            if text.startswith('{'):
+                text = text[1:-1]
             else:
-                text = f"({text} or '')"
-                value = MacroCode(reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+                text = text[1:]
+            if not self.cur_attr.startswith('set:'):
+                value = MacroCode(MacroType.VALUE, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+            else:
+                value = MacroCode(MacroType.STRING, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
         elif FORMATTED_EXPRESSION.search(text):
-            reactive = '`!{' in text or ' !{' in text
-            text = text.replace('!{', '{').replace('`{', '{').replace('}`', '}')
-            value = MacroCode(reactive, compile(f'f"{text}"', f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+            reactive = text[0] == '!'
+            text = text.replace('`{', '{').replace('}`', '}')
+            text = f'f"{text}"'
+            value = MacroCode(MacroType.TEMPLATE, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
         else:
             value = text
         self.current.set_attr(self.cur_attr, value)
@@ -128,21 +133,18 @@ class HTMLVisitor(PMLParserVisitor):
         command = ctx.children[1].getText()
 
         macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
-        macro = None
         if not macro_chunks:
             tag_name = command.strip()
             text = ''
         else:
             tag_name = macro_chunks.group(1).strip()
             text = macro_chunks.group(2).strip()
-            if tag_name not in ('for', 'set'):
-                macro = MacroCode(reactive, compile(text, f"<{tag_name}>", "eval"), text)
 
         # gen 'if' subtree
         if tag_name == 'if':
             parent = HTMLTemplate('#if', self.index, self.current)
             self.current = HTMLTemplate('#choice', self.index, parent=parent)
-            self.current.macro = macro
+            self.current.macro = MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{tag_name}>", "eval"), text)
         elif tag_name == 'for':
             parent = HTMLTemplate('#for', self.index, self.current)
             sides = text.split('#')
@@ -152,11 +154,15 @@ class HTMLVisitor(PMLParserVisitor):
             index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
 
             self.current = HTMLTemplate('#loop', self.index, parent=parent)
-            self.current.macro = [MacroCode(reactive, iterator, sides[0]), MacroCode(reactive, index_func, sides[1] if len(sides)>1 else None)]
+            self.current.macro = [MacroCode(MacroType.ITERATOR, reactive, iterator, chunks[1])]
+            if len(sides)>1:
+                self.current.macro.append(MacroCode(MacroType.INDEX, reactive, index_func, sides[1]))
+            else:
+                self.current.macro.append(None)
             self.current.text = var_name
         elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
-            self.current.macro = macro
+            self.current.macro = MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{tag_name}>", "eval"), text)
         elif tag_name == 'else':
             self.current = HTMLTemplate('#else', self.index, parent=self.current.parent)
         elif tag_name == 'set':
@@ -166,7 +172,7 @@ class HTMLVisitor(PMLParserVisitor):
                 raise IllegalStateException("set command should contains `:=` marker")
             var_name = chunks[0].strip()
             expr = compile(chunks[1].strip(), f"<{self.current.path()}>", "eval")
-            self.current.macro = MacroCode(reactive, expr, chunks[1].strip())
+            self.current.macro = MacroCode(MacroType.VALUE, reactive, expr, chunks[1].strip())
             self.current.text = var_name
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
@@ -183,7 +189,7 @@ class HTMLVisitor(PMLParserVisitor):
         macro = HTMLTemplate('@macro', self.index, parent=self.current)
         text = ctx.children[1].getText()
         code = compile(text, f'<{self.current}:macro>', 'eval')
-        macro.macro = MacroCode(ctx.children[0].getText().startswith('!'), code, text)
+        macro.macro = MacroCode(MacroType.VALUE, ctx.children[0].getText().startswith('!'), code, text)
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')

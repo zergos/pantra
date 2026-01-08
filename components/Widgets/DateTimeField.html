@@ -12,8 +12,7 @@ value: datetime = datetime.fromordinal(1)
 def parse_input(node):
     global value
     d = refs.date.value
-    t = datetime.utcfromtimestamp(refs.time.value/1000).time() if refs.time.value else time()
-    refs.time['value'] = t
+    t = refs.time.value or time()
     value = datetime.combine(d, t)
     ctx.call('on_change', ctx)
 
