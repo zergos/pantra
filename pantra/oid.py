@@ -5,10 +5,11 @@ from itertools import count
 import weakref
 
 if typing.TYPE_CHECKING:
+    from pantra.common import UniqueNode
     from pantra.components.render.render_node import RenderNode
 
 
-def gen_id(obj: RenderNode) -> int:
+def gen_id(obj: UniqueNode) -> int:
     idx = next(gen_id.counter)
     get_node.oids[idx] = obj
     return idx

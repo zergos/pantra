@@ -32,6 +32,7 @@ class Config:
     SESSION_TTL: int
     MAX_MESSAGE_SIZE: int
     LOCKS_TIMEOUT: int
+    SHOTS_PER_SECOND: int
 
     BOOTSTRAP_FILENAME: Path
     APP_TITLE: str

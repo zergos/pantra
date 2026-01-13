@@ -6,13 +6,12 @@ from .settings import config
 
 if typing.TYPE_CHECKING:
     import logging
-    from pantra.common import ADict
     from pantra.components.context import Context, HTMLElement, ActionType
     from pantra.components.render.render_node import RenderNode
     from pantra.session import Session
     from typing import *
 
-    refs: ADict[Context | RenderNode]
+    refs: dict[str, Context | HTMLElement | Any]
     ctx: Context
     session: Session
     logger: logging.Logger
@@ -21,7 +20,7 @@ if typing.TYPE_CHECKING:
 
     def _(message: str, *, plural: str = None, n: int = None, ctx: str = None, many: bool = False): ...
 
-    __all__ = ['ADict', 'Context', 'HTMLElement', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'RenderNode',
+    __all__ = ['Context', 'HTMLElement', 'Session', 'refs', 'ctx', 'session', 'Locals', '_', 'RenderNode',
                'Any', 'Callable', 'ClassVar', 'Generic', 'Optional', 'Tuple', 'Type', 'TypeVar', 'Union', 'AbstractSet',
                'ByteString', 'Container', 'ContextManager', 'Hashable', 'ItemsView', 'Iterable', 'Iterator', 'KeysView',
                'Mapping', 'MappingView', 'MutableMapping', 'MutableSequence', 'MutableSet', 'Sequence', 'Sized',

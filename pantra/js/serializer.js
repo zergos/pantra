@@ -146,7 +146,8 @@ const StubElementSerializer = {
             
             OID.set(element, v.i);
             parent.appendChild(element);
-        }
+        } if (v['#'])
+            rebindNode(v, element);
     }
 };
 

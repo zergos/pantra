@@ -33,8 +33,8 @@ lookup_list: List = []
 def fill_value(node):
     if value is None:
         return
-    refs.input['value'] = item_to_text(value)
-    refs.input.update_tree()
+    refs['input']['value'] = item_to_text(value)
+    refs['input'].update_tree()
     ctx.call('on_change', ctx)
 
 

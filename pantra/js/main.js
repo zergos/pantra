@@ -37,8 +37,7 @@ function start(newLocalId, newTabId, cacheId, webPath) {
 
 function sendMessage(message) {
     if (["REFRESH","CLICK","CHANGE","SELECT"].includes(message.C)) {
-        document.getElementById('progress-spinner-animation').beginElement();
-        document.getElementById('progress-spinner').style.display = 'block';
+        showSpinner();
     }
 
     wsConnection.send(serializer.encode(message));

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import types
 import typing
 import ctypes
-import inspect
 
 if typing.TYPE_CHECKING:
-    from typing import Self, Iterable, Optional, Callable, Generator, Any, Union
+    from typing import *
 
-__all__ = ['typename', 'ADict', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
-           'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue', 'raise_exception_in_thread']
+__all__ = ['typename', 'UniNode', 'UniqueNode', 'DynamicString', 'DynamicClasses', 'DynamicStyles', 'WebUnits',
+           'EmptyCaller', 'define_getter', 'define_setter', 'DynamicValue', 'raise_exception_in_thread',
+           'DynamicHTML']
 
 from .oid import gen_id
 
@@ -17,52 +16,16 @@ from .oid import gen_id
 def typename(t):
     return type(t).__name__
 
-
 ValueT = typing.TypeVar('ValueT')
-
-class ADict(typing.Generic[ValueT], dict[str, ValueT]):
-    __setattr__ = dict.__setitem__  
-    __delattr__ = dict.__delitem__
-
-    def __getitem__(self, item: str) -> ValueT: ...
-    del __getitem__
-
-    def __getattr__(self, item: str) -> ValueT:
-        try:
-            return self[item]
-        except KeyError:
-            raise AttributeError
-
-    def __or__(self, other: ADict) -> Self:
-        res = self.__class__(self)
-        res.update(other)
-        return res
-
-    def __sub__(self, other: Iterable) -> Self:
-        res = self.__class__(self)
-        for k in other:
-            if k in res:
-                del res[k]
-        return res
-
-    def __truediv__(self, other: Iterable) -> tuple[Self, Self]:
-        res = self.__class__(self)
-        res2 = self.__class__()
-        for k in other:
-            if k in res:
-                res2[k] = res[k]
-                del res[k]
-        return res, res2
-
 
 class UniNode:
     __slots__ = ['_children', '_parent']
 
-    def __init__(self, parent: Optional[UniNode] = None):
-        self._parent: UniNode | None = parent
+    def __init__(self, parent: Optional[Self] = None):
+        self._parent: Self | None = parent
         if parent:
             parent.append(self)
-        self._children: list[UniNode] = []
+        self._children: list[Self] = []
 
     @property
     def parent(self) -> Self:
@@ -80,10 +43,10 @@ class UniNode:
     def children(self) -> list[Self]:
         return self._children  
 
-    def append(self, node: UniNode):
+    def append(self, node: Self):
         self._children.append(node)
 
-    def remove(self, node: UniNode):
+    def remove(self, node: Self):
         node.parent = None
 
     def clear(self):
@@ -92,12 +55,17 @@ class UniNode:
     def index(self):
         return self._parent._children.index(self)
 
-    def move(self, from_i: int, to_i: int):
+    def move_child(self, from_i: int, to_i: int):
         if from_i == to_i:
             return
         self._children.insert(to_i, self._children.pop(from_i))
 
-    def __contains__(self, item: UniNode):
+    def move(self, to_i: int):
+        if not self._parent:
+            return
+        self._parent.move_child(self.index(), to_i)
+
+    def __contains__(self, item: Self):
         return item in self._children
 
     def __getitem__(self, item: int) -> Self:
@@ -176,7 +144,7 @@ class DynamicValue:
 
     def __init__(self, func: Callable[[], Any]):
         self.func: Callable[[], Any] = func
-        self.value = None
+        self.value = func()
 
     def update(self):
         self.value = self.func()
@@ -213,7 +181,8 @@ class DynamicClasses(str):
             return self + other
 
 
-class DynamicStyles(ADict[str]):
+class DynamicStyles(dict[str, typing.Union[str, int, 'WebUnits']]):
+    __slots__ = []
     def __init__(self, style: dict | str | None = None):
         if style:
             if isinstance(style, dict):
@@ -228,18 +197,7 @@ class DynamicStyles(ADict[str]):
             super().__init__()
 
     def __str__(self):
-        return ';'.join(f'{k.replace("_","-")}: {v}' for k, v in self.items() if v not in ('', None))
-
-    def __enter__(self):
-        return self.copy()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    def __sub__(self, other):
-        if other in self:
-            del self[other]
-        return self
+        return ';'.join(f'{k}: {v}' for k, v in self.items())
 
 
 class WebUnits(str):
@@ -263,18 +221,23 @@ class WebUnits(str):
             self.unit = value[pos:]
 
     def __add__(self, other: int | float):
+        if not other: return self
         return WebUnits(self.value + other, self.unit)
 
     def __sub__(self, other: int | float):
+        if not other: return self
         return WebUnits(self.value - other, self.unit)
 
     def __mul__(self, other):
+        if other == 1: return self
         return WebUnits(self.value * other, self.unit)
 
     def __truediv__(self, other):
+        if other == 1: return self
         return WebUnits(self.value / other, self.unit)
 
     def __floordiv__(self, other):
+        if other == 1: return self
         return WebUnits(self.value // other, self.unit)
 
     def __neg__(self):

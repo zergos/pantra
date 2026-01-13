@@ -10,7 +10,7 @@ value: time = time(0, 0, 1)
 
 def parse_input(node):
     global value
-    value = refs.time.value
+    value = refs['time']['value']
     ctx.call('on_change', ctx)
 
 </python>

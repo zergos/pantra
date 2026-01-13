@@ -69,7 +69,7 @@ async def process_message(session: Session, data: dict):
 
     elif command == 'M':
         logger.debug(f"[M]etrics received for <{get_node(data['oid'])}:{data['oid']}>")
-        HTMLElement._set_metrics(data['oid'], data)
+        HTMLElement._set_metrics(data['oid'], data['box'])
 
     elif command == 'V':
         logger.debug(f"[V]alue received for <{get_node(data['oid'])}:{data['oid']}>")
@@ -123,7 +123,7 @@ class Messages:
         return Messages.CommandArg(m="e", l=text)
 
     @staticmethod
-    def noop():
+    def task_done():
         return Messages.Command(m="0")
 
     @staticmethod
@@ -173,4 +173,3 @@ class Messages:
     @staticmethod
     def keys_on():
         return Messages.Command(m="kon")
-

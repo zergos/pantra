@@ -1,5 +1,9 @@
 function process_message(obj) {
     switch (obj.m) {
+        case '0':
+            hideSpinner();
+            break;
+
         case 'u':
             //root_node().style.visibility = 'visible';
             break;
@@ -101,7 +105,7 @@ function process_message(obj) {
             keyEventsDisabled = false;
             break;
     }
-    document.getElementById('progress-spinner').style.display = 'none';
+
 }
 
 let Messages = {
@@ -121,10 +125,12 @@ let Messages = {
         return {
                 C: 'M',
                 oid: oid,
-                x: Math.round(rect.left),
-                y: Math.round(rect.top),
-                w: Math.round(rect.width),
-                h: Math.round(rect.height)
+                box:[
+                    Math.round(rect.left),
+                    Math.round(rect.top),
+                    Math.round(rect.width),
+                    Math.round(rect.height)
+                    ]
             }
     },
     validity: (oid, validity) => { return {C: 'VALID', oid: oid, validity: validity} },

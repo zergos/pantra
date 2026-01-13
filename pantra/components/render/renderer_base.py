@@ -4,7 +4,7 @@ import typing
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
-from pantra.common import DynamicString, DynamicValue
+from pantra.common import DynamicString, DynamicValue, typename
 from pantra.compiler import ContextInitFailed
 from ..template import MacroCode, MacroType
 
@@ -19,50 +19,40 @@ StrOrCode = str | MacroCode | None
 __all__ = ['RendererBase', 'StrOrCode']
 
 class RendererBase(ABC):
-    __slots__ = ['ctx', 'in_builder']
+    __slots__ = ['ctx']
 
     def __init__(self, ctx: Context):
         self.ctx: Context = ctx
-        self.in_builder: bool = False
 
     def __call__(self, template: str | HTMLTemplate, parent: RenderNode = None, locals: dict = None, build: bool = True):
         return self.render(template, parent, locals, build)
 
-    @contextmanager
-    def builder_context(self):
-        self.in_builder = True
-        yield
-        self.in_builder = False
-
     def build(self):
         try:
-            with self.builder_context():
-                self.build_node(self.ctx.template, self.ctx)
+            self.build_node(self.ctx.template, self.ctx)
         except ContextInitFailed:
             self.ctx.remove()
-
-    def eval_value(self, macro: MacroCode, node: RenderNode, bind_ctx: Context = None):
-        ctx = bind_ctx or self.ctx
-        if type(macro.code) == list:
-            if len(macro.code) == 1:
-                return ctx.locals[macro.code[0]]
-            value = ctx.locals
-            for chunk in macro.code:
-                value = getattr(value, chunk)
-            return value
-        else:
-            return eval(macro.code, {'ctx': ctx, 'this': node}, ctx.locals)
 
     def trace_eval(self, macro: MacroCode, node: RenderNode, bind_ctx: Context = None):
         ctx = bind_ctx or self.ctx
         with ctx.session.node_context(node):
-            if self.in_builder and macro.reactive:
-                with ctx.record_reactions(node):
-                    return self.eval_value(macro, node, ctx)
+            if type(macro.code) == list:
+                var_name = macro.code[0]
+                if len(macro.code) == 1:
+                    return ctx.locals[var_name]
+                if var_name == 'ctx':
+                    value = ctx
+                elif var_name == 'this':
+                    value = node
+                else:
+                    value = ctx.locals[var_name]
+                for chunk in macro.code[1:]:
+                    value = getattr(value, chunk)
+                return value
             else:
-                return self.eval_value(macro, node, ctx)
+                return eval(macro.code, {'ctx': ctx, 'this': node}, ctx.locals)
 
-    def translate(self, s):
+    def translate(self, s: str) -> str:
         if s.startswith('\\'):
             return s[1:]
         if s.startswith('#'):
@@ -76,6 +66,8 @@ class RendererBase(ABC):
                 return ctx[source[1:]]
             return self.translate(source)
         if type(source) is MacroCode:
+            if source.reactive:
+                ctx.locals.register_reactions(source.vars, node)
             value = self.trace_eval(source, node, ctx)
             if source.type == MacroType.STRING:
                 return value or ''
@@ -87,6 +79,8 @@ class RendererBase(ABC):
         if isinstance(source, str):
             return lambda: ctx[source]
         if type(source) is MacroCode:
+            if source.reactive:
+                ctx.locals.register_reactions(source.vars, node)
             if source.type == MacroType.STRING:
                 return lambda: self.trace_eval(source, node, ctx) or ''
             else:
@@ -108,28 +102,6 @@ class RendererBase(ABC):
             return DynamicString(self.build_func(source, node))
         return self.translate(source)
 
-    """
-    def eval_string(self, source: StrOrCode, node: RenderNode) -> Any:
-        if type(source) is MacroCode:
-            return self.trace_eval(source, node)
-        return source
-
-    def eval_string_i10n(self, source: StrOrCode, node: RenderNode) -> Any:
-        if source is None:
-            return None
-
-        if type(source) is MacroCode:
-            return self.trace_eval(source, node)
-        return self.translate(source)
-
-    def build_func_or_local(self, source: StrOrCode, node: RenderNode, default: Any = None) -> Callable[[], Any]:
-        if type(source) is MacroCode:
-            return self.build_func(source, node)
-        else:
-            ctx = self.ctx
-            return lambda: ctx.locals.get(source, default)
-    """
-
     @abstractmethod
     def process_special_attribute_html(self, attr: tuple[AttrType, str | None], value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
         ...
@@ -141,13 +113,6 @@ class RendererBase(ABC):
     @abstractmethod
     def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode] = None) -> Optional[RenderNode]:
         ...
-
-    def rebind(self, node: RenderNode):
-        if node.render_this:
-            self.ctx.shot(node)
-        else:
-            for child in node.children:
-                self.rebind(child)
 
     def update_children(self, node: RenderNode):
         for child in node.children:  # type: RenderNode

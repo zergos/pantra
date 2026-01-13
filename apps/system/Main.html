@@ -30,17 +30,17 @@ def init():
     session.set_title('System configuration')
 
 def bind_to_taskbar(node):
-    refs.taskbar["render_to"] = node
+    refs['taskbar']["render_to"] = node
 
 def edit_users(node):
-    window, new = refs.taskbar['add_window']('Users', 'Users')
+    window, new = refs['taskbar']['add_window']('Users', 'Users')
     if new:
         c = Context('UserList', window)
         c.render.build()
 
 def test(node):
     for i in range(20):
-        view, new = refs.taskbar['add_window'](f'Window{i}', f'Window {i}')
+        view, new = refs['taskbar']['add_window'](f'Window{i}', f'Window {i}')
         HTMLElement('h1', view, text=f'Hello {i}!')
 
 </python>

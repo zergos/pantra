@@ -83,7 +83,7 @@ from pantra.ctx import *
 
 title: str = ''
 active: str = ''
-render_to: str = ''
+render_to: HTMLElement | None = None
 
 windows: Dict[str, 'Window'] = {}
 nodes: List[Context] = []
@@ -101,8 +101,8 @@ def init():
 
 def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLElement, bool]:
     if code not in windows:
-        bar = HTMLElement('div', refs.bars, {'on:click': 'click_bar'}, wintitle)
-        bar.data.code = code
+        bar = HTMLElement('div', refs['bars'], {'on:click': 'click_bar'}, wintitle)
+        bar.data['code'] = code
         color = random.randint(80, 300)
         bar.style.background = hsluv.hsluv_to_hex([color, 80, 80])
         bar.style.color = hsluv.hsluv_to_hex([color, 100, 20])
@@ -113,7 +113,7 @@ def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLEl
             if caller:
                 view.set_scope('caller', caller)
 
-        refs.bars.update_tree()
+        refs['bars'].update_tree()
         new = True
     else:
         new = False
@@ -164,6 +164,6 @@ def close(node=None):
     if windows[current].view:
         windows[current].view.remove()
     del windows[current]
-    refs.bars.update(True)
+    refs['bars'].update(True)
 
 </python>

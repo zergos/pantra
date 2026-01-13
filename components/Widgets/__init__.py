@@ -11,7 +11,7 @@ except ImportError:
     from pantra.models.db_types import *
 
 from pantra.components.context import Context
-from pantra.common import ADict, WebUnits
+from pantra.common import WebUnits
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -23,19 +23,6 @@ class DBFieldType(enum.Enum):
     CATALOG = enum.auto()
     DOCUMENT = enum.auto()
     OTHER = enum.auto()
-
-
-class ValuesDict(ADict):
-    def __getattr__(self, item):
-        if item[0] == '_':
-            return super().__getattr__(item)
-        return self[item]['value']
-
-    def __setattr__(self, key, value):
-        if key[0] == '_':
-            super().__setattr__(key, value)
-        else:
-            self[key]['value'] = value
 
 
 TEMPLATE_MAP = {
@@ -56,7 +43,7 @@ TEMPLATE_MAP = {
 
 
 def make_widget(parent: RenderNode, ux: UX, value: Any = None, **kwargs) -> Optional[Context]:
-    locals = ADict(
+    locals = dict(
         caption=parent.session.gettext(ux.title),
         readonly=ux.readonly,
         required=not ux.blank,

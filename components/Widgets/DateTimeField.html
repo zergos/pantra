@@ -11,8 +11,8 @@ value: datetime = datetime.fromordinal(1)
 
 def parse_input(node):
     global value
-    d = refs.date.value
-    t = refs.time.value or time()
+    d = refs['date']['value']
+    t = refs['time']['value'] or time()
     value = datetime.combine(d, t)
     ctx.call('on_change', ctx)
 

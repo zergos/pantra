@@ -6,6 +6,7 @@
 	"serializer.js",
 	"events.js",
 	"ws_client.js",
+    "spinner.js",
 	"protocol.js",
 	"main.js"
 ]

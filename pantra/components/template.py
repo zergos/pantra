@@ -5,8 +5,9 @@ from enum import Enum, IntEnum, auto
 from pathlib import Path
 import re
 from dataclasses import dataclass
+import ast
 
-from pantra.common import UniNode, ADict
+from pantra.common import UniNode
 from pantra.settings import config
 
 if typing.TYPE_CHECKING:
@@ -28,7 +29,8 @@ is_expression_id.r = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+")
 
 def is_expression_canonical(expr: str) -> bool:
     # check expression is "some.field.name"
-    return is_expression_canonical.r.fullmatch(expr) is not None
+    return (is_expression_canonical.r.fullmatch(expr) is not None
+        and not expr.startswith("this") and not expr.startswith("node"))
 
 is_expression_canonical.r = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+([.][a-zA-Z_][a-zA-Z0-9_]+)+$")
 
@@ -92,58 +94,61 @@ class AttrType(IntEnum):
     LOCALIZE = auto()
     SET_FALSE = auto()
     CONSUME = auto()
+    DATA_NODE = auto()
 
     @staticmethod
-    def detect(attr: str) -> tuple[AttrType, str | None]:
+    def detect(attr: str) -> tuple[AttrType, str | None, bool]:
         if ':' in attr:
             if attr.startswith('ref:'):
                 name = attr.split(':')[1].strip()
-                return AttrType.REF_NAME, name
+                return AttrType.REF_NAME, name, False
             if attr.startswith('cref:'):
                 name = attr.split(':')[1].strip()
-                return AttrType.CREF_NAME, name
+                return AttrType.CREF_NAME, name, False
             if attr.startswith('scope:'):
                 name = attr.split(':')[1].strip()
-                return AttrType.SCOPE, name
+                return AttrType.SCOPE, name, False
             if attr == 'on:render':
-                return AttrType.ON_RENDER, None
+                return AttrType.ON_RENDER, None, False
             if attr == 'on:init':
-                return AttrType.ON_INIT, None
+                return AttrType.ON_INIT, None, False
             if attr.startswith('class:'):
                 cls = attr.split(':')[1].strip()
-                return AttrType.CLASS_SWITCH, cls
+                return AttrType.CLASS_SWITCH, cls, True
             if attr.startswith('css:'):
                 attr = attr.split(':')[1].strip()
-                return AttrType.DYNAMIC_STYLE, attr
+                return AttrType.DYNAMIC_STYLE, attr, True
             if attr == 'bind:value':
-                return AttrType.BIND_VALUE, None
+                return AttrType.BIND_VALUE, None, False
             if attr.startswith('set:'):
                 attr = attr.split(':')[1].strip()
-                return AttrType.SET_FALSE, attr
+                return AttrType.SET_FALSE, attr, True
             if attr.startswith('data:'):
                 attr = attr.split(':')[1].strip()
-                return AttrType.DATA, attr
+                return AttrType.DATA, attr, False
             if attr.startswith('src:') or attr.startswith('href:'):
-                return AttrType.SRC_HREF, attr
+                return AttrType.SRC_HREF, attr, False
             if attr.startswith('not:'):
                 attr = attr.split(':')[1].strip()
-                return AttrType.SET_FALSE, attr
+                return AttrType.SET_FALSE, attr, True
         else:
             if attr == 'reactive':
-                return AttrType.REACTIVE, None
+                return AttrType.REACTIVE, None, False
             if attr == 'style':
-                return AttrType.STYLE, None
+                return AttrType.STYLE, None, False
             if attr == 'class':
-                return AttrType.CLASS, None
+                return AttrType.CLASS, None, False
             if attr == 'type':
-                return AttrType.TYPE, None
+                return AttrType.TYPE, None, False
             if attr == 'value':
-                return AttrType.VALUE, None
+                return AttrType.VALUE, None, False
             if attr == 'localize':
-                return AttrType.LOCALIZE, None
+                return AttrType.LOCALIZE, None, False
             if attr == 'consume':
-                return AttrType.CONSUME, None
-        return AttrType.ATTR, attr
+                return AttrType.CONSUME, None, False
+            if attr == 'data-node':
+                return AttrType.DATA_NODE, None, False
+        return AttrType.ATTR, attr, False
 
 class MacroType(Enum):
     STRING = auto()
@@ -153,31 +158,41 @@ class MacroType(Enum):
     ITERATOR = auto()
     INDEX = auto()
 
+class AstNamesVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.vars = set()
+    def visit_Name(self, node):
+        self.vars.add(node.id)
+
 @dataclass(slots=True)
 class MacroCode:
     type: MacroType
     reactive: bool
     code: CodeType | list[str] | None
     src: str
+    vars: set[str] = None
 
     def __post_init__(self) -> None:
+        visitor = AstNamesVisitor()
+        visitor.visit(ast.parse(self.src))
+        self.vars = visitor.vars
+
         if is_expression_id(self.src):
             self.code = [self.src]
         elif is_expression_canonical(self.src):
             self.code = self.src.split('.')
 
 class HTMLTemplate(UniNode):
-    __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'text', 'macro', 'name', 'filename', 'code',
+    __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'content', 'name', 'filename', 'code',
                  'index', 'hex_digest', 'code_metrics')
 
     def __init__(self, tag_name: str, index: int, parent: Self | None = None, attributes: dict | None = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
         self.node_type: NodeType = NodeType.detect(tag_name)
-        self.attributes: dict[str, str | MacroCode | None] = attributes and ADict(attributes) or ADict()
-        self.attr_specs: dict[str, tuple[AttrType, str | None]] = {k: AttrType.detect(k) for k in self.attributes}
-        self.text: str = text
-        self.macro: MacroCode | list[MacroCode] | None = None
+        self.attributes: dict[str, str | MacroCode | None] = attributes or {}
+        self.attr_specs: dict[str, tuple[AttrType, str | None, bool]] = {k: AttrType.detect(k) for k in self.attributes}
+        self.content: str | MacroCode | None = text
         self.name: str | None = None
         self.filename: Optional[Path] = None
         self.code: str | CodeType | None = None

@@ -4,7 +4,7 @@ import re
 import typing
 import logging
 
-from pantra.common import UniqueNode, ADict, typename
+from pantra.common import UniqueNode, typename
 from ..template import collect_template
 
 if typing.TYPE_CHECKING:
@@ -20,13 +20,16 @@ RE_JS_VARS = re.compile(r"`?\{\{(.*?)}}`?")
 logger = logging.getLogger("pantra.system")
 
 class RenderNode(UniqueNode):
-    __slots__ = ['context', 'shot', 'session', 'render_this', 'name', 'scope', '_rebind']
+    render_this: ClassVar[bool] = False
+    render_if_necessary: ClassVar[bool] = False
 
-    def __init__(self, parent: Optional[RenderNode], render_this: bool = False, shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+    __slots__ = ['context', 'shot', 'session', 'name', 'scope', 'rebind_requested', 'render_this_node']
+
+    def __init__(self, parent: Optional[RenderNode], shot: Optional[ContextShot] = None, session: Optional[Session] = None):
         super().__init__(parent)
         self.shot: ContextShot = shot or parent.shot
         self.session: Session = session or parent.session
-        self.scope: ADict = ADict() if not parent else parent.scope
+        self.scope: dict[str, Any] = {} if not parent else parent.scope
 
         if parent:
             # slot contents (as well as root contents) belongs to sub-context
@@ -37,26 +40,29 @@ class RenderNode(UniqueNode):
         else:
             self.context: Context = self
 
-        def get_first_macro(code_or_list: MacroCode | list[MacroCode]) -> MacroCode:
-            return code_or_list[0] if type(code_or_list) is list else code_or_list
+        self.name = ''
+        self.rebind_requested = False
 
-        # we have to render control nodes as Stubs to hold middle DOM position
-        if not render_this \
-                and self.parent \
-                and typename(self) in ('ConditionNode', 'LoopNode') \
-                and get_first_macro(self.template[0].macro).reactive \
-                and self.index() < len(self.template.parent.children) - 1:
-                    self.render_this = True
-                    # and (self.template[-1].tag_name == '#else' \
-                    #    or self.index() < len(self.template.parent.children) - 1):
-        else:
-            self.render_this: bool = render_this
-
-        if self.render_this:
+        self.render_this_node = self.render_this
+        if self.render_this_node:
             self.shot += self
 
-        self.name = ''
-        self._rebind = False
+    def arrange_the_blocks(self):
+        # we have to render control nodes as Stubs to hold middle DOM position
+        for i in range(len(self.children)-1):
+            node = self.children[i]
+            if (node.render_if_necessary
+                and node.context.locals.has_reactions_to(node)):
+                node.render_this_node = True
+                self.shot += node
+
+    def rebind(self):
+        if self.render_this_node:
+            self.rebind_requested = True
+            self.shot(self)
+        else:
+            for child in self.children:
+                child.rebind()
 
     def render(self, template: Union[str, HTMLTemplate], locals: dict = None, build: bool = True):
         self.context.renderer(template, self, locals, build)
@@ -66,24 +72,20 @@ class RenderNode(UniqueNode):
         if tag_name[0].isupper():
             node_template = collect_template(tag_name, self.context.session)
             if not node_template: return None
-            return self.context.render(node_template, self, locals=attributes)
+            return self.render(node_template, attributes)
         else:
             return HTMLElement(tag_name, self, attributes, text)
 
     @staticmethod
     def _cleanup_node(node):
-        if node in node.context.react_nodes:
-            node.context.react_nodes.remove(node)
-            for v in list(node.context.react_vars.values()):
-                if node in v:
-                    v.remove(node)
+        node.context.locals.remove_reactions_to(node)
         if node in node.context.refs.values():
             k = next(k for k, v in node.context.refs.items() if v == node)
             del node.context.refs[k]
 
     def empty(self):
         for child in self.children:  # type: RenderNode
-            if child.render_this:
+            if child.render_this_node:
                 self.shot -= child
             self._cleanup_node(child)
             child.empty()
@@ -95,7 +97,7 @@ class RenderNode(UniqueNode):
             super().remove(node)
         else:
             self.empty()
-            if self.render_this:
+            if self.render_this_node:
                 self.shot -= self
             self._cleanup_node(self)
             if self.parent:
@@ -103,16 +105,12 @@ class RenderNode(UniqueNode):
 
     def update(self, with_attrs: bool = False):
         if with_attrs:
-            self.context.render.update(self)
+            self.context.renderer.update(self)
         else:
             self.shot(self)
 
     def update_tree(self):
         self.context.renderer.update(self, True)
-
-    def rebuild(self):
-        self.empty()
-        self.renderer.build()
 
     def _clone(self, new_parent: RenderNode) -> Optional[HTMLElement, TextNode]:
         return None
@@ -143,7 +141,7 @@ class RenderNode(UniqueNode):
     def set_scope(self, data: Union[Dict, str], value: Any = None):
         if isinstance(data, str):
             data = {data: value}
-        self.scope = ADict(self.scope) | data
+        self.scope |= data
 
     def describe(self, indent: int = 0) -> str:
         res = ' ' * indent + str(self) + ':' + str(self.oid)

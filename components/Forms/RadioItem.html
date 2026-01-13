@@ -2,7 +2,7 @@
     <input
             reactive
             type="radio"
-            name="{ctx.scope.radio_name}"
+            name="{ctx.scope['radio_name']}"
             bind:value="checked_value"
             set:disabled
             data:value="{value}"
@@ -24,9 +24,9 @@ def init():
     global checked_value
     if checked:
         checked_value = 'checked'
-        ctx.scope.on_radio_change(value)
+        ctx.scope['on_radio_change'](value)
 
 def on_change(node):
-    ctx.scope.on_radio_change(node.data.value)
+    ctx.scope['on_radio_change'](node.data['value'])
 
 </python>

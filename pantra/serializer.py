@@ -11,7 +11,7 @@ __all__ = ['serializer']
 
 def get_parent_oid(node: RenderNode) -> typing.Optional[int]:
     parent = node.parent
-    while parent and not parent.render_this:
+    while parent and not parent.render_this_node:
         parent = parent.parent
     return parent and parent.oid
 
@@ -39,9 +39,9 @@ class HTMLElementSerializer(bsdf.Extension):
             res['t'] = v.text
         if type(v) == NSElement:
             res['x'] = v.ns_type.value
-        if v._rebind:
+        if v.rebind_requested:
             res['#'] = True
-            v._rebind = False
+            v.rebind_requested = False
         if v.context._restyle:
             res['$'] = v.context.template.name
         if v.value_type:
@@ -62,9 +62,9 @@ class TextSerializer(bsdf.Extension):
 
     def encode(self, s, v: TextNode):
         res = {'i': v.oid, 'p': get_parent_oid(v), 't': v.text}
-        if v._rebind:
+        if v.rebind_requested:
             res['#'] = True
-            v._rebind = False
+            v.rebind_requested = False
         return res
 
 
@@ -72,13 +72,16 @@ class StubElementSerializer(bsdf.Extension):
     name = 'd'
 
     def match(self, s, v):
-        return isinstance(v, ConditionNode) or isinstance(v, LoopNode)
+        return type(v) in (ConditionNode, LoopNode)
 
-    def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
+    def encode(self, s, v: RenderNode):
         res = {
             'i': v.oid,
             'p': get_parent_oid(v),
         }
+        if v.rebind_requested:
+            res['#'] = True
+            v.rebind_requested = False
         if v.context._restyle:
             res['$'] = v.context.template.name
         return res

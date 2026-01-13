@@ -1,6 +1,8 @@
 <CellString consume type="number"/>
 
 <python>
+from pantra.ctx import ctx
+
 def exit_cell(node, key=None):
     if ctx.parent:
         ctx.parent['save_value'](ctx, int(value))

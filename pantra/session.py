@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from concurrent import futures
 import functools
 import threading
@@ -15,7 +16,7 @@ from aiohttp import web
 
 from .protocol import Messages
 from .settings import config
-from .common import ADict, UniNode, raise_exception_in_thread, UniqueNode
+from .common import UniNode, raise_exception_in_thread, UniqueNode
 from .patching import wipe_logger
 from .compiler import exec_restart
 from .workers.decorators import async_worker
@@ -42,12 +43,13 @@ class SessionTask(typing.NamedTuple):
 @wipe_logger
 class Session:
     pending_errors: ClassVar[Queue[str]] = Queue()
-    states: ClassVar[dict[str, ADict]] = defaultdict(ADict)
+    states: ClassVar[dict[str, dict[str, Any]]] = defaultdict(dict)
     sessions: ClassVar[dict[str, Self]] = dict()
     server_worker: ClassVar[BaseWorkerServer | None] = None
 
-    __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'metrics_stack', 'user', 'title',
-                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks', '_in_node']
+    __slots__ = ['session_id', 'just_connected', 'state', 'root', 'app', 'user', 'title',
+                 'locale', 'translations', 'storage', 'last_touch', 'finish_flag', 'params', 'tasks', '_in_node',
+                 '_flicker_next_time']
 
     @classmethod
     async def run_server_worker(cls):
@@ -79,12 +81,12 @@ class Session:
         self.locale: Locale | None = None
         self.translations: Translations | None = None
         self._in_node: RenderNode | None = None
+        self._flicker_next_time: int = 0
         if not hasattr(self, "state"):
-            self.state: ADict = ADict() # Session.states['browser_id']
+            self.state: dict[str, Any] = {} # Session.states['browser_id']
             self.just_connected: bool = True
             self.root: Optional[Context] = None
             self.title = ''
-            self.metrics_stack: list[HTMLElement] = []
             self.user: Optional[dict[str, Any]] = None
             self.set_locale(lang)
 
@@ -127,14 +129,9 @@ class Session:
     @async_worker
     async def send_message(self, message: dict[str, Any]):
         from .serializer import serializer
-
-        try:
-            code = serializer.encode(message)
-        except:
-            logger.error(traceback.format_exc())
-        else:
-            self.last_touch = datetime.now()
-            await self.server_worker.listener.send(self.session_id, code)
+        code = serializer.encode(message)
+        self.last_touch = datetime.now()
+        await self.server_worker.listener.send(self.session_id, code)
 
     def node_context(self, node: RenderNode):
         class CtxClass:
@@ -179,10 +176,23 @@ class Session:
     @async_worker
     async def send_shot(self):
         if not self.root.shot:
-            logger.error('Shot not prepared yet')
+            logger.error('Shot is not prepared yet')
             return
+
         shot: ContextShot = self.root.shot
-        created, updated, deleted = shot.pop()
+        flickering, created, updated, deleted = shot.pop()
+
+        this_time = time.perf_counter()
+        has_changes = created or updated or deleted
+
+        if flickering:
+            if has_changes or this_time >= self._flicker_next_time:
+                self._flicker_next_time = this_time + 1 / config.SHOTS_PER_SECOND
+                logger.debug(f"{{{self.app}}} Sending flickering:{len(flickering)}")
+                await self.send_message(Messages.update(flickering))
+
+        if not has_changes:
+            return
         logger.debug(f"{{{self.app}}} Sending shot NEW:{len(created)} UPD:{len(updated)} DEL:{len(deleted)}")
         if deleted:
             await self.send_message(Messages.delete(deleted))
@@ -195,7 +205,7 @@ class Session:
         for child in children:  # type: RenderNode
             if not child:
                 continue
-            if not child.render_this:
+            if not child.render_this_node:
                 pass
             else:
                 lst.append(child)
@@ -241,11 +251,6 @@ class Session:
         logger.debug(f"{{{self.app}}} Request metrics for {node}")
         self.send_message(Messages.request_metrics(node.oid))
 
-    def drop_metrics(self):
-        for node in self.metrics_stack:
-            if hasattr(node, '_metrics'):
-                delattr(node, '_metrics')
-
     def request_value(self, node: HTMLElement, typ: str = 'text'):
         logger.debug(f"{{{self.app}}} Request value for {node}")
         self.send_message(Messages.request_value(node.oid, typ))
@@ -277,8 +282,8 @@ class Session:
         self.title = title
         return self.send_title(title)
 
-    def send_noop(self):
-        return self.send_message(Messages.noop())
+    def send_task_done(self):
+        return self.send_message(Messages.task_done())
 
     def set_locale(self, lang: str | list):
         lang_name = lang if isinstance(lang, str) else lang[0]
@@ -333,6 +338,7 @@ def trace_errors(func: Callable[[Session, ...], None]):
     def res(session, *args, **kwargs):
         dont_refresh = kwargs.pop("dont_refresh", False)
         if type(session) is not Session:
+            session.error('trace_errors() wrong call: `session` must be provided\n' + traceback.format_exc())
             return
         try:
             func(session, *args, **kwargs)
@@ -341,6 +347,8 @@ def trace_errors(func: Callable[[Session, ...], None]):
         else:
             if not dont_refresh:
                 session.send_shot()
+        finally:
+            session.send_task_done()
     res.call = func
     return res
 
@@ -363,10 +371,10 @@ def trace_errors_async(session: Session, func: Coroutine):
 
 
 @typing.overload
-def run_safe(node: RenderNode, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
+def run_safe(session: Session, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
 
 
 @trace_errors
-def run_safe(node: RenderNode, func: Callable, *args, **kwargs):
+def run_safe(session: Session, func: Callable, *args, **kwargs):
     func(*args, **kwargs)
 

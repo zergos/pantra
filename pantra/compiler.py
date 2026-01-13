@@ -9,7 +9,6 @@ from dataclasses import dataclass
 import ast
 
 import sass
-from .common import ADict
 from .settings import config
 
 if typing.TYPE_CHECKING:
@@ -47,8 +46,10 @@ class CodeMetrics:
                 elif node.name == 'on_render':
                     res.has_on_render = True
             elif isinstance(node, ast.Assign):
-                if node.targets[0] == 'ns_type':
-                    res.has_ns_type = True
+                for target in node.targets:
+                    if type(target) is ast.Name and target.id == 'ns_type':
+                        res.has_ns_type = True
+                        break
         return res
 
     def add(self, other: Self) -> Self:
@@ -101,42 +102,42 @@ def trace_exec(func):
 
 @trace_exec
 def compile_context_code(ctx: Context, template: HTMLTemplate):
-    initial_locals = ADict(ctx.locals) - ['init', 'on_restart']
+    initial_values = {k:v for k,v in ctx.locals.items() if k not in ('init', 'on_restart', 'ctx', 'refs')}
     common_locals = {'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.gettext, 'logger': logger}
     ctx.locals.update(common_locals)
     code_metrics: CodeMetrics = CodeMetrics() if not template.code_metrics else None
     if 'use' in template.attributes:
-        exec_includes(template.attributes.use.strip('" \''), template.filename, ctx.locals, code_metrics)
-    if template.text is not None:
+        exec_includes(template.attributes['use'].strip('" \''), template.filename, ctx.locals, code_metrics)
+    if template.content is not None:
         if not template.code:
-            template.code = compile(template.text, template.filename, 'exec')
+            template.code = compile(template.content, template.filename, 'exec')
         # exec(template.code, common_globals(), self.ctx.locals)
         exec(template.code, ctx.locals)#, {'__name__': template.name})
     if not template.code_metrics:
-        template.code_metrics = code_metrics.add(CodeMetrics.collect(template.text))
+        template.code_metrics = code_metrics.add(CodeMetrics.collect(template.content))
     else:
         code_metrics = template.code_metrics
 
-    ctx.locals.update(initial_locals)
+    ctx.locals.update(initial_values)
     if code_metrics.has_init:
-        if ctx.locals.init() is False:
+        if ctx.locals.call('init') is False:
             raise ContextInitFailed()
     if code_metrics.has_on_restart:
-        ctx.locals.on_restart()
+        ctx.locals.call('on_restart')
     if code_metrics.has_ns_type:
-        ctx.ns_type = ctx.locals.ns_type
+        ctx.ns_type = ctx.locals['ns_type']
 
 
 @trace_exec
 def exec_restart(ctx: Context):
-    ctx.locals.on_restart()
+    ctx.locals.call('on_restart')
 
 
 def compile_style(ctx: Context, template: HTMLTemplate) -> str:
     if template.code:
         return template.code
     try:
-        css = sass.compile(string=template.text, output_style='compressed', include_paths=[str(config.CSS_PATH)])
+        css = sass.compile(string=template.content, output_style='compressed', include_paths=[str(config.CSS_PATH)])
     except Exception as e:
         css = ''
         ctx.session.error(f'{template.filename}.scss> {e}')

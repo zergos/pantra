@@ -114,18 +114,22 @@ class BaseWorkerServer(ABC):
                 if not v.thread.is_alive():
                     logger.warning(f"Thread killed `{k}` ({v.task_info})")
                     del cls.workers[k]
-                elif v.active and tick - v.last_tick > config.THREAD_TIMEOUT:
+                elif v.active and config.THREAD_TIMEOUT and tick - v.last_tick > config.THREAD_TIMEOUT:
                     logger.warning(f"Thread timeout `{k}` ({v.task_info})")
                     raise_exception_in_thread(v.thread.native_id)
                     del cls.workers[k]
-                elif len(cls.workers) > config.MAX_TASK_THREADS \
-                        and not v.active and v.last_tick and tick - v.last_tick > config.KILL_THREAD_LAG:
+                elif (config.MAX_TASK_THREADS and config.KILL_THREAD_LAG
+                      and len(cls.workers) > config.MAX_TASK_THREADS
+                      and not v.active and v.last_tick
+                      and tick - v.last_tick > config.KILL_THREAD_LAG):
                     logger.warning(f"Thread killing `{k}` ({v.task_info})")
                     v.mode = ThreadMode.REDUCED
                 elif v.active and v.last_tick > last_tick:
                     last_tick = v.last_tick
-            if len(cls.workers) < config.MIN_TASK_THREADS \
-                    or not cls.task_queue.empty() and last_tick and tick - last_tick > config.CREATE_THREAD_LAG:
+            if (config.MIN_TASK_THREADS and config.CREATE_THREAD_LAG
+                    and len(cls.workers) < config.MIN_TASK_THREADS
+                    or not cls.task_queue.empty() and last_tick
+                    and tick - last_tick > config.CREATE_THREAD_LAG):
                 cls.thread_counter += 1
                 thread_name = f'X#{cls.thread_counter}'
                 thread = threading.Thread(target=cls.task_processor, name=thread_name, daemon=True)

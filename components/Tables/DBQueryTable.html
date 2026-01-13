@@ -58,7 +58,7 @@ def get_rows(order_col, order_dir):
 def save_value(field: Context, value):
     col = field['column']
 
-    row_id = field.upto('tr').data.row_id
+    row_id = field.upto('tr').data['row_id']
     row = table[row_id]
     setattr(row, col.name, value)
     row.save()

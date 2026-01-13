@@ -1,4 +1,5 @@
 """
+<slot name="columns" data-node="columns" on:render="arrange_columns"/>
 <div class="Table container">
     <table id="t{ctx.oid}">
         <colgroup ref:colgroup>
@@ -197,16 +198,19 @@ active_col_cell: Optional[HTMLElement] = None
 col_id: Optional[str] = None
 
 def init():
+    pass
+
+def arrange_columns(node):
     global maps, col_id, col_styles, columns
-    cols_slot = ctx.slot['columns'] if ctx.slot else None
-    if not cols_slot:
+    cols_data = ctx.data_nodes['columns']
+    if not cols_data.children:
         # default layout
         maps = []
         row = []
         for col_name, col in columns.items():
             if not col.hidden:
                 row.append(ColumnMap(info=col))
-                col.widget = collect_template(ctx.session, get_widget(col))
+                col.widget = get_widget(col)
         common_width = DynamicStyles(f'width: {100 / len(row):.2f}%')
         for col_name, col in columns.items():
             #if col_name != col_id:
@@ -215,11 +219,11 @@ def init():
         maps.append(row)
     else:
         # predefined layout
-        maps = build_maps(ctx, cols_slot.template, columns)
+        maps = build_maps(cols_data, columns)
         for row in maps:
             for col in row:
                 attrs = col.node.attributes
-                attrs.name = col.info.name
+                attrs['name'] = col.info.name
                 col.node.style = col.info.style | col.node.style
                 col.info.title = attrs.get('title', col.info.title) or col.info.name
                 for opt in ('editable', 'resizable', 'sortable'):
@@ -227,7 +231,7 @@ def init():
                         setattr(col.info, opt, False)
                     elif opt in attrs:
                         setattr(col.info, opt, attrs[opt])
-                col.widget = collect_template(get_widget(col.info), ctx.session)
+                col.widget = get_widget(col.info)
         col_styles, css = collect_col_styles(ctx, maps)
         if css:
             HTMLElement('style', ctx, text=css)
@@ -247,13 +251,13 @@ def fmt(value, info: ColumnInfo):
 def refresh(clear: bool = False):
     global active_row, active_row_node
     if clear:
-        refs.tbody[0].reset_cache()
+        refs['tbody'][0].reset_cache()
     active_row = None
     active_row_node = None
-    refs.tbody.update_tree()
+    refs['tbody'].update_tree()
 
     if active_row_id is not None:
-        for rows in refs.tbody[0]:
+        for rows in refs['tbody'][0]:
             row = rows[0]
             if row.data.row_id == active_row_id:
                 select_cell(row[0][0])
@@ -277,7 +281,7 @@ def do_sort(node):
     else:
         order_dir = -order_dir
     node.update()
-    refs.tbody.update_tree()
+    refs['tbody'].update_tree()
 
 
 class DragResize(DragController):
@@ -286,8 +290,7 @@ class DragResize(DragController):
     source_node: HTMLElement
 
     def get_options(self, node: HTMLElement):
-        ctx.session.drop_metrics()
-        return DragOptions(0, True, False, None, node.upto('th').metrics.left + 20, None, None)
+        return DragOptions(0, True, False, None, node.upto('th').request_metrics().left.value + 20, None, None)
 
     def start(self, node: HTMLElement):
         th = node.upto('th')
@@ -298,22 +301,21 @@ class DragResize(DragController):
         return True
 
     def move(self):
-        self.drag_node.move(self.delta_x, 0)
+        self.drag_node.move_box(self.delta_x, 0)
 
     def stop(self):
         global col_styles
         self.drag_node.remove()
-        source_width = self.source_node.metrics.width
-        new_width = self.x - self.source_node.metrics.left
+        new_width = self.x - self.source_node.metrics.left.value
         col_style = col_styles[self.source_index]
         if 'width' not in col_styles[self.source_index]:
-            col_style.width = WebUnits(new_width)
+            col_style['width'] = WebUnits(new_width)
         else:
-            if type(col_style.width) != WebUnits:
-                col_style.width = WebUnits(col_style.width)
-            col_style.width = col_style.width * new_width // source_width
-        refs.colgroup[0][self.source_index].style = col_style
-        refs.colgroup.update_tree()
+            if type(col_style['width']) != WebUnits:
+                col_style['width'] = WebUnits(col_style['width'])
+            col_style['width'] = col_style['width'] * new_width // self.source_node.metrics.width.value
+        refs['colgroup'][0][self.source_index].style = col_style
+        refs['colgroup'].update_tree()
 
 
 def get_widget(col_info: ColumnInfo):
@@ -330,7 +332,7 @@ def select_cell(node: HTMLElement):
         active_col_cell.classes -= 'selected'
         ctx.shot(active_col_cell)
 
-    col = node.data.col
+    col = node.data['col']
     active_col = col.name
     node.classes += 'selected'
     active_col_cell = node
@@ -342,8 +344,8 @@ def select_cell(node: HTMLElement):
     for n in row:
         n.classes += 'selected'
         ctx.shot(n)
-        active_row_id = n.data.row_id
-        active_row = n.data.row
+        active_row_id = n.data['row_id']
+        active_row = n.data['row']
 
     on_select(row)
 
@@ -353,24 +355,24 @@ def enter_cell(node: HTMLElement):
         callback(active_row_id)
         return
 
-    if not editable or node.data.col.readonly:
+    if not editable or node.data['col'].readonly:
         return
 
-    if (widget:=node.data.col.widget) is None:
-        widget = get_widget_default(node.data.col)
+    if (widget:=node.data['col'].widget) is None:
+        widget = get_widget_default(node.data['col'])
     text = node.text
     node.text = ''
-    node.style.padding = 0
+    node.style['padding'] = 0
     ctx.shot(node)
-    node.render(widget, {'column': node.data.col, 'value': str(text)})
+    node.add(widget, {'column': node.data['col'], 'value': str(text)})
 
 
-def remove_field(field: Context, value):
+def remove_field(field: HTMLElement, value):
     field.parent.text = value
-    field.parent.style -= 'padding'
+    del field.parent.style['padding']
     ctx.shot(field.parent)
     field.remove()
     if order_col == field['column'].name:
-        refs.tbody.update_tree()
+        refs['tbody'].update_tree()
 
 #</python>

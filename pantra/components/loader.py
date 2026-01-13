@@ -21,6 +21,7 @@ from .static import get_static_url
 
 __all__ = ['load', 'load_styles']
 
+UTF_BOM = '\uFEFF'
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
 SPECIAL_ELEMENTS = 'slot event scope react component'.split()
 FORMATTED_EXPRESSION = re.compile(r'^([^{]|\{\{)*\{([^}]|\{\{|}})*}(?!})')
@@ -42,7 +43,7 @@ class HTMLVisitor(PMLParserVisitor):
         return self._index
 
     def visitText(self, ctx: PMLParser.TextContext):
-        text = ctx.getText().strip('\uFEFF')
+        text = ctx.getText().strip(UTF_BOM)
         if text.strip() and self.current != self.root:
             if text.startswith('#'):
                 text = re.sub(r'\s+', ' ', text)
@@ -52,12 +53,12 @@ class HTMLVisitor(PMLParserVisitor):
 
     def visitRawText(self, ctx: PMLParser.RawTextContext):
         text = ctx.getText()
-        if text.strip('\uFEFF'):
+        if text.strip(UTF_BOM):
             tag_name = self.current.tag_name
             if tag_name == '@python':
                 line_no = ctx.start.line
                 text = '#\n' * (line_no - 1) + text
-            self.current.text = text
+            self.current.content = text
 
     def visitRawTag(self, ctx: PMLParser.RawTagContext):
         tag_name = '@' + ctx.getText().strip()[1:]
@@ -111,10 +112,10 @@ class HTMLVisitor(PMLParserVisitor):
 
     def visitRawName(self, ctx:PMLParser.RawNameContext):
         self.cur_attr = ctx.getText()
-        self.current.attributes[self.cur_attr] = None
+        self.current.set_attr(self.cur_attr, None)
 
     def visitRawValue(self, ctx:PMLParser.RawValueContext):
-        self.current.attributes[self.cur_attr] = ctx.getText().strip('"\'')
+        self.current.set_attr(self.cur_attr, ctx.getText().strip('"\''))
 
     def visitTagEnd(self, ctx: PMLParser.TagEndContext):
         tag_name = ctx.children[1].getText()
@@ -144,7 +145,8 @@ class HTMLVisitor(PMLParserVisitor):
         if tag_name == 'if':
             parent = HTMLTemplate('#if', self.index, self.current)
             self.current = HTMLTemplate('#choice', self.index, parent=parent)
-            self.current.macro = MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{tag_name}>", "eval"), text)
+            self.current.set_attr('condition',
+                                  MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{self.current.path()}>", "eval"), text))
         elif tag_name == 'for':
             parent = HTMLTemplate('#for', self.index, self.current)
             sides = text.split('#')
@@ -154,15 +156,16 @@ class HTMLVisitor(PMLParserVisitor):
             index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
 
             self.current = HTMLTemplate('#loop', self.index, parent=parent)
-            self.current.macro = [MacroCode(MacroType.ITERATOR, reactive, iterator, chunks[1])]
+            self.current.set_attr('var_name', var_name)
+            self.current.set_attr('iter',
+                                  MacroCode(MacroType.ITERATOR, reactive, iterator, chunks[1]))
             if len(sides)>1:
-                self.current.macro.append(MacroCode(MacroType.INDEX, reactive, index_func, sides[1]))
-            else:
-                self.current.macro.append(None)
-            self.current.text = var_name
+                self.current.set_attr('index_func',
+                                      MacroCode(MacroType.INDEX, reactive, index_func, sides[1]))
         elif tag_name == 'elif':
             self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
-            self.current.macro = MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{tag_name}>", "eval"), text)
+            self.current.set_attr('condition',
+                                  MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{self.current.path()}>", "eval"), text))
         elif tag_name == 'else':
             self.current = HTMLTemplate('#else', self.index, parent=self.current.parent)
         elif tag_name == 'set':
@@ -172,8 +175,9 @@ class HTMLVisitor(PMLParserVisitor):
                 raise IllegalStateException("set command should contains `:=` marker")
             var_name = chunks[0].strip()
             expr = compile(chunks[1].strip(), f"<{self.current.path()}>", "eval")
-            self.current.macro = MacroCode(MacroType.VALUE, reactive, expr, chunks[1].strip())
-            self.current.text = var_name
+            self.current.set_attr("value",
+                                  MacroCode(MacroType.VALUE, reactive, expr, chunks[1].strip()))
+            self.current.set_attr('var_name', var_name)
 
     def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
@@ -189,7 +193,7 @@ class HTMLVisitor(PMLParserVisitor):
         macro = HTMLTemplate('@macro', self.index, parent=self.current)
         text = ctx.children[1].getText()
         code = compile(text, f'<{self.current}:macro>', 'eval')
-        macro.macro = MacroCode(MacroType.VALUE, ctx.children[0].getText().startswith('!'), code, text)
+        macro.content = MacroCode(MacroType.VALUE, ctx.children[0].getText().startswith('!'), code, text)
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')

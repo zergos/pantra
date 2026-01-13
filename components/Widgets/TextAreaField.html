@@ -1,17 +1,19 @@
 <Field consume block>
-    <div class="flex-break"/>
-    <textarea
-        bind:value
-        set:required
-        set:readonly
-        spellcheck = "{spellcheck and '' or 'false'}"
-        css:width
-        cols="@cols"
-        rows="@rows"
-        maxlength="@maxlength"
-        on:change="on_change"
-    />
-    <section reuse/>
+    <section>
+        <div class="flex-break"/>
+        <textarea
+            bind:value
+            set:required
+            set:readonly
+            spellcheck = "{spellcheck and '' or 'false'}"
+            css:width
+            cols="@cols"
+            rows="@rows"
+            maxlength="@maxlength"
+            on:change="on_change"
+        />
+    </section>
+    <section name="help" reuse/>
 </Field>
 
 <python>

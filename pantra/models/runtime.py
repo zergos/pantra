@@ -4,7 +4,6 @@ import copy
 import typing
 from dataclasses import dataclass, field as dc_field
 
-from ..common import ADict
 from ..settings import config
 from .parser import parse_xml
 
@@ -20,7 +19,7 @@ class DatabaseInfo:
     kwargs: Dict[str, str] = dc_field(default_factory=dict)
 
 
-dbinfo: ADict[ADict[DatabaseInfo]] = ADict()  # app / db / DatabaseInfo
+dbinfo: dict[str, dict[str, DatabaseInfo]] = {}  # app / db / DatabaseInfo
 
 
 def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
@@ -56,7 +55,7 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
                 db: DBFactory = getattr(DBFactory, name)(**kwargs)
                 kwargs['provider'] = name
                 app_info[db_name] = DatabaseInfo(db, schema=schema, kwargs=kwargs)
-                db.use_module(f'apps.{app}.data')
+                db.bind_module(f'apps.{app}.data')
 
     parse_xml(file_name, start_element)
 

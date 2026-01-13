@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import typing
 import threading
-from collections import defaultdict
-from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, auto
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, field
 
-from ..common import DynamicStyles, DynamicClasses, WebUnits, ADict, DynamicString
-from ..components.watchdict import WatchDict, WatchDictActive
+from ..common import DynamicStyles, DynamicClasses, WebUnits, DynamicString
+from ..components.reactdict import ReactDict
 from ..oid import get_node
 from ..settings import config
 from .template import collect_template, HTMLTemplate
@@ -19,7 +16,7 @@ from .render.render_node import RenderNode
 from ..compiler import CodeMetrics
 
 if typing.TYPE_CHECKING:
-    from typing import Optional, Union, Any, Callable, Hashable, Iterable
+    from typing import *
     from ..session import Session
     from .shot import ContextShot
 
@@ -36,65 +33,68 @@ class NSType(Enum):
     MATH = auto()       # http://www.w3.org/1998/Math/MathML
 
 
-@dataclass
+@dataclass(slots=True)
 class MetricsData:
-    __slots__ = ['left', 'top', 'right', 'bottom', 'width', 'height']
-    left: int
-    top: int
-    right: int
-    bottom: int
-    width: int
-    height: int
+    left: int | WebUnits
+    top: int | WebUnits
+    width: int | WebUnits
+    height: int | WebUnits
+
+    def __post_init__(self):
+        for k in self.__slots__:
+            if not isinstance(v:=getattr(self, k), WebUnits):
+                setattr(self, k, WebUnits(v))
 
 
-class Slot(typing.NamedTuple):
+@dataclass(slots=True)
+class Slot:
     ctx: Context
     template: str | HTMLTemplate
+    for_reuse: bool
+    named_slots: dict[str, Self] = field(default_factory=dict, init=False)
+
+    def get_top(self):
+        if self.for_reuse:
+            return self.ctx.slot and self.ctx.slot.get_top()
+        return self
 
     def __getitem__(self, name: Union[str, int]) -> Union[Slot, None]:
         if type(name) == str:
-            if isinstance(self.template, str):
-                named_func = self.template + '_' + name
-                if hasattr(self.ctx.renderer, named_func):
-                    return Slot(self.ctx, named_func)
+            if (slot := self.named_slots.get(name)) is not None:
+                if slot.for_reuse:
+                    return slot.ctx.slot and slot.ctx.slot[name]
                 else:
-                    return None
-            else:
-                for child in self.template.children:
-                    if child.tag_name == 'section' and child.attributes.get("name") == name:
-                        if 'reuse' in child.attributes:
-                            return self.ctx.slot[name] if self.ctx.slot else None
-                        else:
-                            return Slot(self.ctx, child)
-                else:
-                    return None
+                    return slot
+            return None
         else:
             raise NotImplementedError('integer indexing')  # return super().__getitem__(name)
 
+    def __setitem__(self, name: str, slot: Self):
+        self.named_slots[name] = slot
+
     def __contains__(self, name: str):
-        for child in self.template:
-            if child.tag_name == 'section' and child.attributes.get("name") == name:
-                if 'reuse' in child.attributes:
-                    return bool(self.ctx.slot and name in self.ctx.slot)
-                else:
-                    return True
+        if (slot:=self.named_slots.get(name)) is not None:
+            if slot.for_reuse:
+                return bool(slot.ctx.slot and name in slot.ctx.slot)
+            else:
+                return True
         return False
 
 class Context(RenderNode):
-    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', '_restyle', 'ns_type', 'react_vars', 'renderer',
-                 'react_nodes', 'allowed_call', 'code_metrics', 'attributes']
+    __slots__ = ['locals', '_executed', 'refs', 'slot', 'template', '_restyle', 'ns_type', 'renderer',
+                 'allowed_call', 'code_metrics', 'attributes', 'data_nodes']
 
     def __init__(self, template: Union[HTMLTemplate, str], parent: Optional[RenderNode] = None, shot: Optional[ContextShot] = None, session: Optional[Session] = None, locals: Optional[dict] = None):
-        self.attributes: ADict[Any] = ADict()
-        self.locals: WatchDict = WatchDict(self)
+        self.attributes: dict[str, Any] = {}
+        self.locals: ReactDict = ReactDict()
         if locals:
             self.locals.update(locals)
         self._executed: bool = False
-        self.refs: ADict[Union['Context', HTMLElement, WatchDict]] = ADict()
+        self.refs: dict[str, Union['Context', HTMLElement, ReactDict]] = {}
         self.slot: Optional[Slot] = None
         self.allowed_call: set[str] = set()
 
-        super().__init__(parent=parent, render_this=False, shot=shot, session=session)
+        super().__init__(parent=parent, shot=shot, session=session)
 
         if type(template) == HTMLTemplate:
             self.template: HTMLTemplate = template
@@ -107,15 +107,17 @@ class Context(RenderNode):
         self._restyle: bool = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type
 
-        self.react_vars: dict[str, list[RenderNode]] = defaultdict(list)
-        self.react_nodes: set[RenderNode] = set()
-
         self.code_metrics: Optional[CodeMetrics] = CodeMetrics()
+        self.data_nodes: dict[str, RenderNode] | None = None
 
         self.renderer = config.DEFAULT_RENDERER(self)
 
     def _clone(self, new_parent: RenderNode) -> Union[HTMLElement, TextNode]:
         return HTMLElement(self.template.name, new_parent)
+
+    def rebuild(self):
+        self.empty()
+        self.renderer.build()
 
     def div(self, classes: str = '', src: Optional[HTMLElement] = None, from_x: int = 0, from_y: int = 0, attributes: Optional[dict, None] = None):
         node = HTMLElement('div', self, attributes)
@@ -124,44 +126,29 @@ class Context(RenderNode):
             node.set_metrics(src.metrics, from_x=from_x, from_y=from_y)
         return node
 
-    @contextmanager
-    def record_reactions(self, node: RenderNode):
-        if self.locals.__class__ != WatchDictActive:
-            self.locals.__class__ = WatchDictActive
-            self.locals.start_record(node)
-            yield
-            self.locals.stop_record()
-            self.locals.__class__ = WatchDict
+    def get_caller(self, action: str) -> Callable | Awaitable | None:
+        method = self.locals.get(action)
+        if type(method) is str:
+            if method and self.parent:
+                return self.parent.get_caller(action)
+            return None
         else:
-            yield
+            return method
 
     def call(self, action: str, *args, **kwargs):
-        if action not in self.locals:
-            return
-        method = self.locals[action]
-        if type(method) is str:
-            if self.parent:
-                self.parent.call(action, *args, **kwargs)
-        else:
+        if (method := self.get_caller(action)) is not None:
             method(*args, **kwargs)
 
-    def __getitem__(self, item: Union[str, int]):
+    def __getitem__(self, item: Union[str, int]) -> Any:
         if type(item) is int:
             return self.children[item]
-        return self.locals.get(item, None)
+        return self.locals[item]
 
     def __setitem__(self, key, value):
-        setattr(self.locals, key, value)
-
-    def set_quietly(self, key, value):
         self.locals[key] = value
 
-    def update_from(self, module_name: str):
-        module_path = (Path(self.template.filename).relative_to(config.BASE_PATH).parent / module_name).with_suffix('.py')
-        initial_locals = ADict(self.locals)
-        code = compile(module_path.read_text(), str(module_path), 'exec')
-        exec(code, self.locals) #, {'__file__': str(module_path)})
-        self.locals.update(initial_locals)
+    def set_quietly(self, key, value):
+        self.locals.set_quietly(key, value)
 
     def __str__(self):
         return f'${self.template.name}' + (f':{self.name}' if self.name else '')
@@ -177,17 +164,6 @@ class Context(RenderNode):
 
     def static(self, subdir: str, file_name: str) -> str:
         return get_static_url(self.session.app, self.template.filename, subdir, file_name)
-
-    def set_slot(self, template_name: str, locals: ADict[str] | None = None, slot_name: str = ''):
-        wrap_template = HTMLTemplate(f'{template_name}Slot', 0)
-        wrap_template.append(HTMLTemplate(template_name, 0, attributes=locals))
-
-        if not slot_name:
-            self.slot = Slot(self.parent.context, wrap_template)
-        else:
-            if not self.slot:
-                self.slot = {}
-            self.slot[slot_name] = Slot(self.parent.context, wrap_template)
 
 class ConditionalClass(typing.NamedTuple):
     condition: Callable[[], bool]
@@ -220,11 +196,12 @@ class ConditionalClasses(list):
 
 
 class HTMLElement(RenderNode):
+    render_this = True
     __slots__ = ['tag_name', 'attributes', 'classes', 'con_classes', 'text', 'style', 'data',
                  '_set_focus', '_metrics', '_metrics_ev', 'value_type', '_value', '_value_ev', '_validity', '_validity_ev',
                  'localize']
 
-    def __new__(cls, tag_name: str, parent: RenderNode, attributes: dict | ADict | None = None, text: str = ''):
+    def __new__(cls, tag_name: str, parent: RenderNode, attributes: dict[str, Any] | None = None, text: str = ''):
         if parent:
             if type(parent) is NSElement or type(parent) is Context and parent.ns_type:
                 instance = super().__new__(NSElement)
@@ -238,18 +215,28 @@ class HTMLElement(RenderNode):
             instance = super().__new__(cls)
         return instance
 
-    def __init__(self, tag_name: str, parent: RenderNode, attributes: Optional[Union[dict, ADict]] = None, text: str = None):
-        super().__init__(parent, True)
+    def __init__(self, tag_name: str, parent: RenderNode, attributes: dict[str, Any] = None, text: str = None):
         self.tag_name: str = tag_name
-        self.attributes: ADict[str, Any] = attributes and ADict(attributes) or ADict()
+        self.attributes: dict[str, Any] = attributes or {}
         self.classes: Union[DynamicClasses, DynamicString, str] = DynamicClasses()
         self.con_classes: ConditionalClasses = ConditionalClasses()
         self.style: Union[DynamicStyles, DynamicString, str] = DynamicStyles()
         self.text: Union[DynamicString, str, None] = text
-        self.data: ADict[str, Any] = ADict()
+        self.data: dict[str, Any] = {}
         self._set_focus = False
         self.value_type = None
         self.localize: bool = False
+
+        self._metrics: MetricsData | None = None
+        self._metrics_ev: threading.Event | None = None
+        self._value: Any = None
+        self._value_ev: threading.Event | None = None
+        self._validity: bool | None = None
+        self._validity_ev: threading.Event | None = None
+        super().__init__(parent)
+
+    def get_caller(self, action: str) -> Callable | Awaitable | None:
+        return self.context.get_caller(action)
 
     @classmethod
     def parse(cls, element: str, parent: RenderNode, text: str = '') -> Optional[HTMLElement]:
@@ -269,10 +256,10 @@ class HTMLElement(RenderNode):
 
     def _clone(self, new_parent: RenderNode) -> Union[HTMLElement, TextNode]:
         clone: HTMLElement = HTMLElement(self.tag_name, new_parent)
-        clone.attributes = ADict({
+        clone.attributes = {
             k: v
-            for k, v in self.attributes.items() if k[:3] != 'on:' and not k.startswith('ref:')
-        })
+            for k, v in self.attributes.items() if not k.startswith('on:') and not k.startswith('ref:')
+        }
         clone.text = self.text
         clone.classes = deepcopy(self.classes)
         clone.style = deepcopy(self.style)
@@ -280,55 +267,52 @@ class HTMLElement(RenderNode):
         return clone
 
     @staticmethod
-    def _set_metrics(oid: int, metrics: dict[str, int]) -> object:
-        self = get_node(oid)
+    def _set_metrics(oid: int, box: list[int]) -> object:
+        self: HTMLElement = get_node(oid)
         if self is None: return
-        self._metrics = MetricsData(metrics['x'], metrics['y'], metrics['x']+metrics['w'], metrics['y']+metrics['h'], metrics['w'], metrics['h'])
-        self.session.metrics_stack.append(self)
+        self._metrics = MetricsData(*box)
         self._metrics_ev.set()
 
     def request_metrics(self):
-        if not hasattr(self, '_metrics_cv'):
+        if self._metrics_ev is None:
             self._metrics_ev = threading.Event()
         self.session.request_metrics(self)
         self._metrics_ev.wait(config.LOCKS_TIMEOUT)
+        return self._metrics
 
     @property
-    def metrics(self):
-        if hasattr(self, '_metrics'):
+    def metrics(self) -> MetricsData:
+        if self._metrics is not None:
             return self._metrics
-        self.request_metrics()
-        return self._metrics
+        return self.request_metrics()
 
     def set_metrics(self, m: Union[MetricsData, dict[str, Union[int, str]], list[Union[int, str]]],
                     from_x: int = 0, from_y: int = 0, shift_x: int = 0, shift_y: int = 0, grow: int = 0):
-        if isinstance(m, dict):
-            m = ADict(m)
-        elif isinstance(m, list):
-            m = ADict({k: v for k, v in zip(['left', 'top', 'width', 'height'], m)})
-        self.style.position = 'fixed'
+        if isinstance(m, list):
+            m = MetricsData(*m)
+        self.style['position'] = 'fixed'
         if from_x:
             m.left = from_x
-        self.style.left = WebUnits(m.left) + shift_x
+        self.style['left'] = m.left + shift_x
         if from_y:
             m.top = from_y
-        self.style.top = WebUnits(m.top) + shift_y
-        self.style.width = WebUnits(m.width) + grow
-        self.style.height = WebUnits(m.height) + grow
+        self.style['top'] = m.top + shift_y
+        self.style['width'] = m.width + grow
+        self.style['height'] = m.height + grow
         self.shot(self)
 
     @staticmethod
     def _set_value(oid: int, value):
-        self = get_node(oid)
+        self: HTMLElement = get_node(oid)
         if self is None: return
         self._value = value
         self._value_ev.set()
 
     @property
     def value(self):
-        if hasattr(self, '_value'):
+        if self._value is not object:
             return self._value
-        if not hasattr(self, '_value_cv'):
+        if self._value_ev is None:
             self._value_ev = threading.Event()
         self.session.request_value(self, self.value_type or 'text')
         self._value_ev.wait(config.LOCKS_TIMEOUT)
@@ -340,7 +324,7 @@ class HTMLElement(RenderNode):
         self.shot(self)
 
     def validate(self):
-        if not hasattr(self, '_validity_ev'):
+        if self._validity_ev is None:
             self._validity_ev = threading.Event()
         self.session.request_validity(self)
         self._validity_ev.wait(config.LOCKS_TIMEOUT)
@@ -348,15 +332,15 @@ class HTMLElement(RenderNode):
 
     @staticmethod
     def _set_validity(oid: int, validity: bool):
-        self = get_node(oid)
+        self: HTMLElement = get_node(oid)
         if self is None: return
         self._validity = validity
         self._validity_ev.set()
 
-    def move(self, delta_x, delta_y):
-        self.style.left += delta_x
-        self.style.top += delta_y
-        self.shot(self)
+    def move_box(self, delta_x, delta_y):
+        self.style['left'] += delta_x
+        self.style['top'] += delta_y
+        self.shot.flick(self)
 
     def set_focus(self):
         self._set_focus = True
@@ -407,11 +391,12 @@ class Condition:
 
 
 class ConditionNode(RenderNode):
+    render_if_necessary = True
     __slots__ = ['state', 'conditions', 'template']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
         self.template = template
-        super().__init__(parent, False)
+        super().__init__(parent)
         self.state = -1
         self.conditions: Optional[list[Condition]] = []
 
@@ -423,15 +408,16 @@ class ConditionNode(RenderNode):
 
 
 class LoopNode(RenderNode):
+    render_if_necessary = True
     __slots__ = ['template', 'loop_template', 'else_template', 'var_name', 'iterator', 'index_func', 'index_map']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
         self.template: HTMLTemplate = template
-        super().__init__(parent, False)
+        super().__init__(parent)
 
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
-        self.loop_template: HTMLTemplate = None
+        self.loop_template: Optional[HTMLTemplate] = None
         self.else_template: Optional[HTMLTemplate] = None
         self.index_func: Optional[Callable[[], Any]] = None
         self.index_map: dict[Hashable, list[RenderNode]] = {}
@@ -447,10 +433,11 @@ class LoopNode(RenderNode):
 
 
 class TextNode(RenderNode):
+    render_this = True
     __slots__ = ['text']
 
     def __init__(self, parent: RenderNode, text: Union[DynamicString, str, None]):
-        super().__init__(parent, True)
+        super().__init__(parent)
         self.text: Union[DynamicString, str, None] = text
 
     def _clone(self, new_parent: RenderNode) -> Union[HTMLElement, TextNode]:
@@ -461,21 +448,22 @@ class TextNode(RenderNode):
 
 
 class EventNode(RenderNode):
+    render_this = True
     __slots__ = ['attributes']
 
-    def __init__(self, parent: RenderNode, attributes: Optional[ADict] = None):
-        super().__init__(parent, True)
-        self.attributes = attributes or ADict()
+    def __init__(self, parent: RenderNode, attributes: dict[str, Any] = None):
+        super().__init__(parent)
+        self.attributes = attributes or {}
 
 
 class SetNode(RenderNode):
-    __slots__ = ['var_name', 'expr', 'template']
+    __slots__ = ['var_name', 'value', 'template']
 
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
-        super().__init__(parent, False)
+        super().__init__(parent)
         self.template = template
         self.var_name = ''
-        self.expr = ''
+        self.value = ''
 
     def __str__(self):
         return ':='
@@ -485,7 +473,7 @@ class ReactNode(RenderNode):
     __slots__ = ['var_name', 'action', 'value']
 
     def __init__(self, parent: RenderNode, var_name: str, action: str):
-        super().__init__(parent, False)
+        super().__init__(parent)
         self.var_name = var_name
         self.action = action
         self.value = None
@@ -495,11 +483,12 @@ class ReactNode(RenderNode):
 
 
 class ScriptNode(RenderNode):
+    render_this = True
     __slots__ = ['uid', 'attributes', 'text']
 
-    def __init__(self, parent: RenderNode, uid: str, attributes: Optional[Union[dict, ADict]] = None, text: str = ''):
-        super().__init__(parent, True)
-        self.attributes: ADict[Any] = attributes and ADict(attributes) or ADict()
+    def __init__(self, parent: RenderNode, uid: str, attributes: dict[str, Any] = None, text: str = ''):
+        super().__init__(parent)
+        self.attributes: dict[str, Any] = attributes or {}
         self.text: Union[DynamicString, str] = text
         self.uid: str = uid
 
@@ -510,5 +499,5 @@ class ScriptNode(RenderNode):
 class GroupNode(RenderNode):
     __slots__ = ['template']
     def __init__(self, parent: RenderNode, template: HTMLTemplate):
-        super().__init__(parent, False)
+        super().__init__(parent)
         self.template = template

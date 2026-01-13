@@ -23,18 +23,16 @@ import random
 import string
 from datetime import datetime, timedelta
 from pantra.ctx import *
-from pantra.common import ADict
 
 data: List[Dict[str, Any]]
 col_names: List[str]
-
 
 def init():
     global data, col_names
     data = []
     now = datetime.now()
     for r in range(100):
-        data.append(ADict(
+        data.append(dict(
             id=r,
             a=random.randint(1, 1000),
             b=''.join(random.choice(string.ascii_uppercase) for _ in range(random.randint(5, 15))),

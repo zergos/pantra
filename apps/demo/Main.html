@@ -28,5 +28,5 @@ chosen: str = _('Make a choice...')
 destiny_set = ('Good', 'Evil', 'Rich', 'Sexy')
 
 async def choose(node):
-    ctx['chosen'] = node.data.value
+    ctx['chosen'] = node.data['value']
 </python>

@@ -43,7 +43,7 @@ if False:
     _("Close")
 
 buttons: str = 'Yes,No'
-callback: Callable[[str], None] = lambda str: None
+callback: Callable[[str], None] = lambda s: None
 
 class ButtonCommand(typing.NamedTuple):
     command: str
@@ -57,7 +57,7 @@ def init():
 
 def click(node):
     ctx.remove()
-    callback(node.data.command)
+    callback(node.data['command'])
 
 def cancel(node):
     ctx.remove()

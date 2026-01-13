@@ -7,7 +7,7 @@
         class:error
 >
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <scope radio_name="o{ctx.oid}" on_radio_change="{on_radio_change}">
+    <scope radio_name="o{ctx.oid}" on_radio_change="@on_radio_change">
     </scope>
     <slot/>
     <HelpMessage consume="help"/>
@@ -25,10 +25,10 @@ value = None
 def on_render():
     global value
     if value:
-        for node in refs.box.select("$RadioItem"):
+        for node in refs['box'].select("$RadioItem"):
             node['checked_value'] = node['value'] == value and 'checked' or ''
     elif ctx['required']:
-        for node in refs.box.select("$RadioItem"):
+        for node in refs['box'].select("$RadioItem"):
             node['checked_value'] = 'checked'
             value = node['value']
             break

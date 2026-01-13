@@ -137,28 +137,28 @@ def render_form(node: HTMLElement):
         node.update_tree()
 
 def remove_filter(node: HTMLElement):
-    node.data.filter.enabled = False
-    loop = refs.filters.downto('@', 2)
+    node.data['filter'].enabled = False
+    loop = refs['filters'].downto('@', 2)
     loop.update(True)
-    render_form(refs.form)
+    render_form(refs['form'])
     callback()
 
 def toggle_form(node):
-    refs.container.toggle_class('hidden')
+    refs['container'].toggle_class('hidden')
 
 def hide_form(node):
-    refs.container.add_class('hidden')
+    refs['container'].add_class('hidden')
 
 def apply_filters(node):
-    loop = refs.filters.downto('@', 2)
+    loop = refs['filters'].downto('@', 2)
     loop.update(True)
     callback()
 
 def search_action(node: HTMLElement):
-    if node.data.code == 'X':
+    if node.data['code'] == 'X':
         node['value'] = ''
         search_callback('')
-    elif node.data.code == 'O':
+    elif node.data['code'] == 'O':
         search_callback(node['value'])
 
 def search_default_action(node: HTMLElement, key: str):

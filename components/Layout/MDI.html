@@ -3,7 +3,7 @@
 <python>
 from pantra.ctx import *
 
-taskbar: Context = None
+taskbar: Context | None = None
 
 def bind_taskbar(node):
     global taskbar

@@ -90,17 +90,17 @@ class HDragSplitter(DragController):
     source_width: int
 
     def get_options(self, node: HTMLElement):
-        return DragOptions(allow_y=False)
+        return DragOptions(allow_move_by_y=False)
 
     def start(self, node) -> bool:
         if fixed_leftcol:
             return False
-        self.source_width = refs.leftcol.metrics.width
+        self.source_width = refs['leftcol'].metrics.width
         self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
         return True
 
     def move(self):
-        self.drag_node.move(self.delta_x, 0)
+        self.drag_node.move_box(self.delta_x, 0)
 
     def stop(self):
         self.drag_node.remove()
@@ -111,24 +111,24 @@ class HDragSplitter(DragController):
 
 class VDragSplitter(DragController):
     drag_node: HTMLElement
-    source_height: int
+    source_height: WebUnits
 
     def get_options(self, node: HTMLElement):
-        return DragOptions(allow_x=False)
+        return DragOptions(allow_move_by_x=False)
 
     def start(self, node) -> bool:
         if fixed_header:
             return False
-        self.source_height = refs.header.metrics.height
+        self.source_height = refs['header'].metrics.height
         self.drag_node = ctx.div('moving v', node, from_y=self.from_y)
         return True
 
     def move(self):
-        self.drag_node.move(0, self.delta_y)
+        self.drag_node.move_box(0, self.delta_y)
 
     def stop(self):
         self.drag_node.remove()
         height = self.source_height + self.y - self.from_y
-        ctx['top_height'] = WebUnits(height)
+        ctx['top_height'] = height
 
 </python>

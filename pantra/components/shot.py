@@ -7,21 +7,36 @@ from queue import Queue
 if typing.TYPE_CHECKING:
     from .render.render_node import RenderNode
 
-__all__ = ['ContextShot']
+__all__ = ['ContextShot', 'NullContextShot']
 
 
-class ContextShot:
-    __slots__ = ['created', 'updated', 'deleted', '_frozen', '_freeze_list', '_rebind']
+class NullContextShot:
+    def pop(self):
+        raise RuntimeError("Method `pop` not implemented for NullContextShot.")
+
+    def pop_flickering(self):
+        raise RuntimeError("Method `pop_flickering` not implemented for NullContextShot.")
+
+    def __call__(self, node):
+        pass
+
+    def __add__(self, node):
+        return self
+
+    def __sub__(self, other):
+        return self
+
+
+class ContextShot(NullContextShot):
+    __slots__ = ['created', 'updated', 'deleted']
 
     def __init__(self):
         self.created: Queue[RenderNode] = Queue()
         self.updated: Queue[RenderNode] = Queue()
+        self.flickering: Queue[RenderNode] = Queue()
         self.deleted: Queue[int] = Queue()
-        self._frozen = False
-        self._rebind = False
-        self._freeze_list = None
 
-    def pop(self) -> tuple[list[RenderNode], list[RenderNode], list[int]]:
+    def pop(self) -> tuple[list[RenderNode], list[RenderNode], list[RenderNode], list[int]]:
         deleted = []
         while not self.deleted.empty():
             deleted.append(self.deleted.get())
@@ -35,41 +50,23 @@ class ContextShot:
             item = self.updated.get()
             if item.oid not in deleted and item not in created:
                 updated.append(item)
-        return created, updated, deleted
-
-    @contextmanager
-    def freeze(self):
-        self._frozen = True
-        self._freeze_list = []
-        yield
-        for node in self._freeze_list:
-            node.parent.remove(node)
-        self._freeze_list = None
-        self._frozen = False
-
-    @contextmanager
-    def rebind(self):
-        self._rebind = True
-        yield
-        self._rebind = False
+        flickering = []
+        while not self.flickering.empty():
+            item = self.flickering.get()
+            if item not in deleted and item not in created and item not in updated:
+                flickering.append(item)
+        return flickering, created, updated, deleted
 
     def __call__(self, node):
-        if not self._frozen:
-            if self._rebind:
-                node._rebind = True
-            self.updated.put(node)
-        else:
-            self._freeze_list.append(node)
+        self.updated.put(node)
 
     def __add__(self, node):
-        if not self._frozen:
-            if self._rebind:
-                node._rebind = True
-            self.created.put(node)
-        else:
-            self._freeze_list.append(node)
+        self.created.put(node)
         return self
 
     def __sub__(self, other):
         self.deleted.put(other.oid)
         return self
+
+    def flick(self, node):
+        self.flickering.put(node)

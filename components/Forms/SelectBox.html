@@ -26,10 +26,10 @@ def render_select(node: HTMLElement):
     if value:
         opts = [value] if type(value) is not list else value
         for opt in node.select('option'):
-            opt.attributes.selected = opt in opts or opt['caption'] in opts
+            opt.attributes['selected'] = opt in opts or opt['caption'] in opts
     elif not blank:
         if (default:=node.downto('option')) is not None:
-            default.attributes.selected = True
+            default.attributes['selected'] = True
             value = default['caption']
 
 def update_value(node):
@@ -37,6 +37,6 @@ def update_value(node):
     value = node.value['caption'] if type(node.value) != list else [v['caption'] for v in node.value]
     opts = [node.value] if type(node.value) != list else node.value
     for opt in node.select('option'):
-        opt.attributes.selected = opt in opts
+        opt.attributes['selected'] = opt in opts
 
 </python>
