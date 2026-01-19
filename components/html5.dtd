@@ -656,7 +656,7 @@
   set:required  (set:required) #IMPLIED
   step          %Number;       #IMPLIED
   width         %Pixels;       #IMPLIED
-  set:focus     (set:focus)    #IMPLIED
+  set:focused   (set:focused)  #IMPLIED
   >
 
 <!ELEMENT select (optgroup|option)+>  

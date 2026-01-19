@@ -76,6 +76,7 @@ function process_message(obj) {
             parent.appendChild(root);
             dragModeActive = false;
             dragEventsAttached = false;
+            spinnerCounter = 0;
             resetEvents();
             break;
 

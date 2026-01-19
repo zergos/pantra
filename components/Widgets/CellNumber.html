@@ -1,7 +1,9 @@
 <CellString consume type="number"/>
 
 <python>
-from pantra.ctx import ctx
+from pantra.ctx import *
+
+value: int
 
 def exit_cell(node, key=None):
     if ctx.parent:

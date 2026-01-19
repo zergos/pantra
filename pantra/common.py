@@ -121,7 +121,7 @@ class UniqueNode(UniNode):
 class DynamicString(str):
     __slots__ = ['func', 'html']
 
-    def __new__(cls, func: Callable[[], str] | str):
+    def __new__(cls, func: Callable[[], Any] | str):
         value = func() if callable(func) else func
         if isinstance(value, DynamicString):
             return value
@@ -197,7 +197,7 @@ class DynamicStyles(dict[str, typing.Union[str, int, 'WebUnits']]):
             super().__init__()
 
     def __str__(self):
-        return ';'.join(f'{k}: {v}' for k, v in self.items())
+        return ';'.join(f'{k}: {v}' for k, v in self.items() if v)
 
 
 class WebUnits(str):

@@ -6,6 +6,7 @@ from pathlib import Path
 if typing.TYPE_CHECKING:
     from .workers.base import BaseWorkerClient, BaseWorkerServer
     from .components.render.renderer_base import RendererBase
+    from .routes import BaseRouter
 
 class Config:
     BASE_PATH: Path
@@ -17,6 +18,7 @@ class Config:
     APPS_PATH: Path
     STATIC_DIR: str
     ALLOWED_DIRS: dict[str, Path]
+    CACHE_PATH: Path
 
     DEFAULT_APP: str
     PRODUCTIVE: bool
@@ -37,6 +39,7 @@ class Config:
     BOOTSTRAP_FILENAME: Path
     APP_TITLE: str
     DEFAULT_RENDERER: str | type[RendererBase]
+    ROUTER_CLASS: str | type[BaseRouter]
 
     WORKERS_MODULE: str
     WORKER_SERVER: type[BaseWorkerServer]

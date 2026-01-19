@@ -12,7 +12,7 @@ from collections import defaultdict
 import logging
 from datetime import datetime
 
-from aiohttp import web
+from starlette.websockets import WebSocket
 
 from .protocol import Messages
 from .settings import config
@@ -115,21 +115,20 @@ class Session:
         logger.debug(f"{{{self.app}}} Going to restart...")
         self.send_message(Messages.restart())
         shot = ContextShot()
-        try:
-            ctx = Context("Main", shot=shot, session=self)
-            if ctx.template:
-                self.root = ctx
-                logger.debug(f"{{{self.app}}} Build [Main] context")
-                ctx.renderer.build()
-                self.send_shot()
-        except:
-            # print(traceback.format_exc())
-            self.error(traceback.format_exc(-3))
+        ctx = Context("Main", shot=shot, session=self)
+        if ctx.template:
+            self.root = ctx
+            logger.debug(f"{{{self.app}}} Build [Main] context")
+            run_safe(self, ctx.renderer.build)
 
     @async_worker
     async def send_message(self, message: dict[str, Any]):
         from .serializer import serializer
-        code = serializer.encode(message)
+        try:
+            code = serializer.encode(message)
+        except Exception as e:
+            await self.send_message(Messages.error(str(e)))
+            return
         self.last_touch = datetime.now()
         await self.server_worker.listener.send(self.session_id, code)
 
@@ -158,7 +157,7 @@ class Session:
             await self.send_message(Messages.error(text))
 
     @classmethod
-    async def remind_errors_client(cls, ws: web.WebSocketResponse):
+    async def remind_errors_client(cls, ws: WebSocket):
         from .serializer import serializer
 
         while not cls.pending_errors.empty():
@@ -338,8 +337,7 @@ def trace_errors(func: Callable[[Session, ...], None]):
     def res(session, *args, **kwargs):
         dont_refresh = kwargs.pop("dont_refresh", False)
         if type(session) is not Session:
-            session.error('trace_errors() wrong call: `session` must be provided\n' + traceback.format_exc())
-            return
+            raise ValueError('trace_errors() wrong call: `session` must be provided')
         try:
             func(session, *args, **kwargs)
         except:

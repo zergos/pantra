@@ -3,21 +3,26 @@ import json
 import string
 from . import vlq
 
-MAP_CONFIG = 'map.json'
-OUT_NAME = 'all.js'
-OUT_NAME_MAP = 'all.js.map'
+MAP_CONFIG_FILENAME = 'map.json'
+JS_BUNDLE_FILENAME = 'all.js'
+JS_BUNDLE_MAP_FILENAME = 'all.js.map'
 sepa_tokens = string.ascii_letters + string.digits + '_$'
 
 
-def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False, config_line: str | None = None) -> tuple[str, str]:
-    with (path / MAP_CONFIG).open("rb") as f:
+def make_js_bundle(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool = False, config_line: str | None = None) -> tuple[str, str]:
+    with (path / MAP_CONFIG_FILENAME).open("rb") as f:
         src_names = json.load(f)
+
+    if with_content:
+        src_names_out = list(map(lambda s: f'webpack://pantra/{s}', src_names))
+    else:
+        src_names_out = src_names
 
     dest = dict(
         version=3,
-        file=OUT_NAME,
+        file=JS_BUNDLE_FILENAME,
         sourceRoot="",
-        sources=src_names,
+        sources=src_names_out,
         names=[],
         sourcesContent=[],
         mappings=[],
@@ -106,17 +111,15 @@ def make(path: Path = Path('.'), with_content: bool = False, keep_spaces: bool =
 
     dest['mappings'] = ','.join(mappings) + ';'  # noqa
 
-    return out, json.dumps(dest)
+    return out + f'\n//# sourceMappingURL={JS_BUNDLE_MAP_FILENAME}', json.dumps(dest)
 
 
 if __name__ == '__main__':
-    if not Path(MAP_CONFIG).exists():
-        print(f'define source files names list in {MAP_CONFIG} file')
+    if not Path(MAP_CONFIG_FILENAME).exists():
+        print(f'Define source files names list in `{MAP_CONFIG_FILENAME}` file')
     else:
-        out, out_map = make()
+        out, out_map = make_js_bundle()
         path = Path('.')
-        (path / OUT_NAME).write_text(out)
-        with (path / (OUT_NAME + '.map')).open('wt') as f:
-            json.dump(out_map, f)
-
+        (path / JS_BUNDLE_FILENAME).write_text(out, 'utf-8')
+        (path / JS_BUNDLE_MAP_FILENAME).write_text(out_map, 'utf-8')
         print('done')

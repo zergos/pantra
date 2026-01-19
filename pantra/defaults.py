@@ -14,9 +14,10 @@ BASE_PATH = get_proj_path()
 WEB_PATH = ''
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
-CSS_PATH = BASE_PATH
+CSS_PATH = BASE_PATH / 'css'
 JS_PATH = Path(importlib.util.find_spec('pantra').origin).parent / 'js'
 APPS_PATH = BASE_PATH / 'apps'
+CACHE_PATH = BASE_PATH / 'cached'
 STATIC_DIR = 'static'
 ALLOWED_DIRS = {}
 
@@ -39,6 +40,9 @@ SHOTS_PER_SECOND = 10
 BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 APP_TITLE = "Pantra Web App"
 DEFAULT_RENDERER = 'pantra.components.render.renderer_html.RendererHTML'
+#DEFAULT_RENDERER = 'pantra.cached.renderer.RendererCached'
+ROUTER_CLASS = 'pantra.routes.DevRouter'
+#ROUTER_CLASS = 'pantra.routes.CachedRouter'
 
 ENABLE_LOGGING = False
 ENABLE_WATCHDOG = False

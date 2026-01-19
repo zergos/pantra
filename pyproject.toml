@@ -4,26 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pantra"
-license = {text = "Apache 2.0"}
+license  = "Apache-2.0"
 authors = [
-    {name = "Andrey Aseev", email = "invent@zergos.ru"}
+    {name = "Andrey Aseev", email = "andrey@aseev.biz"}
 ]
 maintainers = [
-    {name = "Andrey Aseev", email = "invent@zergos.ru"}
+    {name = "Andrey Aseev", email = "andrey@aseev.biz"}
 ]
 urls = {Homepage = "https://github.com/zergos/pantra"}
-description = "Python Full-stack Framework"
+description = "Python Full-stack Web Framework"
 dependencies = [
-    'aiohttp>=3.7.4.post0',
-    'aiofiles',
+	'uvicorn',
+    'starlette',
+    'websockets',
     'antlr4-python3-runtime==4.10',
-    'cssutils==2.3.0',
+    'cssutils>=2.3.0',
     'requests>=2.31.0',
-    'libsass==0.22.0',
+    'libsass>=0.22.0',
     'Babel>=2.9.1',
     'watchdog>=2.1.6',
     'hsluv>=5.0.2',
-    'setuptools',
 ]
 requires-python = ">=3.10"
 dynamic = ["version", "readme"]
@@ -31,7 +31,7 @@ scripts = {pantra = "pantra.management:execute_from_command_line"}
 
 [project.optional-dependencies]
 quazy = [
-    'quazydb @ git+https://github.com/zergos/quazydb'
+    'quazydb'
 ]
 
 [tool.setuptools]

@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from pantra.session import Session
     from ..context import Context, HTMLElement, TextNode
     from ..template import MacroCode, HTMLTemplate
-    from ..shot import ContextShot
+    from ..shot import ContextShotLike
 
 __all__ = ['RenderNode']
 
@@ -25,13 +25,15 @@ class RenderNode(UniqueNode):
 
     __slots__ = ['context', 'shot', 'session', 'name', 'scope', 'rebind_requested', 'render_this_node']
 
-    def __init__(self, parent: Optional[RenderNode], shot: Optional[ContextShot] = None, session: Optional[Session] = None):
+    def __init__(self, name: str, parent: Optional[RenderNode], shot: Optional[ContextShotLike] = None, session: Optional[Session] = None, context: Optional[Context] = None):
         super().__init__(parent)
-        self.shot: ContextShot = shot or parent.shot
+        self.shot: ContextShotLike = shot or parent.shot
         self.session: Session = session or parent.session
         self.scope: dict[str, Any] = {} if not parent else parent.scope
 
-        if parent:
+        if context:
+            self.context: Context = context
+        elif parent:
             # slot contents (as well as root contents) belongs to sub-context
             if typename(parent) == 'Context':
                 self.context: Context = parent
@@ -40,19 +42,22 @@ class RenderNode(UniqueNode):
         else:
             self.context: Context = self
 
-        self.name = ''
-        self.rebind_requested = False
+        self.name: str = name
+        self.rebind_requested: bool = False
 
-        self.render_this_node = self.render_this
+        self.render_this_node: bool = self.render_this
         if self.render_this_node:
             self.shot += self
 
-    def arrange_the_blocks(self):
+    def __str__(self):
+        return self.name or 'unknown'
+
+    def arrange_the_block(self):
         # we have to render control nodes as Stubs to hold middle DOM position
         for i in range(len(self.children)-1):
             node = self.children[i]
-            if (node.render_if_necessary
-                and node.context.locals.has_reactions_to(node)):
+            if node.render_if_necessary:
+                #and node.context.locals.has_reactions_to(node)):
                 node.render_this_node = True
                 self.shot += node
 
@@ -72,7 +77,7 @@ class RenderNode(UniqueNode):
         if tag_name[0].isupper():
             node_template = collect_template(tag_name, self.context.session)
             if not node_template: return None
-            return self.render(node_template, attributes)
+            return self.render(tag_name, attributes)
         else:
             return HTMLElement(tag_name, self, attributes, text)
 
@@ -83,13 +88,14 @@ class RenderNode(UniqueNode):
             k = next(k for k, v in node.context.refs.items() if v == node)
             del node.context.refs[k]
 
-    def empty(self):
+    def empty(self) -> Self:
         for child in self.children:  # type: RenderNode
             if child.render_this_node:
                 self.shot -= child
             self._cleanup_node(child)
             child.empty()
         self.children.clear()
+        return self
 
     def remove(self, node: Optional[RenderNode] = None):
         if node is not None:

@@ -1,10 +1,10 @@
-{{#if ctx.has_slot("help") or help}}
+{{#if ctx.has_slot("help") or help_message}}
     <div class="help">
         <!--img src:icons="question-circle.svg" on:click="toggle_help"-->
         <div class="question" on:click="toggle_help"/>
         <div class="content" class:hidden="!{not help_visible}" on:focusout="toggle_help">
             <slot name="help">
-                {{help}}
+                {{help_message}}
             </slot>
             <div class="fog" on:click="close_help"/>
         </div>
@@ -50,7 +50,7 @@
 <python>
 from pantra.ctx import *
 
-help: str = ''
+help_message: str = ''
 help_visible: bool = False
 
 def toggle_help(node):

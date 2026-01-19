@@ -2,7 +2,7 @@ from queue import Queue
 import time
 import logging
 
-from .gen import make
+from .gen import make_js_bundle
 from ..settings import config
 from ..patching import wipe_logger
 
@@ -30,7 +30,7 @@ class AllJSCache:
             k: v
             for k, v in config.__dict__.items() if k.startswith('JS_') and type(v) in (str, int, float, bool)
         })
-        self.content, self.map = make(config.JS_PATH, config_line=config_line)
+        self.content, self.map = make_js_bundle(config.JS_PATH, with_content=True)
 
     def __getattribute__(self, item: str):
         if item.startswith("_"):

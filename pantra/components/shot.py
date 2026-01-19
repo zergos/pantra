@@ -7,10 +7,23 @@ from queue import Queue
 if typing.TYPE_CHECKING:
     from .render.render_node import RenderNode
 
-__all__ = ['ContextShot', 'NullContextShot']
+__all__ = ['ContextShot', 'NullContextShot', 'ContextShotLike']
+
+class ContextShotLike(typing.Protocol):
+    def pop(self): ...
+
+    def pop_flickering(self): ...
+
+    def __call__(self, node): ...
+
+    def __add__(self, node): ...
+
+    def __sub__(self, other): ...
 
 
 class NullContextShot:
+    __slots__ = ()
+
     def pop(self):
         raise RuntimeError("Method `pop` not implemented for NullContextShot.")
 
@@ -27,8 +40,8 @@ class NullContextShot:
         return self
 
 
-class ContextShot(NullContextShot):
-    __slots__ = ['created', 'updated', 'deleted']
+class ContextShot:
+    __slots__ = ['created', 'updated', 'deleted', 'flickering']
 
     def __init__(self):
         self.created: Queue[RenderNode] = Queue()

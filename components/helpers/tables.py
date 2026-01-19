@@ -131,7 +131,7 @@ def build_maps(data_node: RenderNode, columns: Columns) -> MapsRows:
     def gox(l: HTMLElement, x: int = 0, y: int = 0) -> tuple[int, int]:
         w = h = 0
         for i in l:
-            if i.tag_name == 'col':
+            if i.name == 'col':
                 for name in i.attributes['name'].strip('" ''').split(','):
                     set_cell(x + w, y, i, name)
                     w += 1
@@ -145,7 +145,7 @@ def build_maps(data_node: RenderNode, columns: Columns) -> MapsRows:
     def goy(l: HTMLElement, x: int, y: int) -> tuple[int, int]:
         w = h = 0
         for i in l:
-            if i.tag_name == 'col':
+            if i.name == 'col':
                 for name in i.attributes['name'].strip('" ''').split(','):
                     set_cell(x, y + h, i, name)
                 w = max(w, 1)

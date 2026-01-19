@@ -16,7 +16,7 @@ from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
 from pantra.settings import config
-from .template import HTMLTemplate, MacroCode, MacroType
+from .template import HTMLTemplate, MacroCode, MacroType, get_template_path
 from .static import get_static_url
 
 __all__ = ['load', 'load_styles']
@@ -243,10 +243,10 @@ def load(filename: Path, error_callback: typing.Callable[[str], None]) -> typing
 class StyleVisitor(PMLParserVisitor):
     parser = cssutils.CSSParser(validate=False, raiseExceptions=True)
 
-    def __init__(self, app:str, class_name: str, template_name: Path):
+    def __init__(self, app:str, class_name: str, template_filename: Path):
         self.app = app
         self.class_name = class_name
-        self.template_name = template_name
+        self.template_filename = template_filename
         self.styles: typing.List[str] = []
         self.in_style = False
         self.global_mode = False
@@ -256,11 +256,11 @@ class StyleVisitor(PMLParserVisitor):
             return
 
         def static(file_name) -> str:
-            return f'url("{get_static_url(self.app, self.template_name, None, file_name)}")'
+            return f'url("{get_static_url(self.app, self.template_filename.parent, self.class_name, None, file_name)}")'
 
         text = ctx.getText()
         text = '\n' * (ctx.start.line-1) + text
-        text = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH)], custom_functions=[
+        text = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH.parent)], custom_functions=[
             sass.SassFunction("static", ("$url", ), static)
         ])
 
@@ -359,14 +359,14 @@ class StyleVisitor(PMLParserVisitor):
         raise IllegalStateException(f'wrong node {node.getText()}')
 
 
-def load_styles(app:str, name: str, filename: Path):
-    in_stream = FileStream(str(filename), encoding='utf-8')
+def load_styles(app:str, name: str, template_filename: Path):
+    in_stream = FileStream(str(template_filename), encoding='utf-8')
     lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
     parser = PMLParser(stream)
     tree = parser.process()
 
-    visitor = StyleVisitor(app, name, filename)
+    visitor = StyleVisitor(app, name, template_filename)
     visitor.visit(tree)
     return '\n'.join(visitor.styles)
 

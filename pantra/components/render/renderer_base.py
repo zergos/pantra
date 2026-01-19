@@ -3,20 +3,34 @@ from __future__ import annotations
 import typing
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import dataclass
 
-from pantra.common import DynamicString, DynamicValue, typename
+from redis.exceptions import SlotNotCoveredError
+
+from pantra.common import DynamicString, DynamicValue
 from pantra.compiler import ContextInitFailed
 from ..template import MacroCode, MacroType
+from ..context import HTMLElement, Slot
 
 if typing.TYPE_CHECKING:
-    from typing import Callable, Any, Union, Optional
-    from ..context import Context, HTMLElement
+    from typing import *
+    from types import CodeType
+    from pantra.session import Session
+    from ..context import Context
     from ..template import HTMLTemplate, AttrType
     from .render_node import RenderNode
 
 StrOrCode = str | MacroCode | None
 
-__all__ = ['RendererBase', 'StrOrCode']
+__all__ = ['RendererBase', 'StrOrCode', 'ForLoopType']
+
+@dataclass(slots=True)
+class ForLoopType:
+    parent: Self
+    counter: int = 0
+    counter0: int = 0
+    index: Hashable = 0
+
 
 class RendererBase(ABC):
     __slots__ = ['ctx']
@@ -26,6 +40,25 @@ class RendererBase(ABC):
 
     def __call__(self, template: str | HTMLTemplate, parent: RenderNode = None, locals: dict = None, build: bool = True):
         return self.render(template, parent, locals, build)
+
+    @classmethod
+    @abstractmethod
+    def collect_template(cls, name: str, session: Optional[Session] = None, app: Optional[str] = None) -> Optional[HTMLTemplate | CodeType]:
+        ...
+
+    def add(self, tag_name: str, parent: RenderNode) -> HTMLElement:
+        node = HTMLElement(tag_name, parent, context=self.ctx)
+        return node
+
+    @contextmanager
+    def override_ns_type(self, slot: Slot):
+        if self.ctx.ns_type:
+            save_ns_type = slot.ctx.ns_type
+            slot.ctx.ns_type = self.ctx.ns_type
+            yield
+            slot.ctx.ns_type = save_ns_type
+        else:
+            yield
 
     def build(self):
         try:
@@ -87,6 +120,13 @@ class RendererBase(ABC):
                 return lambda: self.trace_eval(source, node, ctx)
         raise ValueError("Can't build a function with raw value")
 
+    def build_string_or_func(self, source: StrOrCode, node: RenderNode) -> str | Callable[[], Any]:
+        if isinstance(source, str):
+            if source.startswith('@'):
+                return self.build_func(source[1:], node)
+            return self.translate(source)
+        return self.build_func(source, node)
+
     def dynamic_string(self, source: StrOrCode, node: RenderNode) -> str | DynamicString:
         if type(source) is MacroCode:
             return DynamicString(self.build_func(source, node))
@@ -95,20 +135,12 @@ class RendererBase(ABC):
     def dynamic_value(self, source: Any | MacroCode, node: RenderNode) -> Any | DynamicValue:
         if type(source) is MacroCode:
             return DynamicValue(self.build_func(source, node))
-        return source
+        return self.translate(source)
 
     def dynamic_string_i10n(self, source: StrOrCode, node: RenderNode) -> str | DynamicString:
         if type(source) is MacroCode:
             return DynamicString(self.build_func(source, node))
         return self.translate(source)
-
-    @abstractmethod
-    def process_special_attribute_html(self, attr: tuple[AttrType, str | None], value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
-        ...
-
-    @abstractmethod
-    def process_special_attribute_ctx(self, attr: tuple[AttrType, str | None], value: StrOrCode, node: Union[HTMLElement, Context]) -> bool:
-        ...
 
     @abstractmethod
     def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode] = None) -> Optional[RenderNode]:
@@ -125,7 +157,7 @@ class RendererBase(ABC):
     def update(self, node: RenderNode, recursive: bool = False):
         ...
 
-    def render(self, template: Union[str, HTMLTemplate], parent: RenderNode = None, locals: dict = None, build: bool = True):
+    def render(self, template: str | HTMLTemplate | CodeType, parent: RenderNode = None, locals: dict = None, build: bool = True):
         from ..context import Context
         if not parent:
             parent = self.ctx

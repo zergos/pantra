@@ -1,37 +1,73 @@
 from __future__ import annotations
 
 import typing
-from contextlib import nullcontext
-from dataclasses import dataclass
 
 from pantra.common import DynamicString, typename, DynamicStyles, DynamicClasses, DynamicValue
 from pantra.compiler import ContextInitFailed, compile_context_code
-from pantra.session import run_safe
-from ..template import AttrType, NodeType, collect_template, MacroCode
+from pantra.settings import config
+from ..template import AttrType, NodeType, collect_template, MacroCode, MacroType
 from ..context import HTMLElement, Context, Slot, ConditionNode, Condition, LoopNode, SetNode, ScriptNode, \
-    EventNode, TextNode, ReactNode, GroupNode
+    EventNode, TextNode, ReactNode
 from ..shot import NullContextShot
-from .renderer_base import RendererBase, StrOrCode
+from .renderer_base import RendererBase, StrOrCode, ForLoopType
 from .render_node import RenderNode, RE_JS_VARS
 
 if typing.TYPE_CHECKING:
-    from typing import Callable, Any, Self, Union, Optional, Hashable
+    from typing import *
+    from pathlib import Path
+    from pantra.session import Session
     from ..template import HTMLTemplate
 
-@dataclass(slots=True)
-class ForLoopType:
-    parent: Self
-    counter: int = 0
-    counter0: int = 0
-    index: Hashable = 0
-
-
 class RendererHTML(RendererBase):
-    __slots__ = ['has_node_processor']
+    templates: ClassVar[dict[str, HTMLTemplate | None]] = {}
 
     def __init__(self, ctx: Context):
         super().__init__(ctx)
-        self.has_node_processor: bool = False
+
+    @staticmethod
+    def _search_component(path: Path, name: str) -> Path | None:
+        for file in path.glob(f"**/{name}.html"):
+            return file
+        return None
+
+    @classmethod
+    def collect_template(cls, name: str, session: Optional[Session] = None, app: Optional[str] = None) -> Optional[HTMLTemplate]:
+        app = session and session.app or app
+        key = app + '/' + name if app is not None else name
+        if key in cls.templates:
+            return cls.templates[key]
+
+        path = app and cls._search_component(config.APPS_PATH / app, name)
+        if not path:
+            if name in cls.templates:
+                cls.templates[key] = cls.templates[name]
+                return cls.templates[name]
+            # elif config.PRODUCTIVE:
+            #    templates[key] = None
+            #    return None
+
+            path = cls._search_component(config.COMPONENTS_PATH, name)
+            if not path:
+                if not config.PRODUCTIVE and session is not None:
+                    session.error(f'component {name} not found')
+                cls.templates[key] = None
+                return None
+            key = name
+
+        from ..loader import load
+        template = load(path, session.error) if session is not None else load(path, lambda x: None)
+        if template:
+            template.name = name
+            cls.templates[key] = template
+        return template
+
+    def arrange_the_block(self, node: RenderNode, template):
+        # we have to render control nodes as Stubs to hold middle DOM position
+        if node and node.render_if_necessary:
+            if (node.index() < len(template.parent.children) - 1
+                and node.context.locals.has_reactions_to(node)):
+                node.render_this_node = True
+                self.ctx.shot += node
 
     #region Attribute processors
     @staticmethod
@@ -44,7 +80,7 @@ class RendererHTML(RendererBase):
 
     def _process_attr_ref_name(self, attr_name, value, node):
         self.ctx.refs[attr_name] = node
-        node.name = attr_name
+        node.ref_name = attr_name
         return True
 
     def _process_attr_cref_name(self, attr_name, value, node):
@@ -59,7 +95,8 @@ class RendererHTML(RendererBase):
         return True
 
     def _process_attr_on_init(self, attr_name, value, node):
-        run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
+        #run_safe(self.ctx.session, lambda: self.ctx[value](node), dont_refresh=True)
+        self.ctx[value](node)
         return True
 
     def _process_attr_class_switch(self, attr_name, value, node):
@@ -74,9 +111,8 @@ class RendererHTML(RendererBase):
             self.ctx.session.error(f'Can not combine dynamic style with expressions `{attr_name}={value}`')
             return True
         if value is None:
-            node.style[attr_name] = DynamicString(self.build_func(attr_name, node))
-        else:
-            node.style[attr_name] = self.dynamic_string(value, node)
+            value = MacroCode(MacroType.STRING, False, None, attr_name)
+        node.style[attr_name] = self.dynamic_string(value, node)
         return True
 
     def _process_attr_bind_value(self, attr_name, value, node):
@@ -89,16 +125,16 @@ class RendererHTML(RendererBase):
 
     def _process_attr_dynamic_set(self, attr_name, value, node):
         if value is None:
-            value = attr_name
-        if attr_name in ('focus', 'localize'):
+            value = MacroCode(MacroType.STRING, False, None, attr_name)
+        if attr_name in ('focused', 'localize'):
             if isinstance(value, str) and value == "yes":
                 value = True
             elif isinstance(value, str) and value == "no":
                 value = False
             else:
                 value = self.build_value(value, node)
-            if attr_name == 'focus':
-                node._set_focus = bool(value)
+            if attr_name == 'focused':
+                node._set_focused = bool(value)
             else:
                 node.localize = bool(value)
         elif attr_name == 'type':
@@ -170,7 +206,7 @@ class RendererHTML(RendererBase):
                     at = at.strip()
                     # copy local values into consumed context
                     if at in node.context.locals:
-                        node[at] = node.context[at]
+                        node.locals[at] = node.context[at]
         return True
 
     PROCESS_HTML_ATTR: dict[int, Callable[[Self, str, Any, HTMLElement], bool]] = {
@@ -233,14 +269,15 @@ class RendererHTML(RendererBase):
         if (func_name := template.attributes.get('on:render')) is not None:
             if func_name not in self.ctx.locals:
                 raise ValueError(f'No renderer named `{func_name}` found in `{self.ctx.template.name}`')
-            run_safe(self.ctx.session, lambda: self.ctx[func_name](node), dont_refresh=True)
+            #run_safe(self.ctx.session, lambda: self.ctx[func_name](node), dont_refresh=True)
+            self.ctx[func_name](node)
 
     def _build_html_tag(self, template, parent):
         if 'not:render' in template.attributes:
             # forget it
             return None
 
-        node = HTMLElement(template.tag_name, parent=parent)
+        node = self.add(template.tag_name, parent=parent)
 
         # evaluate attributes
         for attr, value in template.attributes.items():
@@ -249,7 +286,8 @@ class RendererHTML(RendererBase):
 
         # evaluate body
         if self.ctx.code_metrics.has_node_processor:
-            run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+            #run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+            self.ctx['node_processor'](node)
 
         # evaluate children
         if len(template.children) == 1:
@@ -263,7 +301,6 @@ class RendererHTML(RendererBase):
         elif template.children:
             for child in template.children:
                 self.build_node(child, node)
-            node.arrange_the_blocks()
 
         self._call_after_render(template, node)
         return node
@@ -271,7 +308,9 @@ class RendererHTML(RendererBase):
     def _build_template_tag(self, template, parent):
         node_template = collect_template(template.tag_name, self.ctx.session)
         if not node_template: return None
-        node = Context(node_template, parent)
+        if 'not:render' in template.attributes:
+            return None
+        node = Context(template.tag_name, parent)
         if template.attributes.get('consume', '') is None:
             node.attributes = node.context.attributes
             node.locals = node.context.locals
@@ -279,6 +318,19 @@ class RendererHTML(RendererBase):
             #    if k in node.locals:
             #        del node.locals[k]
             node.refs = node.context.refs
+
+        # evaluate attributes
+        for attr, value in template.attributes.items():
+            if not self.process_special_attribute_ctx(template.attr_specs[attr], value, node):
+                if isinstance(value, str) or type(value) is MacroCode:
+                    value = self.dynamic_value(value, node)
+                elif value is None:
+                    value = True
+                if type(value) is DynamicValue:
+                    node.attributes[attr] = value
+                    node.locals[attr] = value.update()
+                else:
+                    node.locals[attr] = value
 
         # attach slots
         if template.children:
@@ -291,20 +343,9 @@ class RendererHTML(RendererBase):
                         node.slot.template = child
                         node.slot.for_reuse = 'reuse' in child.attributes
 
-        for attr, value in template.attributes.items():
-            if not self.process_special_attribute_ctx(template.attr_specs[attr], value, node):
-                if isinstance(value, str) or type(value) is MacroCode:
-                    value = self.dynamic_value(value, node)
-                elif value is None:
-                    value = True
-                node.attributes[attr] = value
-                if type(value) is DynamicValue:
-                    node.locals[attr] = value.update()
-                else:
-                    node.locals[attr] = value
-
         if self.ctx.code_metrics.has_node_processor:
-            run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+            #run_safe(self.ctx.session, lambda: self.ctx['node_processor'](node), dont_refresh=True)
+            self.ctx['node_processor'](node)
 
         try:
             node.renderer.build()
@@ -325,15 +366,16 @@ class RendererHTML(RendererBase):
 
         for child in template.children:
             self.build_node(child, node)
-        node.arrange_the_blocks()
 
         if self.ctx.code_metrics.has_on_render:
-            run_safe(self.ctx.session, self.ctx["on_render"], dont_refresh=True)
+            #run_safe(self.ctx.session, self.ctx["on_render"], dont_refresh=True)
+            self.ctx["on_render"]()
 
         return node
 
     def _build_macro_if(self, template, parent):
         node = ConditionNode(parent, template)
+        self.arrange_the_block(node, template)
         for child_template in template.children:  # type: HTMLTemplate
             if child_template.tag_name != '#else':
                 item = Condition(self.build_func(child_template.attributes['condition'], node), child_template)
@@ -345,6 +387,7 @@ class RendererHTML(RendererBase):
 
     def _build_macro_for(self, template, parent):
         node: LoopNode = LoopNode(parent, template)
+        self.arrange_the_block(node, template)
         loop_template = template[0]
         node.var_name = loop_template.attributes['var_name']
         node.iterator = self.build_func(loop_template.attributes['iter'], node)
@@ -374,8 +417,7 @@ class RendererHTML(RendererBase):
 
         for child in template.children:
             self.build_node(child, parent)
-        parent.arrange_the_blocks()
-        return parent
+        return None
 
     def _build_at_slot(self, template, parent):
         if (name := template.attributes.get('name')) is not None:
@@ -386,27 +428,18 @@ class RendererHTML(RendererBase):
         if not slot:
             for child in template.children:
                 self.build_node(child, parent)
-            parent.arrange_the_blocks()
             self._call_after_render(template, parent)
             return parent
 
-        # temporarily replace local context, but preserve ns_type
-        # I know it's dirty, but it eliminates the need to add param context to all constructors
-        save_ctx = self.ctx
-        save_ns = slot.ctx.ns_type
-        parent.context = slot.ctx
-        self.ctx = slot.ctx
-        self.ctx.ns_type = save_ctx.ns_type
-        for child in slot.template.children:
-            if not name and child.tag_name == 'section':
-                continue
-            self.build_node(child, parent)
-        parent.arrange_the_blocks()
-        self.ctx.ns_type = save_ns
-        parent.context = save_ctx
-        self.ctx = save_ctx
+        with self.override_ns_type(slot):
+            for child in slot.template.children:
+                if not name and child.tag_name == 'section':
+                    continue
+                #self.build_node(child, parent)
+                slot.ctx.renderer.build_node(child, parent)
+
         self._call_after_render(template, parent)
-        return parent
+        return None
 
     def _build_at_python(self, template, parent):
         if not self.ctx._executed:
@@ -492,13 +525,14 @@ class RendererHTML(RendererBase):
 
     def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode] = None) -> Optional[RenderNode | list[RenderNode]]:
         if (node_name := template.attributes.get('data-node')) is not None:
-            data_node = RenderNode(None, NullContextShot(), parent.session)
+            data_node = RenderNode("data-node", None, NullContextShot(), parent.session)
             data_node.context = parent.context
             if not self.ctx.data_nodes:
                 self.ctx.data_nodes = {}
             self.ctx.data_nodes[node_name] = data_node
             parent = data_node
-        return self.NODE_BUILDERS[template.node_type.value](self, template, parent)
+        node = self.NODE_BUILDERS[template.node_type.value](self, template, parent)
+        return node
 
     #region Node updaters
     def _update_html_node(self, node, recursive):
@@ -558,7 +592,6 @@ class RendererHTML(RendererBase):
 
             for child in condition.template.children:
                 self.build_node(child, node)
-            node.arrange_the_blocks()
 
             return False
         return True
@@ -566,20 +599,19 @@ class RendererHTML(RendererBase):
     def _update_loop_node(self, node, recursive):
         if not node.index_func:
             node.empty()
-            empty = False
+            empty = True
             iter = node.iterator()
             if iter:
                 parentloop = self.ctx.locals.get('forloop')
                 for_loop = ForLoopType(parentloop)
                 self.ctx.locals['forloop'] = for_loop
                 for i, value in enumerate(iter):
+                    empty = False
                     self.ctx.locals[node.var_name] = value
                     for_loop.counter = i + 1
                     for_loop.counter0 = i
                     for temp_child in node.loop_template:
                         self.build_node(temp_child, node)
-                else:
-                    empty = True
                 if node.var_name in self.ctx.locals:
                     del self.ctx.locals[node.var_name]
                 if parentloop:
@@ -635,8 +667,6 @@ class RendererHTML(RendererBase):
             for temp_child in node.else_template.children:
                 self.build_node(temp_child, node)
 
-        node.arrange_the_blocks()
-
         return False
 
     def _update_set_node(self, node, recursive):
@@ -644,7 +674,6 @@ class RendererHTML(RendererBase):
         self.ctx.locals[node.var_name] = node.value()
         for child in node.template.children:
             self.build_node(child, node)
-        node.arrange_the_blocks()
         del self.ctx.locals[node.var_name]
         return False
 

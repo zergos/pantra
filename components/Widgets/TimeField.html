@@ -1,5 +1,5 @@
 <Field consume>
-    <SingleInput consume="required,readonly,focus" cref:time type="time" step="1" on_change="@parse_input"/>
+    <SingleInput consume="required,readonly,focused" cref:time type="time" step="1" on_change="@parse_input"/>
 </Field>
 
 <python>
@@ -7,6 +7,9 @@ from datetime import time, datetime
 from pantra.ctx import *
 
 value: time = time(0, 0, 1)
+required: bool = False
+readonly: bool = False
+focused: bool = False
 
 def parse_input(node):
     global value

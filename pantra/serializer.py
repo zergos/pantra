@@ -24,13 +24,13 @@ class HTMLElementSerializer(bsdf.Extension):
 
     def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
         res = {
-            'n': v.tag_name,
+            'n': v.name,
             'i': v.oid,
             'p': get_parent_oid(v),
             'a': v.attributes,
             'C': v.classes + str(v.con_classes),
             's': str(v.style),
-            'f': v._set_focus,
+            'f': v._set_focused,
             'l': v.localize,
         }
         if isinstance(v.text, DynamicString) and v.text.html:
@@ -43,7 +43,7 @@ class HTMLElementSerializer(bsdf.Extension):
             res['#'] = True
             v.rebind_requested = False
         if v.context._restyle:
-            res['$'] = v.context.template.name
+            res['$'] = v.context.name
         if v.value_type:
             res['type'] = v.value_type
         value = getattr(v, '_value', None)
@@ -83,7 +83,7 @@ class StubElementSerializer(bsdf.Extension):
             res['#'] = True
             v.rebind_requested = False
         if v.context._restyle:
-            res['$'] = v.context.template.name
+            res['$'] = v.context.name
         return res
 
 
@@ -94,7 +94,7 @@ class EventSerializer(bsdf.Extension):
         return type(v) == EventNode
 
     def encode(self, s, v):
-        return {'ctx': v.context.template.name, 'a': v.attributes, 'oid': v.context.oid}
+        return {'ctx': v.context.name, 'a': v.attributes, 'oid': v.context.oid}
 
 
 class DateSerializer(bsdf.Extension):

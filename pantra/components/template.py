@@ -17,9 +17,8 @@ if typing.TYPE_CHECKING:
     from pantra.session import Session
     from pantra.compiler import CodeMetrics
 
-__all__ = ['HTMLTemplate', 'MacroCode', 'collect_styles', 'collect_template', 'NodeType', 'AttrType', 'MacroType']
-
-templates: dict[str, HTMLTemplate | None] = {}
+__all__ = ['HTMLTemplate', 'MacroCode', 'collect_styles', 'collect_template', 'NodeType', 'AttrType', 'MacroType',
+           'get_template_path']
 
 def is_expression_id(expr: str) -> str:
     # check expression is field "name"
@@ -122,7 +121,7 @@ class AttrType(IntEnum):
                 return AttrType.BIND_VALUE, None, False
             if attr.startswith('set:'):
                 attr = attr.split(':')[1].strip()
-                return AttrType.SET_FALSE, attr, True
+                return AttrType.DYNAMIC_SET, attr, True
             if attr.startswith('data:'):
                 attr = attr.split(':')[1].strip()
                 return AttrType.DATA, attr, False
@@ -182,6 +181,12 @@ class MacroCode:
         elif is_expression_canonical(self.src):
             self.code = self.src.split('.')
 
+def get_template_path(t: HTMLTemplate | CodeType) -> Path:
+    if type(t) is HTMLTemplate:
+        return t.filename.parent
+    else:
+        return Path(t.co_filename).parent
+
 class HTMLTemplate(UniNode):
     __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'content', 'name', 'filename', 'code',
                  'index', 'hex_digest', 'code_metrics')
@@ -217,44 +222,8 @@ class HTMLTemplate(UniNode):
         self.attr_specs[attr_name] = AttrType.detect(attr_name)
 
 
-def _search_component(path: Path, name: str) -> Path | None:
-    for file in path.glob(f"**/{name}.html"):
-        return file
-    return None
-
-
 def collect_template(name: str, session: Optional[Session] = None, app: Optional[str] = None) -> Optional[HTMLTemplate]:
-    global templates
-
-    key = session.app +  '/' + name if session is not None else name
-    if key in templates:
-        return templates[key]
-
-    path = _search_component(session.app_path, name) if session is not None \
-        else _search_component(config.APPS_PATH / app, name) if app is not None \
-        else None
-    if not path:
-        if name in templates:
-            templates[key] = templates[name]
-            return templates[name]
-        #elif config.PRODUCTIVE:
-        #    templates[key] = None
-        #    return None
-
-        path = _search_component(config.COMPONENTS_PATH, name)
-        if not path:
-            if not config.PRODUCTIVE and session is not None:
-                session.error(f'component {name} not found')
-            templates[key] = None
-            return None
-        key = name
-
-    from .loader import load
-    template = load(path, session.error) if session is not None else load(path, lambda x: None)
-    if template:
-        template.name = name
-        templates[key] = template
-    return template
+    return config.DEFAULT_RENDERER.collect_template(name, session, app)
 
 def collect_styles(app:str, app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
     from .loader import load_styles

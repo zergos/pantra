@@ -4,12 +4,12 @@ from typing import Any, Callable
 
 from quazy import DBTable
 
-from pantra.components.loader import collect_template, HTMLTemplate
+from pantra.components.template import collect_template, HTMLTemplate
 from pantra.models import dbinfo, expose_database
 from pantra.session import Session
 from pantra.components.context import Context
 
-from components.Layout import *
+from components.helpers.layout import *
 
 __all__ = ['render_list', 'render_form', 'render_select']
 

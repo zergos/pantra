@@ -88,7 +88,7 @@ except ImportError:
     DBTable = None
     from pantra.models.db_types import *
 
-from components.Tables import Filter, FilterView, OPERATORS
+from components.helpers.tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
 filters: List[Filter] = []

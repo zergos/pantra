@@ -32,13 +32,20 @@ class Main:
 
     app: str = lambda: _detect_app()
 
-    def run(self, host: str = '127.0.0.1', port: int = 8005):
+    def run(self, host: str = '127.0.0.1', port: int = 8005, cached: bool = False):
         """
         run pantra application on host and port
         :param host: local IP address to bind
         :param port: number of local port
+        :param cached: whether to use cached app
         """
         from pantra.main import run as run_main
+
+        if cached:
+            from pantra.cached.renderer import RendererCached
+            from pantra.routes import CachedRouter
+            config.DEFAULT_RENDERER = RendererCached
+            config.ROUTER_CLASS = CachedRouter
 
         run_main(host, port)
 
@@ -47,7 +54,7 @@ class Main:
         run pantra backend workers facility in separate process
         """
         import os
-        from .watchers import start_observer, stop_observer
+        from .watchers import start_observer
         from .session import Session
 
         if config.WORKER_SERVER.run_with_web:
@@ -131,9 +138,13 @@ class Main:
         """
         build app cache
         """
-        from .components.cache_builder import CacheBuilder
+        from pantra.cached.builder import CacheBuilder
 
-        CacheBuilder(self.app).make('Main')
+        builder = CacheBuilder(self.app)
+        builder.make('Main')
+        builder.collect_styles()
+        builder.collect_js()
+        builder.collect_static()
         print('Done')
 
 

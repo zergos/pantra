@@ -22,7 +22,8 @@ function start(newLocalId, newTabId, cacheId, webPath) {
         sessionStorage.setItem('tab_id', tabId);
     }
     let protocol = location.protocol === "http:"? "ws" : "wss";
-    wsConnection = new WSClient(`${protocol}://${location.host}${location.pathname}/ws/${localId}/${tabId}${location.search}`);
+    let app_name = location.pathname === "/" ? "" : location.pathname;
+    wsConnection = new WSClient(`${protocol}://${location.host}${app_name}/ws/${localId}/${tabId}${location.search}`);
     wsConnection.onrefresh = () => {
         sendMessage(Messages.up())
     };

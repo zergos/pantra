@@ -1,9 +1,10 @@
 """
 <slot name="columns" data-node="columns" on:render="arrange_columns"/>
+<CellString not:render/><CellNumber not:render/>
 <div class="Table container">
     <table id="t{ctx.oid}">
         <colgroup ref:colgroup>
-            {{#for style in col_styles #forloop.counter}}
+            {{#for style in col_styles}}
             <col style="{style}">
             {{/for}}
         </colgroup>
@@ -170,7 +171,7 @@
 # """
 from datetime import datetime
 from pantra.imports import *
-from components.Tables import *
+from components.helpers.tables import *
 from pantra.ctx import *
 
 editable: bool = True
@@ -198,6 +199,9 @@ active_col_cell: Optional[HTMLElement] = None
 col_id: Optional[str] = None
 
 def init():
+    pass
+
+def get_rows(order_col, order_dir) -> Iterable[Mapping[str, Any]]:
     pass
 
 def arrange_columns(node):
@@ -272,7 +276,7 @@ def get_order_class(node):
 def do_sort(node):
     global order_dir, order_col, order_node
     if order_node != node:
-        order_col = node.data.col
+        order_col = node.data['col']
         order_dir = 1
         prev_node = order_node
         order_node = node

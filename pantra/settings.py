@@ -28,11 +28,12 @@ class Config:
 
         self._inited = True
 
-        if (renderer:=getattr(self, "DEFAULT_RENDERER")) is not None:
-            if isinstance(renderer, str):
-                chunks = renderer.split(".")
-                mod = import_module('.'.join(chunks[:-1]))
-                setattr(self, "DEFAULT_RENDERER", getattr(mod, chunks[-1]))
+        for var_name in ("DEFAULT_RENDERER", "ROUTER_CLASS"):
+            if (renderer:=getattr(self, var_name)) is not None:
+                if isinstance(renderer, str):
+                    chunks = renderer.split(".")
+                    mod = import_module('.'.join(chunks[:-1]))
+                    setattr(self, var_name, getattr(mod, chunks[-1]))
 
         if not hasattr(self, "WORKER_SERVER") and hasattr(self, "WORKERS_MODULE"):
             try:

@@ -17,7 +17,7 @@ from ..settings import config
 from ..patching import wipe_logger
 
 if typing.TYPE_CHECKING:
-    from aiohttp import web
+    from starlette.websockets import WebSocket
     from ..session import Session
     from ..components.render.render_node import RenderNode
 
@@ -220,7 +220,7 @@ class BaseWorkerClient(ABC):
         await self.stop_websocket_binding()
         self.connection.close()
 
-    def bind_to_websocket(self, ws: web.WebSocketResponse):
+    def bind_to_websocket(self, ws: WebSocket):
         async def task():
             while True:
                 message = await self.connection.receive()
@@ -242,7 +242,7 @@ class BaseWorkerClient(ABC):
         await self.connection.send(message)
 
     @typing.overload
-    def __init__(self, session_id: str, ws: web.WebSocketResponse, app: str, lang: list[str], params: dict[str, str]): ...
+    def __init__(self, session_id: str, ws: WebSocket, app: str, lang: list[str], params: dict[str, str]): ...
 
     def __init__(self, *args):
         self.args = args
