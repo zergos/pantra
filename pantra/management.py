@@ -88,9 +88,10 @@ class Main:
         update_dtd()
         print('Done')
 
-    def get_boilerplate(self):
+    def get_boilerplate(self, version: str = None):
         """
         download basic template
+        :param version: version to download (default is current)
         """
         import tempfile
         import os
@@ -99,11 +100,15 @@ class Main:
 
         import requests
         from .settings import config
+        from . import VERSION
 
         REPO_BRANCH = 'pantra-master'
 
+        if not version:
+            version = VERSION
+
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            res = requests.get("https://github.com/zergos/pantra/archive/master.zip")
+            res = requests.get(f"https://github.com/zergos/pantra/archive/refs/tags/{version}.zip")
             if res.status_code != 200:
                 print(f'{res.status_code} {res.reason}')
                 return
