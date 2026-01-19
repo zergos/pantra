@@ -99,13 +99,6 @@ class Session:
     def __contains__(self, item):
         return item in self.state
 
-    @property
-    def app_path(self) -> Path:
-        if self.app == 'Core':
-            return config.COMPONENTS_PATH
-        else:
-            return config.APPS_PATH / self.app
-
     @staticmethod
     def gen_session_id() -> str:
         return uuid.uuid4().hex
@@ -288,7 +281,7 @@ class Session:
         lang_name = lang if isinstance(lang, str) else lang[0]
         logger.debug(f"{{{self.app}}} Set lang = {lang_name}")
         self.locale = get_locale(lang_name)
-        self.translations = get_translation(self.app_path, lang)
+        self.translations = get_translation(self.app, lang)
 
     def add_translation(self, app: str):
         app_path = config.APPS_PATH / app

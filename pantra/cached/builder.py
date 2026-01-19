@@ -201,6 +201,18 @@ class CacheBuilder:
         if (src_path := config.APPS_PATH / self.app / config.STATIC_DIR).exists():
             shutil.copytree(src_path, dest_path / f'~{self.app}', dirs_exist_ok=True)
 
+    def collect_locale(self):
+        print("Collecting locale...")
+        # core locale
+        src_path = config.COMPONENTS_PATH / 'locale'
+        dest_path = config.CACHE_PATH / 'core' / 'locale'
+        shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+        # app locale
+        src_path = config.APPS_PATH / self.app / 'locale'
+        dest_path = config.CACHE_PATH / 'apps' / self.app / 'locale'
+        if src_path.exists():
+            shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+
     def gen_prefix(self, prefix: str='') -> str:
         self.prefixes[prefix] += 1
         return prefix + "_" + str(self.prefixes[prefix])

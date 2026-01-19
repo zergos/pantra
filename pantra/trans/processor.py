@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from babel.support import Translations, NullTranslations
-from pantra.defaults import APPS_PATH, COMPONENTS_PATH
+from pantra.settings import config
 from .locale import Locale
 
 if typing.TYPE_CHECKING:
@@ -33,13 +33,14 @@ def get_locale(lang: str) -> Locale:
 
 
 # TODO: make compatible with file watcher
-def get_translation(app_path: Path, lang: Union[str, Iterable]) -> Translations:
+def get_translation(app: str, lang: Union[str, Iterable]) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
     transes = [
-        TranslationsExtra.load(COMPONENTS_PATH / 'locale', lang_lst),
-        Translations.load(APPS_PATH / 'system'/ 'locale', lang_lst),
-        Translations.load(app_path / 'locale', lang_lst),
+        TranslationsExtra.load(config.COMPONENTS_PATH / 'locale', lang_lst),
+        Translations.load(config.APPS_PATH / 'system' / 'locale', lang_lst),
+        Translations.load(config.APPS_PATH / app / 'locale', lang_lst),
     ]
+
     trans = transes[0]
     for item in transes:
         if type(trans) is NullTranslations:

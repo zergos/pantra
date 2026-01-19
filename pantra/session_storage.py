@@ -5,6 +5,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
+from pantra.settings import config
+
 if typing.TYPE_CHECKING:
     from .session import Session
 
@@ -46,7 +48,7 @@ class SessionStorage(ABC):
 class ShelveSessionStorage(SessionStorage):
     def __init__(self, session: Session):
         super().__init__(session)
-        self.filename = session.app_path / "storage" / (session.user or "common")
+        self.filename = config.APPS_PATH / session.app / "storage" / (session.user or "common")
         if not self.filename.parent.exists():
             self.filename.parent.mkdir()
 

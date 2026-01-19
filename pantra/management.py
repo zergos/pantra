@@ -46,6 +46,9 @@ class Main:
             from pantra.routes import CachedRouter
             config.DEFAULT_RENDERER = RendererCached
             config.ROUTER_CLASS = CachedRouter
+            config.BOOTSTRAP_FILENAME = config.CACHE_PATH / 'bootstrap.html'
+            config.COMPONENTS_PATH = config.CACHE_PATH / 'core'
+            config.APPS_PATH = config.CACHE_PATH / 'apps'
 
         run_main(host, port)
 
@@ -145,6 +148,7 @@ class Main:
         builder.collect_styles()
         builder.collect_js()
         builder.collect_static()
+        builder.collect_locale()
         print('Done')
 
 
@@ -205,13 +209,13 @@ class Migrate:
         if not self._check_migrations():
             return
 
-        from quazy.migrations import get_migrations_list
+        from quazy.migrations import get_migrations
 
         db, schema = self._expose_db()
         if not db:
             return
 
-        all_migrations = get_migrations_list(db, schema)
+        all_migrations = get_migrations(db, schema)
 
         if all_migrations:
             for mig in all_migrations:
@@ -228,18 +232,18 @@ class Migrate:
         if not self._check_migrations():
             return
 
-        from quazy.migrations import compare_schema
+        from quazy.migrations import get_changes
 
         db, schema = self._expose_db()
         if not db:
             return
-        diff = compare_schema(db, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line], schema=schema)
+        commands, tables = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
 
-        if not diff:
+        if not commands:
             print("No changes")
             return
 
-        print(diff.info())
+        print(commands)
 
     @context_args('app')
     def apply(self, rename: str = "", comments: str = "", debug: bool = False):
@@ -266,17 +270,17 @@ class Migrate:
 
             logger.addHandler(console_handler)
 
-        from quazy.migrations import compare_schema, apply_changes
+        from quazy.migrations import get_changes, apply_changes
 
         db, schema = self._expose_db()
         if not db:
             return
-        diff = compare_schema(db, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line], schema=schema)
-        if not diff:
+        commands, tables = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
+        if not commands:
             print("No changes")
             return
 
-        apply_changes(db, diff, comments, schema)
+        apply_changes(db, schema, commands, tables, comments)
 
     @context_args('app')
     def reset(self):
