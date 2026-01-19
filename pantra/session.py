@@ -40,6 +40,44 @@ class SessionTask(typing.NamedTuple):
     func: typing.Callable
 
 
+def trace_errors(func: Callable[[Session, ...], None]):
+    @functools.wraps(func)
+    def res(session, *args, **kwargs):
+        dont_refresh = kwargs.pop("dont_refresh", False)
+        if type(session) is not Session:
+            raise RuntimeError('trace_errors() wrong call: `session` must be provided')
+        try:
+            func(session, *args, **kwargs)
+        except:
+            session.error(traceback.format_exc())
+        else:
+            if not dont_refresh:
+                session.send_shot()
+        finally:
+            session.send_task_done()
+    res.call = func
+    return res
+
+def trace_errors_async(session: Session, func: Coroutine):
+    async def res():
+        if session is None:
+            raise ValueError('No `session` specified')
+        try:
+            await func
+        except:
+            await session.error(traceback.format_exc())
+        else:
+            await session.send_shot()
+    return res()
+
+@typing.overload
+def run_safe(session: Session, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
+
+@trace_errors
+def run_safe(session: Session, func: Callable, *args, **kwargs):
+    func(*args, **kwargs)
+
+
 @wipe_logger
 class Session:
     pending_errors: ClassVar[Queue[str]] = Queue()
@@ -323,49 +361,4 @@ class Session:
 
     def key_events_on(self):
         self.send_message(Messages.keys_on())
-
-
-def trace_errors(func: Callable[[Session, ...], None]):
-    @functools.wraps(func)
-    def res(session, *args, **kwargs):
-        dont_refresh = kwargs.pop("dont_refresh", False)
-        if type(session) is not Session:
-            raise ValueError('trace_errors() wrong call: `session` must be provided')
-        try:
-            func(session, *args, **kwargs)
-        except:
-            session.error(traceback.format_exc())
-        else:
-            if not dont_refresh:
-                session.send_shot()
-        finally:
-            session.send_task_done()
-    res.call = func
-    return res
-
-
-async def check():
-    pass
-
-
-def trace_errors_async(session: Session, func: Coroutine):
-    async def res():
-        if session is None:
-            raise ValueError('No `session` specified')
-        try:
-            await func
-        except:
-            await session.error(traceback.format_exc())
-        else:
-            await session.send_shot()
-    return res()
-
-
-@typing.overload
-def run_safe(session: Session, func: Callable, *args, dont_refresh: bool = False, **kwargs): ...
-
-
-@trace_errors
-def run_safe(session: Session, func: Callable, *args, **kwargs):
-    func(*args, **kwargs)
 
