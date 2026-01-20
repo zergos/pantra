@@ -102,10 +102,10 @@ class Main:
         from .settings import config
         from . import VERSION
 
-        REPO_BRANCH = 'pantra-master'
-
         if not version:
             version = VERSION
+
+        REPO_BRANCH = 'pantra-' + version
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             res = requests.get(f"https://github.com/zergos/pantra/archive/refs/tags/{version}.zip")
