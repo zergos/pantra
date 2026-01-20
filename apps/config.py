@@ -1,6 +1,8 @@
 # apps configs
+
 DEFAULT_APP = 'demo'
-ENABLE_LOGGING = True
+#WIPE_LOGGING = True
+LOG_LEVEL = 'info'
 
 MIN_TASK_THREADS=1
 MAX_TASK_THREADS=2

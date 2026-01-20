@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing
-import logging
 
 from pantra.common import UniqueNode, typename
 from ..template import collect_template
@@ -17,7 +16,6 @@ if typing.TYPE_CHECKING:
 __all__ = ['RenderNode']
 
 RE_JS_VARS = re.compile(r"`?\{\{(.*?)}}`?")
-logger = logging.getLogger("pantra.system")
 
 class RenderNode(UniqueNode):
     render_this: ClassVar[bool] = False

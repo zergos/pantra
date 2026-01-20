@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import typing
-import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -13,15 +12,12 @@ from datetime import datetime
 from enum import IntEnum, auto
 
 from ..common import raise_exception_in_thread
-from ..settings import config
-from ..patching import wipe_logger
+from ..settings import config, logger
 
 if typing.TYPE_CHECKING:
     from starlette.websockets import WebSocket
     from ..session import Session
     from ..components.render.render_node import RenderNode
-
-logger = logging.getLogger('pantra.system')
 
 class ThreadMode(IntEnum):
     NORMAL = auto()
@@ -35,7 +31,6 @@ class WorkerStat:
     thread: threading.Thread = None
     task_info: str = ""
 
-@wipe_logger
 class BaseWorkerServer(ABC):
     run_with_web: typing.ClassVar[bool] = False
 
@@ -60,7 +55,7 @@ class BaseWorkerServer(ABC):
     def task_processor(cls):
         try:
             ident = threading.current_thread().name
-            logger.debug('Task thread started')
+            logger.info('Task thread started')
             while True:
                 try:
                     func, args, kwargs = cls.task_queue.get(timeout=5)
@@ -146,14 +141,14 @@ class BaseWorkerServer(ABC):
             for session_id in frozenset(Session.sessions):
                 session = Session.sessions[session_id]
                 if not getattr(session, "just_connected", True) and (now - session.last_touch).seconds >= config.SESSION_TTL:
-                    logger.info(f'Session {session_id} killed by TTL limit {config.SESSION_TTL} seconds')
+                    logger.warning(f'Session {session_id} killed by TTL limit {config.SESSION_TTL} seconds')
                     for task in list(session.tasks.keys()):
                         session.kill_task(task)
                     del Session.sessions[session_id]
 
     @classmethod
     def start_task_workers(cls):
-        logger.debug("Starting task workers")
+        logger.info("Starting task workers")
         BaseWorkerServer.task_queue = queue.Queue()
         for i in range(config.MIN_TASK_THREADS):
             thread = threading.Thread(target=cls.task_processor, name=f'#{i}', daemon=True)
@@ -170,7 +165,7 @@ class BaseWorkerServer(ABC):
         from ..serializer import serializer
         from ..protocol import process_message
 
-        logger.debug("Starting task processor")
+        logger.info("Starting task processor")
 
         self.async_loop = asyncio.get_running_loop()
 
@@ -190,7 +185,6 @@ class BaseWorkerServer(ABC):
                     await process_message(session, data)
 
 
-@wipe_logger
 class BaseWorkerClient(ABC):
     class Connection(ABC):
         @abstractmethod

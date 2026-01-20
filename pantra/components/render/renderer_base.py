@@ -31,6 +31,7 @@ class ForLoopType:
 
 
 class RendererBase(ABC):
+    templates: ClassVar[dict[str, Any]] = {}
     __slots__ = ['ctx']
 
     def __init__(self, ctx: Context):

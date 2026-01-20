@@ -102,7 +102,7 @@ class Context(RenderNode):
         self.template: Union[HTMLTemplate, CodeType, None] = collect_template(template_name, self.session)
         if self.template is None:
             self.session.error(f'Template `{template_name}` not found')
-            raise NameError
+            raise NameError(f'Template `{template_name}` not found')
 
         self._restyle: bool = False
         self.ns_type: Optional[NSType] = parent and parent.context.ns_type

@@ -1,22 +1,18 @@
 import sys
 import typing
-import logging
 import hashlib
 from pathlib import Path
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from .settings import config
-from .patching import wipe_logger
+from .settings import config, logger
 
 if typing.TYPE_CHECKING:
-    from .components.loader import HTMLTemplate
+    from .components.template import HTMLTemplate
 
 __all__ = ['start_observer', 'stop_observer']
 
 observer: typing.Optional[Observer] = None
-logger = logging.getLogger("pantra.system")
-
 
 class AppFilesEventHandler(PatternMatchingEventHandler):
 
@@ -25,7 +21,6 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
         self.templates = templates
         self.code_base = code_base
 
-    @wipe_logger
     def refresh_template(self, filename: Path):
         if filename.suffix == '.html':
             hex_digest = hashlib.md5(filename.read_bytes()).hexdigest()
@@ -48,22 +43,22 @@ class AppFilesEventHandler(PatternMatchingEventHandler):
                         pass
 
     def on_modified(self, event):
-        print('CHANGES: ', event.src_path, event.event_type)
+        logger.info('CHANGES: ', event.src_path, event.event_type)
         self.refresh_template(Path(event.src_path))
 
 
-@wipe_logger
 def start_observer():
     global observer
 
     from .compiler import code_base
-    from .components.loader import templates
+
+    templates = config.DEFAULT_RENDERER.templates
 
     logger.info("Starting files watchers")
     observer = Observer()
     observer.daemon = True
-    observer.schedule(AppFilesEventHandler(templates, code_base), config.APPS_PATH, True)
-    observer.schedule(AppFilesEventHandler(templates, code_base), config.COMPONENTS_PATH, True)
+    observer.schedule(AppFilesEventHandler(templates, code_base), str(config.APPS_PATH), True)
+    observer.schedule(AppFilesEventHandler(templates, code_base), str(config.COMPONENTS_PATH), True)
     observer.start()
 
 

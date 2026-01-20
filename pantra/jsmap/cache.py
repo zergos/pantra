@@ -1,16 +1,11 @@
 from queue import Queue
 import time
-import logging
 
 from .gen import make_js_bundle
-from ..settings import config
-from ..patching import wipe_logger
+from ..settings import config, logger
 
 __all__ = ['cache']
 
-logger = logging.getLogger("pantra.system")
-
-@wipe_logger
 class AllJSCache:
     def __init__(self):
         self.content: str | None = None
@@ -18,14 +13,14 @@ class AllJSCache:
         self._q = Queue(1)
 
     def _reset(self):
-        logger.debug("Reset JS bundle")
+        logger.info("Reset JS bundle")
         self.content = None
         self.map = None
 
     def _update(self):
         import json
 
-        logger.debug("Building JS bundle")
+        logger.info("Building JS bundle")
         config_line = json.dumps({
             k: v
             for k, v in config.__dict__.items() if k.startswith('JS_') and type(v) in (str, int, float, bool)

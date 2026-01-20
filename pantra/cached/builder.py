@@ -161,11 +161,11 @@ class CacheBuilder:
         css = sass.compile(string=text, output_style='compact', include_paths=[str(config.CSS_PATH.parent)])
         (dest_path / 'basic.css').write_text(css, encoding='utf-8')
         # global.css
-        print(f"Collecting common styles...")
+        print(f"    Collecting common styles...")
         styles = collect_styles('Core', config.COMPONENTS_PATH, print)
         (dest_path / 'global.css').write_text(styles, encoding='utf-8')
         # local css
-        print(f"[{self.app}] Collecting local styles...")
+        print(f"    [{self.app}] Collecting local styles...")
         app_path = config.APPS_PATH / self.app
         styles = collect_styles(self.app, app_path, print)
         (dest_path / f'{self.app}.local.css').write_text(styles, encoding='utf-8')
@@ -210,6 +210,13 @@ class CacheBuilder:
         # app locale
         src_path = config.APPS_PATH / self.app / 'locale'
         dest_path = config.CACHE_PATH / 'apps' / self.app / 'locale'
+        if src_path.exists():
+            shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+
+    def collect_data(self):
+        print("Collecting data...")
+        src_path = config.APPS_PATH / self.app / 'data'
+        dest_path = config.CACHE_PATH / 'apps' / self.app / 'data'
         if src_path.exists():
             shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
 
@@ -859,7 +866,7 @@ class CacheBuilder:
         if template_name in self.templates_ready:
             return
 
-        print(f'Generate template {template_name}...')
+        print(f'    {template_name}')
 
         template = collect_template(template_name, app=self.app)
         code = self.build_node(template, 'None')

@@ -1,6 +1,5 @@
 import asyncio
 import sys
-import logging
 from importlib import import_module
 from pathlib import Path
 import mimetypes
@@ -18,10 +17,8 @@ from starlette.staticfiles import StaticFiles
 from pantra.components.template import collect_template, get_template_path, collect_styles
 from pantra.patching import wipe_logger
 from pantra.session import Session
-from pantra.settings import config
+from pantra.settings import config, logger
 from pantra import jsmap
-
-logger = logging.getLogger("pantra.system")
 
 def get(pattern: str, method: str = None):
     def inner(func):
@@ -32,7 +29,6 @@ def get(pattern: str, method: str = None):
         return func
     return inner
 
-@wipe_logger
 class BaseRouter:
     routes: list[Route]
     CACHE_ID = Session.gen_session_id()
@@ -40,18 +36,33 @@ class BaseRouter:
     def __init__(self):
         super().__init__()
         if not config.BOOTSTRAP_FILENAME.exists():
-            print(f'File `{config.BOOTSTRAP_FILENAME}` not found')
+            logger.error(f'File `{config.BOOTSTRAP_FILENAME}` not found')
             sys.exit(1)
 
         self.bootstrap: str = config.BOOTSTRAP_FILENAME.read_text()
 
     @staticmethod
     def startup():
+        logger.info("Starting up")
+
+        # patch incorrect default python mime-types
+        mimetypes.init()
+        mimetypes.add_type('application/javascript', '.js')
+        mimetypes.add_type('application/x-yaml', '.yaml')
+        mimetypes.add_type('application/x-yaml', '.yml')
+
         if config.WORKER_SERVER.run_with_web:
             if not config.PRODUCTIVE and config.ENABLE_WATCHDOG:
                 from pantra.watchers import start_observer
                 start_observer()
             asyncio.create_task(Session.run_server_worker())
+
+    @staticmethod
+    def shutdown():
+        logger.info("Shutting down")
+        if not config.PRODUCTIVE and config.ENABLE_WATCHDOG:
+            from pantra.watchers import stop_observer
+            stop_observer()
 
     def static_routes(self):
         return []
@@ -149,10 +160,10 @@ class BaseRouter:
                 except asyncio.exceptions.CancelledError:
                     raise
                 except RuntimeError as e:
-                    # logger.error(f'Runtime error: {e}')
+                    logger.error(f'Runtime error: {e}')
                     break
                 except WebSocketDisconnect as e:
-                    logger.error(f'WebSocket connection closed with exception `{e}`')
+                    #logger.error(f'WebSocket connection closed with exception `{e}`')
                     break
                 except Exception as e:
                     logger.error(f"WebSocket error: {traceback.format_exc(-1)}")
@@ -253,6 +264,7 @@ class DevRouter(BaseRouter):
         return JSONResponse(jsmap.cache.map)
 
 
+@wipe_logger
 class CachedRouter(BaseRouter):
     @get('/css/.local.css')
     async def get_local_css(self, request: Request):

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import ast
 
 import sass
-from .settings import config
+from .settings import config, logger
 
 if typing.TYPE_CHECKING:
     from typing import Self, Optional
@@ -17,7 +17,6 @@ if typing.TYPE_CHECKING:
     from .components.context import Context, HTMLTemplate
 
 code_base: typing.Dict[str, CodeType] = {}
-logger = logging.getLogger("pantra.system")
 
 @dataclass(slots=True)
 class CodeMetrics:

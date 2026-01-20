@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import typing
+import logging
 from pathlib import Path
 
 if typing.TYPE_CHECKING:
+    from types import ModuleType
     from .workers.base import BaseWorkerClient, BaseWorkerServer
     from .components.render.renderer_base import RendererBase
     from .routes import BaseRouter
 
-class Config:
+logger = logging.getLogger("pantra.system")
+
+class SafeConfig:
+    WIPE_LOGGING: bool
+
+class LazyConfig:
     BASE_PATH: Path
     WEB_PATH: str
     COMPONENTS_PATH: Path
@@ -22,6 +29,7 @@ class Config:
 
     DEFAULT_APP: str
     PRODUCTIVE: bool
+    RUN_CACHED: bool
 
     MIN_TASK_THREADS: int
     MAX_TASK_THREADS: int
@@ -41,13 +49,14 @@ class Config:
     DEFAULT_RENDERER: str | type[RendererBase]
     ROUTER_CLASS: str | type[BaseRouter]
 
-    WORKERS_MODULE: str
+    WORKERS_MODULE: str | ModuleType
     WORKER_SERVER: type[BaseWorkerServer]
     WORKER_CLIENT: type[BaseWorkerClient]
 
-    ENABLE_LOGGING: bool
+    WIPE_LOGGING: bool
+    LOG_LEVEL: typing.Literal["error", "warning", "info", "debug"]
     ENABLE_WATCHDOG: bool
-    SETUP_LOGGER: typing.Callable[[], None]
+    SETUP_LOGGER: typing.Callable[[int], None]
 
     ZMQ_LISTEN: str
     ZMQ_HOST: str
@@ -57,8 +66,9 @@ class Config:
     JS_PROTO_LOGGING: bool
     JS_ADD_IDS: bool
     
-    def __getattr__(self, item):
+    def __getattr__(self, item) -> typing.Any:
         ...
 
 
-config: Config = Config()
+safe_config: SafeConfig = SafeConfig()
+config: LazyConfig = LazyConfig()

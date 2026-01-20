@@ -9,13 +9,12 @@ import typing
 import uuid
 from queue import Queue
 from collections import defaultdict
-import logging
 from datetime import datetime
 
 from starlette.websockets import WebSocket
 
 from .protocol import Messages
-from .settings import config
+from .settings import config, logger
 from .common import UniNode, raise_exception_in_thread, UniqueNode
 from .patching import wipe_logger
 from .compiler import exec_restart
@@ -26,14 +25,11 @@ from .components.shot import ContextShot
 
 if typing.TYPE_CHECKING:
     from typing import Self, ClassVar, Optional, Any, Callable, Coroutine
-    from pathlib import Path
 
     from .components.context import Context, HTMLElement
     from .components.render.render_node import RenderNode
     from .workers.base import BaseWorkerServer
     from .trans.locale import Locale
-
-logger = logging.getLogger("pantra.system")
 
 class SessionTask(typing.NamedTuple):
     task: threading.Thread | futures.Future
@@ -250,7 +246,7 @@ class Session:
         return self.send_message(Messages.update(lst))
 
     def kill_task(self, task_name: str):
-        logger.debug(f"{{{self.app}}} Killing task {task_name}")
+        logger.warning(f"{{{self.app}}} Killing task {task_name}")
         if (stask:=self.tasks.get(task_name, None)) is not None:
             if isinstance(stask.task, threading.Thread):
                 if stask.task.is_alive():

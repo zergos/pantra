@@ -10,7 +10,7 @@ def get_proj_path():
         cwd = cwd.parent
     return Path('.')
 
-BASE_PATH = get_proj_path()
+BASE_PATH = Path().absolute()
 WEB_PATH = ''
 COMPONENTS_PATH = BASE_PATH / 'components'
 PAGES_PATH = BASE_PATH / 'pages'
@@ -23,6 +23,7 @@ ALLOWED_DIRS = {}
 
 DEFAULT_APP = 'Core'
 PRODUCTIVE = False
+RUN_CACHED = False
 
 MIN_TASK_THREADS = 2
 MAX_TASK_THREADS = 100
@@ -39,12 +40,13 @@ SHOTS_PER_SECOND = 10
 
 BOOTSTRAP_FILENAME = COMPONENTS_PATH / "bootstrap.html"
 APP_TITLE = "Pantra Web App"
-DEFAULT_RENDERER = 'pantra.components.render.renderer_html.RendererHTML'
-#DEFAULT_RENDERER = 'pantra.cached.renderer.RendererCached'
-ROUTER_CLASS = 'pantra.routes.DevRouter'
-#ROUTER_CLASS = 'pantra.routes.CachedRouter'
+DEFAULT_RENDERER = 'pantra.components.render.renderer_html:RendererHTML'
+#DEFAULT_RENDERER = 'pantra.cached.renderer:RendererCached'
+ROUTER_CLASS = 'pantra.routes:DevRouter'
+#ROUTER_CLASS = 'pantra.routes:CachedRouter'
 
-ENABLE_LOGGING = False
+WIPE_LOGGING = False
+LOG_LEVEL = "info"
 ENABLE_WATCHDOG = False
 
 def setup_logger(level: int = logging.DEBUG):

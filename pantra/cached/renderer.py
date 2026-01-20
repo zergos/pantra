@@ -8,7 +8,7 @@ from pantra.components.render.renderer_html import RendererHTML
 from pantra.common import typename
 from pantra.components.template import HTMLTemplate
 from pantra.components.context import HTMLElement, NSElement
-from pantra.settings import config
+from pantra.settings import config, logger
 
 if typing.TYPE_CHECKING:
     from typing import *
@@ -16,8 +16,6 @@ if typing.TYPE_CHECKING:
     from pantra.session import Session
     from pantra.components.context import Condition, LoopNode
     from pantra.components.render.render_node import RenderNode
-
-logger = logging.getLogger("pantra.system")
 
 class RendererCached(RendererBase):
     templates: ClassVar[dict[str, CodeType]] = {}

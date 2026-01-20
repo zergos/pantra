@@ -27,15 +27,14 @@ class LoggerTransformer(ast.NodeTransformer):
         return node
 
 def wipe_logger(func: FT) -> FT:
-    from .settings import config
-    if config.ENABLE_LOGGING:
+    from .settings import safe_config
+    if not safe_config.WIPE_LOGGING:
         return func
 
     source_lines, line_num = inspect.getsourcelines(func)
     source = '\n' * (line_num-1) + textwrap.dedent(''.join(source_lines))
     tree = ast.parse(source)
     func_name = tree.body[0].name
-    print(func_name)
     transformer = LoggerTransformer()
     new_tree = transformer.visit(tree)
     if not transformer.has_changes:

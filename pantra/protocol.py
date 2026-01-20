@@ -5,7 +5,7 @@ import typing
 from typing import TypedDict, TYPE_CHECKING
 
 from .oid import get_node
-from .settings import config
+from .settings import config, logger
 from .patching import wipe_logger
 from .workers.decorators import thread_worker
 
@@ -13,8 +13,6 @@ if TYPE_CHECKING:
     from .session import Session
     from .components.context import Context
     from .components.render.render_node import RenderNode
-
-logger = logging.getLogger('pantra.system')
 
 @wipe_logger
 async def process_message(session: Session, data: dict):
@@ -45,7 +43,7 @@ async def process_message(session: Session, data: dict):
             await session.remind_errors()
 
     elif command == 'CLICK':
-        if config.ENABLE_LOGGING:
+        if config.WIPE_LOGGING:
             ctx = getattr(get_node(data['oid']), 'context', None)
             oid = ctx and ctx.oid or data['oid']
             logger.debug(f"[CLICK] command `{data['method']}` to <{ctx}:{oid}>")

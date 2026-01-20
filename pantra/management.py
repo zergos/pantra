@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import asyncio
 from pathlib import Path
 import sys
@@ -42,14 +43,7 @@ class Main:
         from pantra.main import run as run_main
 
         if cached:
-            from pantra.cached.renderer import RendererCached
-            from pantra.routes import CachedRouter
-            config.DEFAULT_RENDERER = RendererCached
-            config.ROUTER_CLASS = CachedRouter
-            config.BOOTSTRAP_FILENAME = config.CACHE_PATH / 'bootstrap.html'
-            config.COMPONENTS_PATH = config.CACHE_PATH / 'core'
-            config.APPS_PATH = config.CACHE_PATH / 'apps'
-
+            os.environ['PANTRA_RUN_CACHED'] = 'yes'
         run_main(host, port)
 
     def run_backend(self):
@@ -149,7 +143,9 @@ class Main:
         from pantra.cached.builder import CacheBuilder
 
         builder = CacheBuilder(self.app)
+        print("Generate templates...")
         builder.make('Main')
+        builder.collect_data()
         builder.collect_styles()
         builder.collect_js()
         builder.collect_static()
