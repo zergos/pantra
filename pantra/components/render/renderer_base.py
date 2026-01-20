@@ -5,8 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-from redis.exceptions import SlotNotCoveredError
-
 from pantra.common import DynamicString, DynamicValue
 from pantra.compiler import ContextInitFailed
 from ..template import MacroCode, MacroType
