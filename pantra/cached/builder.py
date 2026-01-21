@@ -754,8 +754,8 @@ class CacheBuilder:
             for module in template.attributes['use'].strip('" \'').split():
                 self._build_python_includes(template, module)
 
-        self.python_code += '# python code'
-        self.python_code += template.content.strip('\n#')
+        self.python_code += '# main code\n'
+        self.python_code += template.content.strip('\n')
         self.python_code = self.python_code.replace('\r\n', '\n')
         self.python_code = remix_imports(self.python_code)
         self.code_metrics = CodeMetrics.collect(self.python_code)
