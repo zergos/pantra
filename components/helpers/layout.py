@@ -16,4 +16,4 @@ def add_window(session: Session, code: str, title: str) -> Tuple[Optional[Contex
     if 'taskbar' not in session:
         session.log(_('Can not add window, session has no taskbar'))
         return None, False
-    return session['taskbar'].add_window(code, title)
+    return session['taskbar'].call('add_window', code, title)

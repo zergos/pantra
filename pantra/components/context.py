@@ -137,7 +137,7 @@ class Context(RenderNode):
 
     def call(self, action: str, *args, **kwargs):
         if (method := self.get_caller(action)) is not None:
-            method(*args, **kwargs)
+            return method(*args, **kwargs)
 
     def __getitem__(self, item: Union[str, int]) -> Any:
         if type(item) is int:

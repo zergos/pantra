@@ -233,18 +233,14 @@ class Migrate:
         if not self._check_migrations():
             return
 
-        from quazy.migrations import get_changes
+        from quazy.migrations import compare_schema
 
         db, schema = self._expose_db()
         if not db:
             return
-        commands, tables = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
+        diff = compare_schema(db, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line], schema)
 
-        if not commands:
-            print("No changes")
-            return
-
-        print(commands)
+        print(diff.info())
 
     @context_args('app')
     def apply(self, rename: str = "", comments: str = "", debug: bool = False):
@@ -271,17 +267,17 @@ class Migrate:
 
             logger.addHandler(console_handler)
 
-        from quazy.migrations import get_changes, apply_changes
+        from quazy.migrations import compare_schema, apply_changes
 
         db, schema = self._expose_db()
         if not db:
             return
-        commands, tables = get_changes(db, schema, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line])
-        if not commands:
+        diff = compare_schema(db, [(line.split(':')[0], line.split(':')[1]) for line in rename.split(" ") if line], schema)
+        if not diff.commands:
             print("No changes")
             return
 
-        apply_changes(db, schema, commands, tables, comments)
+        apply_changes(db, diff, comments, schema)
 
     @context_args('app')
     def reset(self):

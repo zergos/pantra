@@ -45,7 +45,7 @@ def trace_errors(func: Callable[[Session, ...], None]):
         try:
             func(session, *args, **kwargs)
         except:
-            session.error(traceback.format_exc())
+            session.error(traceback.format_exc(-3))
         else:
             if not dont_refresh:
                 session.send_shot()
@@ -61,7 +61,7 @@ def trace_errors_async(session: Session, func: Coroutine):
         try:
             await func
         except:
-            await session.error(traceback.format_exc())
+            await session.error(traceback.format_exc(-3))
         else:
             await session.send_shot()
     return res()

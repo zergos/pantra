@@ -18,7 +18,7 @@ class ReactDict(dict):
         self.react_nodes: set[RenderNode] = set()
 
     def call(self, func_name, *args, **kwargs):
-        self[func_name](*args, **kwargs)
+        return self[func_name](*args, **kwargs)
 
     def register_reactions(self, var_names: set[str], node: RenderNode):
         for var_name in var_names:

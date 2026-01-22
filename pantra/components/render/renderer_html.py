@@ -48,8 +48,6 @@ class RendererHTML(RendererBase):
 
             path = cls._search_component(config.COMPONENTS_PATH, name)
             if not path:
-                if not config.PRODUCTIVE and session is not None:
-                    session.error(f'component {name} not found')
                 cls.templates[key] = None
                 return None
             key = name
@@ -421,7 +419,7 @@ class RendererHTML(RendererBase):
 
     def _build_at_slot(self, template, parent):
         if (name := template.attributes.get('name')) is not None:
-            slot: Slot = parent.context.slot[name]
+            slot: Slot = parent.context.slot and parent.context.slot[name]
         else:
             slot: Slot = parent.context.slot
 

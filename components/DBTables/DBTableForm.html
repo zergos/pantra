@@ -20,13 +20,13 @@
 import inspect
 
 from quazy import DBTable
-from components.helpers.widgets import ValuesDict, make_widget
+from components.helpers.widgets import make_widget
 from pantra.ctx import *
 
 row: DBTable | type[DBTable] | None = None
 caption: str = ''
 
-values: ValuesDict = ValuesDict()
+values: dict[str, Any] = {}
 
 def init():
     global entity, caption
@@ -39,13 +39,13 @@ def render(node):
         is_new = inspect.isclass(row)
         max_len = round(max(len(title) for name, field in row.DB.fields.items() for title in [_(field.ux.title)]) * 7)/10
         predefined = dict(values)
-        values = ValuesDict()
+        values = {}
         for attr_name, field in row.DB.fields.items():
             values[attr_name] = make_widget(node, field.ux, predefined.get(attr_name) if is_new else getattr(row, attr_name), caption_width=WebUnits(max_len, 'em'))
 
 
 def close(node=None):
-    session['taskbar'].close()
+    session['taskbar'].call("close")
 
 
 def is_valid():
@@ -67,7 +67,7 @@ def save(node):
     for k, v in values.items():
         setattr(r, k, v['value'])
     r.save()
-    ctx.scope.caller['refresh']()
+    ctx.scope['caller'].call('refresh')
     close()
 
 #</python>
