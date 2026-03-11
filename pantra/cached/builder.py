@@ -111,7 +111,10 @@ def indent(s: str, tabs_amount: int) -> str:
 def remix_this(s, new_name):
     tree = ast.parse(s)
     new_tree = NameTransformer(new_name).visit(tree)
-    return ast.unparse(new_tree)
+    res = ast.unparse(new_tree)
+    if res.startswith("f'"):
+        return f'f"{res[2:-1]}"'
+    return res
 
 def makeup_func(macro_prefix: str, macro: StrOrCode, node: str = None) -> str:
     if macro_prefix == 'eval':
@@ -822,12 +825,27 @@ class CacheBuilder:
     def _build_at_react(self, template, parent):
         var_name = template.attributes.get('to')
         action = template.attributes.get('action')
-        if not var_name or not action:
-            raise ValueError('<react> tag must have attributes `to` and `action`')
+        if not var_name:
+            raise ValueError('<react> tag must have attributes `to`')
+        if not action and template.children:
+            func_prefix = self.gen_prefix('react')
+        else:
+            func_prefix = None
         node = next_node_name(parent)
-        res = f'{node} = {CTX}.ReactNode({parent}, {var_name!r}, {action!r})\n'
+        res = f'{node} = {CTX}.ReactNode({parent}, {var_name!r}, {(action and repr(action) or self.func_ctx_prefix()+func_prefix)})\n'
         # take in account consumed contexts
-        res += f'self.ctx.locals.register_reactions({{ {var_name} }}, {node})\n'
+        res += f'self.ctx.locals.register_reactions({set(v.strip() for v in var_name.split(","))!r}, {node})\n'
+
+        if func_prefix and template.children:
+            with self.sub_context():
+                func_body = ''
+                for child in template.children:
+                    func_body += self.build_node(child, 'node')
+                func_body = self.collect_funcs() + func_body
+
+            self.funcs[func_prefix] = func_body
+            res += f'{self.func_ctx_prefix()}{func_prefix}({node})\n'
+
         return res
 
     NODE_BUILDERS: dict[int, Callable[[Self, HTMLTemplate, str], str]] = {

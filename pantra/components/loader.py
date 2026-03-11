@@ -104,7 +104,7 @@ class HTMLVisitor(PMLParserVisitor):
         elif FORMATTED_EXPRESSION.search(text):
             reactive = text[0] == '!'
             text = text.replace('`{', '{').replace('}`', '}')
-            text = f'f"{text}"'
+            text = f'f"""{text}"""'
             value = MacroCode(MacroType.TEMPLATE, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
         else:
             value = text
@@ -172,9 +172,14 @@ class HTMLVisitor(PMLParserVisitor):
             self.current = HTMLTemplate('#set', self.index, parent=self.current)
             chunks = text.split(':=')
             if len(chunks) != 2:
-                raise IllegalStateException("set command should contains `:=` marker")
+                chunks = text.split('=')
+                if len(chunks) < 2:
+                    raise IllegalStateException("set command should contain `:=` or `=` marker")
+                else:
+                    chunks[1] = '='.join(chunks[1:])
             var_name = chunks[0].strip()
-            expr = compile(chunks[1].strip(), f"<{self.current.path()}>", "eval")
+            var_value = chunks[1].strip()
+            expr = compile(var_value, f"<{self.current.path()}>", "eval")
             self.current.set_attr("value",
                                   MacroCode(MacroType.VALUE, reactive, expr, chunks[1].strip()))
             self.current.set_attr('var_name', var_name)
