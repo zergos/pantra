@@ -493,12 +493,16 @@ class RendererHTML(RendererBase):
     def _build_at_react(self, template, parent):
         var_name = template.attributes.get('to')
         action = template.attributes.get('action')
-        if not var_name or not action:
-            self.ctx.session.error('<react> tag must have attributes `to` and `action`')
+        if not var_name:
+            self.ctx.session.error('<react> tag must have attributes `to`')
             return None
         node = ReactNode(parent, var_name, action)
         # take in account consumed contexts
-        self.ctx.locals.register_reactions({var_name}, node)
+        self.ctx.locals.register_reactions(set(v.strip() for v in var_name.split(',')), node)
+
+        for child in template.children:
+            self.build_node(child, node)
+
         return node
 
     NODE_BUILDERS: dict[int, Callable[[Self, HTMLTemplate, RenderNode], RenderNode]] = {
@@ -672,7 +676,7 @@ class RendererHTML(RendererBase):
         self.ctx.locals[node.var_name] = node.value()
         for child in node.template.children:
             self.build_node(child, node)
-        del self.ctx.locals[node.var_name]
+        #del self.ctx.locals[node.var_name]
         return False
 
     NODE_UPDATERS: dict[str, Callable[[Self, RenderNode, bool], bool]] = {
@@ -683,6 +687,7 @@ class RendererHTML(RendererBase):
         'ConditionNode': _update_condition_node,
         'LoopNode': _update_loop_node,
         'SetNode': _update_set_node,
+        'ReactNode': lambda *args: True,
     }
     #endregion
 

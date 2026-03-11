@@ -26,6 +26,7 @@ __all__ = ['NSType', 'HTMLTemplate', 'Context', 'HTMLElement', 'NSElement', 'Loo
            'EventNode', 'SetNode', 'ReactNode', 'ScriptNode', 'ActionType']
 
 ActionType = typing.Callable[['HTMLElement'], None] | None
+CallableTemplate = Union[HTMLTemplate, Callable[[...], None], None]
 
 class NSType(Enum):
     HTML = auto()       # http://www.w3.org/1999/xhtml
@@ -51,7 +52,7 @@ class MetricsData:
 @dataclass(slots=True)
 class Slot:
     ctx: Context
-    template: str | HTMLTemplate | Callable[[RenderNode], None]
+    template: str | HTMLTemplate | Callable[[...], None]
     for_reuse: bool
     named_slots: dict[str, Self] = field(default_factory=dict, init=False)
 
@@ -383,14 +384,14 @@ class NSElement(HTMLElement):
 class Condition:
     __slots__ = ['func', 'template']
     func: Callable[[], bool]
-    template: HTMLTemplate | Callable[[RenderNode], None]
+    template: CallableTemplate
 
 
 class ConditionNode(RenderNode):
     render_if_necessary = True
     __slots__ = ['state', 'conditions', 'template']
 
-    def __init__(self, parent: RenderNode, template: HTMLTemplate):
+    def __init__(self, parent: RenderNode, template: Optional[HTMLTemplate]):
         self.template = template
         super().__init__('?', parent)
         self.state = -1
@@ -404,14 +405,14 @@ class LoopNode(RenderNode):
     render_if_necessary = True
     __slots__ = ['template', 'loop_template', 'else_template', 'var_name', 'iterator', 'index_func', 'index_map']
 
-    def __init__(self, parent: RenderNode, template: HTMLTemplate | None):
-        self.template: HTMLTemplate | None = template
+    def __init__(self, parent: RenderNode, template: Optional[HTMLTemplate]):
+        self.template: CallableTemplate = template
         super().__init__('@', parent)
 
         self.var_name: Optional[str] = None
         self.iterator: Optional[Callable[[], Iterable]] = None
-        self.loop_template: Optional[HTMLTemplate | Callable[[RenderNode, ForLoopType, Any, ...], None]] = None
-        self.else_template: Optional[HTMLTemplate | Callable[[RenderNode], None]] = None
+        self.loop_template: CallableTemplate = None
+        self.else_template: CallableTemplate = None
         self.index_func: Optional[Callable[[ForLoopType, Any], Any]] = None
         self.index_map: dict[Hashable, list[RenderNode]] = {}
 
@@ -446,7 +447,7 @@ class EventNode(RenderNode):
 class SetNode(RenderNode):
     __slots__ = ['var_name', 'value', 'template']
 
-    def __init__(self, parent: RenderNode, template: Union[HTMLTemplate, Callable[[RenderNode, Any], None]]):
+    def __init__(self, parent: RenderNode, template: CallableTemplate):
         super().__init__(':=', parent)
         self.template = template
         self.var_name = ''
@@ -456,7 +457,7 @@ class SetNode(RenderNode):
 class ReactNode(RenderNode):
     __slots__ = ['var_name', 'action', 'value']
 
-    def __init__(self, parent: RenderNode, var_name: str, action: str):
+    def __init__(self, parent: RenderNode, var_name: str, action: str | Callable[[...], None]):
         super().__init__('>>>', parent)
         self.var_name = var_name
         self.action = action
@@ -476,6 +477,6 @@ class ScriptNode(RenderNode):
 
 class GroupNode(RenderNode):
     __slots__ = ['template']
-    def __init__(self, parent: RenderNode, template: HTMLTemplate):
+    def __init__(self, parent: RenderNode, template: Optional[HTMLTemplate]):
         super().__init__('group', parent)
         self.template = template

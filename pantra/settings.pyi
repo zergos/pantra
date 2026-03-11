@@ -16,6 +16,8 @@ class SafeConfig:
     WIPE_LOGGING: bool
 
 class LazyConfig:
+    def init(self) -> None: ...
+
     BASE_PATH: Path
     WEB_PATH: str
     COMPONENTS_PATH: Path

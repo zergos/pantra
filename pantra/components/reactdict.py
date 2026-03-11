@@ -50,7 +50,9 @@ class ReactDict(dict):
                     continue
                 if typename(node) == 'ReactNode':
                     node.value = value
-                    process_call(node.context.session, node.context, node.action, node)
+                    node.update_tree()
+                    if isinstance(node.action, str):
+                        process_call(node.context.session, node.context, node.action, node)
                 else:
                     node.update(True)
 

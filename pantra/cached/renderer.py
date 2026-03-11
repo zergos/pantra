@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import typing
-import logging
 
 from pantra.components.render.renderer_base import RendererBase, ForLoopType
 from pantra.components.render.renderer_html import RendererHTML
 from pantra.common import typename
 from pantra.components.template import HTMLTemplate
-from pantra.components.context import HTMLElement, NSElement
 from pantra.settings import config, logger
 
 if typing.TYPE_CHECKING:
@@ -166,6 +164,7 @@ class RendererCached(RendererBase):
         'ConditionNode': _update_condition_node,
         'LoopNode': _update_loop_node,
         'SetNode': _update_set_node,
+        'ReactNode': lambda *args: True,
     }
     #endregion
 

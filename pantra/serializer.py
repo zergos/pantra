@@ -4,7 +4,8 @@ from datetime import date, time, datetime, timezone
 from .contrib import bsdf_lite as bsdf
 from .common import DynamicString
 from .components.render.render_node import RenderNode
-from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, ConditionNode, LoopNode
+from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, ConditionNode, LoopNode, \
+    ReactNode
 
 __all__ = ['serializer']
 
@@ -72,7 +73,7 @@ class StubElementSerializer(bsdf.Extension):
     name = 'd'
 
     def match(self, s, v):
-        return type(v) in (ConditionNode, LoopNode)
+        return type(v) in (ConditionNode, LoopNode, ReactNode)
 
     def encode(self, s, v: RenderNode):
         res = {
