@@ -44,6 +44,7 @@ class Main:
 
         if cached:
             os.environ['PANTRA_RUN_CACHED'] = 'yes'
+            config.init()
         run_main(host, port)
 
     def run_backend(self):
