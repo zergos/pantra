@@ -104,8 +104,8 @@ def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLEl
         bar = HTMLElement('div', refs['bars'], {'on:click': 'click_bar'}, wintitle)
         bar.data['code'] = code
         color = random.randint(80, 300)
-        bar.style.background = hsluv.hsluv_to_hex([color, 80, 80])
-        bar.style.color = hsluv.hsluv_to_hex([color, 100, 20])
+        bar.style['background'] = hsluv.hsluv_to_hex([color, 80, 80])
+        bar.style['color'] = hsluv.hsluv_to_hex([color, 100, 20])
         windows[code] = Window(wintitle, bar)
         if render_to:
             view = HTMLElement('div', render_to)
@@ -140,7 +140,7 @@ def switch_to(code: str, before_close: bool = False):
         ctx['title'] = ''
 
 def click_bar(node):
-    switch_to(node.data.code)
+    switch_to(node.data['code'])
 
 def close(node=None):
     current = active

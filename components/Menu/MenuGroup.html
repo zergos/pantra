@@ -1,6 +1,6 @@
 <div>
-    <div class="caption" class:toggle="{not hidden}" on:click="toggle"><div>{{caption}}</div><div class="arrow"/></div>
-    <div class="group" class:hide="{hidden}">
+    <div class="caption" class:toggle="!{not hidden}" on:click="toggle"><div>{{caption}}</div><div class="arrow"/></div>
+    <div class="group" class:hide="!{hidden}">
         <slot/>
     </div>
 </div>

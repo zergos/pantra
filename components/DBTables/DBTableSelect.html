@@ -23,11 +23,11 @@ def init():
     table = db[name]
 
 def select(node):
-    select_row(refs.table.active_row_id)
+    select_row(refs['table']['active_row_id'])
 
 def select_row(value):
     value = table[value]
     callback(value)
-    session['taskbar'].close()
+    session['taskbar'].call("close")
 
 </python>

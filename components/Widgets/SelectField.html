@@ -22,6 +22,9 @@ values: dict[str, Any] = {}
 field_value: str = None
 value: Any = None
 on_change: Callable[[Any], None] = EmptyCaller()
+required: bool = False
+width: str = ''
+focused: bool = False
 
 def on_render():
     if value:

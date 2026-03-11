@@ -9,6 +9,6 @@ def bind_taskbar(node):
     global taskbar
     if not taskbar:
         taskbar = session['taskbar']
-    taskbar.render_to = node
+    taskbar['render_to'] = node
 
 </python>
