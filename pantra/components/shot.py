@@ -20,6 +20,8 @@ class ContextShotLike(typing.Protocol):
 
     def __sub__(self, other): ...
 
+    def flick(self, node): ...
+
 
 class NullContextShot:
     __slots__ = ()
@@ -39,6 +41,8 @@ class NullContextShot:
     def __sub__(self, other):
         return self
 
+    def flick(self, node):
+        return self
 
 class ContextShot:
     __slots__ = ['created', 'updated', 'deleted', 'flickering']
@@ -83,3 +87,4 @@ class ContextShot:
 
     def flick(self, node):
         self.flickering.put(node)
+        return self
