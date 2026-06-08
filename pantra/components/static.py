@@ -27,15 +27,22 @@ def get_static_url_cached(app: str, template_path: Path, template_name: str, sub
         search_name = config.STATIC_DIR + '/' + file_name
         web_name = file_name
 
-    # check relative to component
-    path = template_path / search_name
+    # relative to app
+    path = config.APPS_PATH / app / search_name
     if path.exists():
-        return config.WEB_PATH + '/static' + '/'.join(['', f'${template_name}', web_name])
+        return config.WEB_PATH + '/static' + '/'.join(['', f'~{app}', web_name])
     else:
-        # relative to app
-        path = config.APPS_PATH / app / search_name
+        # check relative to component
+        path = template_path / search_name
         if path.exists():
-            return config.WEB_PATH + '/static' + '/'.join(['', f'~{app}', web_name])
+            if not path.is_relative_to(config.APPS_PATH):
+                return config.WEB_PATH + '/static' + '/'.join(['', f'${template_name}', web_name])
+            else:
+                app = path.relative_to(config.APPS_PATH).parts[0]
+                if app == config.DEFAULT_APP:
+                    return config.WEB_PATH + '/static' + '/'.join(['', f'${template_name}', web_name])
+                else:
+                    return config.WEB_PATH + '/static' + '/'.join(['', f'${app}:{template_name}', web_name])
         else:
             # relative to components base
             path = config.COMPONENTS_PATH / search_name

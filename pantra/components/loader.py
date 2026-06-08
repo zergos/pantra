@@ -4,6 +4,8 @@ import hashlib
 from pathlib import Path
 import re
 import typing
+import html
+import string
 
 import cssutils
 import sass
@@ -16,7 +18,8 @@ from .grammar.PMLParser import PMLParser
 from .grammar.PMLParserVisitor import PMLParserVisitor
 
 from pantra.settings import config
-from .template import HTMLTemplate, MacroCode, MacroType, get_template_path
+from pantra.trans.processor import demux_fstring
+from .template import HTMLTemplate, MacroCode, MacroType
 from .static import get_static_url
 
 __all__ = ['load', 'load_styles']
@@ -24,60 +27,58 @@ __all__ = ['load', 'load_styles']
 UTF_BOM = '\uFEFF'
 VOID_ELEMENTS = 'area base br col embed hr img input link meta param source track wbr'.split()
 SPECIAL_ELEMENTS = 'slot event scope react component'.split()
+VARNAME_REFERENCE = re.compile(r'^@[a-zA-Z_][a-zA-Z0-9_]*$')
 FORMATTED_EXPRESSION = re.compile(r'^([^{]|\{\{)*\{([^}]|\{\{|}})*}(?!})')
+FORMATTED_EXPRESSION2 = re.compile(r'^([^{]|[{][^{]|`[^{])*(\{\{|`\{)(.*?)(}}|}`)')
+MACRO_CHUNKS = re.compile(r"^(\w+(:\w+)?)\s+(.*)$", re.M | re.DOTALL)
 
 class HTMLVisitor(PMLParserVisitor):
 
     def __init__(self, filename: Path):
         name = Path(filename).stem
-        root = HTMLTemplate(f'${name}', 0)
+        root = HTMLTemplate(f'${name}')
         root.filename = filename
         self.root: typing.Optional[HTMLTemplate] = root
         self.current: typing.Optional[HTMLTemplate] = root
         self.cur_attr: typing.Optional[str] = None
-        self._index = 0
+        self._script_index = 0
 
-    @property
-    def index(self):
-        self._index += 1
-        return self._index
+        self._stripped_text: str = ""
+        self._unstripped_text: str = ""
 
-    def visitText(self, ctx: PMLParser.TextContext):
-        text = ctx.getText().strip(UTF_BOM)
-        if text.strip() and self.current != self.root:
-            if text.startswith('#'):
-                text = re.sub(r'\s+', ' ', text)
-            else:
-                text = text.replace('\r\n', '\n')
-            HTMLTemplate('@text', self.index, parent=self.current, text=text)
-
-    def visitRawText(self, ctx: PMLParser.RawTextContext):
+    def visitScriptText(self, ctx: PMLParser.ScriptTextContext):
         text = ctx.getText()
         if text.strip(UTF_BOM):
             tag_name = self.current.tag_name
             if tag_name == '@python':
                 line_no = ctx.start.line
                 text = '#\n' * (line_no - 1) + text
+            elif tag_name == '@script':
+                text = self._text_to_code(text, True)
             self.current.content = text
 
-    def visitRawTag(self, ctx: PMLParser.RawTagContext):
+    def visitScriptTag(self, ctx: PMLParser.ScriptTagContext):
         tag_name = '@' + ctx.getText().strip()[1:]
-        self.current = HTMLTemplate(tag_name, self.index, parent=self.current)
+        self.current = HTMLTemplate(tag_name, parent=self.current)
         self.current.filename = self.root.filename
         # raw nodes goes first
-        self.current.parent.children.insert(0, self.current.parent.children.pop())
+        if tag_name == "@python":
+            self.current.parent.children.insert(0, self.current.parent.children.pop())
+        elif tag_name == "@script":
+            self.current.script_index = self._script_index + 1
+            self._script_index += 1
 
-    def visitRawCloseTag(self, ctx: PMLParser.RawCloseTagContext):
+    def visitScriptEnd(self, ctx: PMLParser.ScriptEndContext):
         self.current = self.current.parent
 
-    def visitTagBegin(self, ctx: PMLParser.TagBeginContext):
+    def visitTagOpen(self, ctx: PMLParser.TagOpenContext):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
-        self.current = HTMLTemplate(tag_name, self.index, parent=self.current)
+        self.current = HTMLTemplate(tag_name, parent=self.current)
         # if not self.root: self.root = self.current
         self.visitChildren(ctx)
-        if ctx.children[-1].symbol.type == PMLLexer.SLASH_CLOSE or self.current.tag_name.lower() in VOID_ELEMENTS:
+        if ctx.children[-1].symbol.type == PMLLexer.TAG_SLASH_END or self.current.tag_name.lower() in VOID_ELEMENTS:
             self.current = self.current.parent
 
     def visitAttrName(self, ctx: PMLParser.AttrNameContext):
@@ -85,39 +86,138 @@ class HTMLVisitor(PMLParserVisitor):
         if self.cur_attr != 'class':
             self.current.set_attr(self.cur_attr, None)
 
+    def _text_to_code(self, text: str, double_brackets: bool) -> str | MacroCode:
+        if text in ('{}', '#', '::', '!', '@'):
+            return text
+
+        def template_i18n() -> MacroCode:
+            nonlocal text
+            if translated:
+                text, args = demux_fstring(text)
+                if len(args)>1:
+                    args_text = '*((' + '), ('.join(args) + '))'
+                elif len(args)==1:
+                    args_text = args[0]
+                else:
+                    args_text = '*()'
+                text = f'session.zgettext({text!r}, {args_text})'
+            else:
+                text = f'f"""{text}"""'
+            return MacroCode(MacroType.TEMPLATE, reactive, evaluated,
+                              compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+
+        reactive, translated, evaluated = False, False, False
+        while True:
+            if text[0] == '!':
+                reactive = True
+                text = text[1:]
+                continue
+            if text[0] == '#':
+                translated = True
+                text = text[1:]
+                continue
+            if text.startswith('::'):
+                evaluated = True
+                text = text[2:]
+                continue
+            break
+
+        if not double_brackets and (FORMATTED_EXPRESSION.search(text) or VARNAME_REFERENCE.match(text)):
+            # override reactiveness for attributes
+            if 'reactive' in self.current.attributes:
+                reactive = True
+
+            # check the whole string is an expression
+            if text.startswith('{') and text.endswith('}') and text.count('}') == 1 or text.startswith('@'):
+                if text.startswith('{'):
+                    text = text[1:-1]
+                else:
+                    text = text[1:]
+                return MacroCode(MacroType.VALUE, reactive, evaluated,
+                              compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+            # check for string template
+            else:
+                text = text.replace('`{', '{').replace('}`', '}')
+                return template_i18n()
+
+        elif double_brackets and FORMATTED_EXPRESSION2.search(text):
+            # check the whole string is an expression
+            if text.startswith('{{') and text.endswith('}}') and text.count('}}') == 1:
+                text = text[2:-2]
+                return MacroCode(MacroType.VALUE, reactive, evaluated,
+                              compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+            # check for string template
+            else:
+                text = (text.replace('`{', '\u0007').replace('{{', '\u0007')
+                        .replace('}`', '\u0008').replace('}}', '\u0008')
+                        .replace('{', '{{').replace('}', '}}')
+                        .replace('\u0007', '{').replace('\u0008', '}')
+                        )
+                return template_i18n()
+
+        elif translated:
+            text = f'ctx.session.gettext("""{text}""")'
+            return MacroCode(MacroType.STRING, False, True,
+                              compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+        return text
+
     def visitAttrValue(self, ctx: PMLParser.AttrValueContext):
-        text = ctx.getText().strip('"\'')
-        if text == '{}':
-            value = '{}'
-        elif ((text.startswith('{') or text.startswith('!{')) and text.endswith('}')
-              or text.startswith('@') or text.startswith('!@')):
-            if reactive := text[0] == '!':
-                text = text[1:]
-            if text.startswith('{'):
-                text = text[1:-1]
-            else:
-                text = text[1:]
-            if not self.cur_attr.startswith('set:'):
-                value = MacroCode(MacroType.VALUE, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
-            else:
-                value = MacroCode(MacroType.STRING, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
-        elif FORMATTED_EXPRESSION.search(text):
-            reactive = text[0] == '!'
-            text = text.replace('`{', '{').replace('}`', '}')
-            text = f'f"""{text}"""'
-            value = MacroCode(MacroType.TEMPLATE, reactive, compile(text, f'<{self.current.path()}:{self.cur_attr}>', 'eval'), text)
+        text: str = ctx.getText().strip('"\'`')
+        if ctx.stop.type == ctx.parser.NUMBER:
+            try:
+                value = int(text)
+            except ValueError:
+                value = float(text)
+
+        elif ctx.stop.type == ctx.parser.BOOLEAN:
+            value = text.lower() == 'true'
+
         else:
-            value = text
+            value = self._text_to_code(text, False)
+
         self.current.set_attr(self.cur_attr, value)
 
-    def visitRawName(self, ctx:PMLParser.RawNameContext):
+    def visitContent(self, ctx: PMLParser.ContentContext):
+        self._stripped_text = ""
+        self._unstripped_text = ""
+        self.visitChildren(ctx)
+
+        if self._unstripped_text.endswith('#') and not re.match(r'^#+$', self._stripped_text):
+            content = self._unstripped_text[:-1]
+        else:
+            content = self._stripped_text
+        if content:
+            HTMLTemplate("@text", self.current,
+                         text=self._text_to_code(content, True))
+
+    def visitText(self, ctx: PMLParser.TextContext):
+        if self.current == self.root:
+            return
+
+        text = ctx.getText().lstrip(UTF_BOM)
+        text = html.unescape(text)
+        if (self._unstripped_text and
+                (self._unstripped_text[-1] in string.whitespace
+                 or text[0] in string.whitespace)):
+            self._stripped_text += " "
+        self._stripped_text += re.sub(r"\s+", " ", text.strip())
+        self._unstripped_text += text
+
+    def visitMacroInline(self, ctx: PMLParser.MacroInlineContext):
+        if text:=ctx.getText().strip():
+            if self._unstripped_text and self._unstripped_text[-1] in string.whitespace:
+                self._stripped_text += ' '
+            self._stripped_text += text
+            self._unstripped_text += text
+
+    def visitScriptName(self, ctx:PMLParser.ScriptNameContext):
         self.cur_attr = ctx.getText()
         self.current.set_attr(self.cur_attr, None)
 
-    def visitRawValue(self, ctx:PMLParser.RawValueContext):
+    def visitScriptValue(self, ctx:PMLParser.ScriptValueContext):
         self.current.set_attr(self.cur_attr, ctx.getText().strip('"\''))
 
-    def visitTagEnd(self, ctx: PMLParser.TagEndContext):
+    def visitTagClose(self, ctx: PMLParser.TagCloseContext):
         tag_name = ctx.children[1].getText()
         if tag_name in SPECIAL_ELEMENTS:
             tag_name = '@' + tag_name
@@ -129,62 +229,65 @@ class HTMLVisitor(PMLParserVisitor):
             raise IllegalStateException(f"close tag don't match {tag_name}")
         self.current = self.current.parent
 
-    def visitMacroBegin(self, ctx: PMLParser.MacroBeginContext):
+    def visitMacroOpen(self, ctx: PMLParser.MacroOpenContext):
         reactive = ctx.children[0].getText().startswith('!')
         command = ctx.children[1].getText()
 
-        macro_chunks = re.search(r"^(\w+)\s+(.*)$", command)
+        macro_chunks = MACRO_CHUNKS.search(command)
         if not macro_chunks:
             tag_name = command.strip()
             text = ''
         else:
             tag_name = macro_chunks.group(1).strip()
-            text = macro_chunks.group(2).strip()
+            text = macro_chunks.group(3).strip()
 
         # gen 'if' subtree
         if tag_name == 'if':
-            parent = HTMLTemplate('#if', self.index, self.current)
-            self.current = HTMLTemplate('#choice', self.index, parent=parent)
+            parent = HTMLTemplate('#if', self.current)
+            self.current = HTMLTemplate('#choice', parent=parent)
             self.current.set_attr('condition',
-                                  MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{self.current.path()}>", "eval"), text))
+                                  MacroCode(MacroType.BOOLEAN, reactive, False,
+                                            compile(text, f"<{self.current.path()}>", "eval"), text))
         elif tag_name == 'for':
-            parent = HTMLTemplate('#for', self.index, self.current)
+            parent = HTMLTemplate('#for', self.current)
             sides = text.split('#')
             chunks = sides[0].split(' in ')
             var_name = chunks[0].strip()
             iterator = compile(chunks[1], f"<{parent.path()}:iterator>", "eval")
             index_func = compile(sides[1], f"<{parent.path()}:index_func>", "eval") if len(sides) > 1 else None
 
-            self.current = HTMLTemplate('#loop', self.index, parent=parent)
+            self.current = HTMLTemplate('#loop', parent=parent)
             self.current.set_attr('var_name', var_name)
             self.current.set_attr('iter',
-                                  MacroCode(MacroType.ITERATOR, reactive, iterator, chunks[1]))
+                                  MacroCode(MacroType.ITERATOR, reactive, False, iterator, chunks[1]))
             if len(sides)>1:
                 self.current.set_attr('index_func',
-                                      MacroCode(MacroType.INDEX, reactive, index_func, sides[1]))
+                                      MacroCode(MacroType.INDEX, False, False, index_func, sides[1]))
         elif tag_name == 'elif':
-            self.current = HTMLTemplate('#choice', self.index, parent=self.current.parent)
+            self.current = HTMLTemplate('#choice', parent=self.current.parent)
             self.current.set_attr('condition',
-                                  MacroCode(MacroType.BOOLEAN, reactive, compile(text, f"<{self.current.path()}>", "eval"), text))
+                                  MacroCode(MacroType.BOOLEAN, reactive, False, compile(text, f"<{self.current.path()}>", "eval"), text))
         elif tag_name == 'else':
-            self.current = HTMLTemplate('#else', self.index, parent=self.current.parent)
-        elif tag_name == 'set':
-            self.current = HTMLTemplate('#set', self.index, parent=self.current)
-            chunks = text.split(':=')
-            if len(chunks) != 2:
-                chunks = text.split('=')
-                if len(chunks) < 2:
-                    raise IllegalStateException("set command should contain `:=` or `=` marker")
-                else:
-                    chunks[1] = '='.join(chunks[1:])
-            var_name = chunks[0].strip()
-            var_value = chunks[1].strip()
-            expr = compile(var_value, f"<{self.current.path()}>", "eval")
-            self.current.set_attr("value",
-                                  MacroCode(MacroType.VALUE, reactive, expr, chunks[1].strip()))
-            self.current.set_attr('var_name', var_name)
+            self.current = HTMLTemplate('#else', parent=self.current.parent)
+        elif tag_name.startswith('set'):
+            self.current = HTMLTemplate('#' + tag_name, parent=self.current)
+            if '=' not in text:
+                raise IllegalStateException("set command should contain an assignment expression")
 
-    def visitMacroEnd(self, ctx: PMLParser.MacroEndContext):
+            for line in text.splitlines():
+                if not line.strip():
+                    continue
+
+                if ':=' in line:
+                    var_name, code = line.split(':=', 1)
+                else:
+
+                    var_name, code = line.split('=', 1)
+                expr = compile(code.strip(), f"<{self.current.path()}>", "eval")
+                self.current.set_attr(var_name.strip(),
+                                      MacroCode(MacroType.VALUE, reactive, False, expr, code.strip()))
+
+    def visitMacroClose(self, ctx: PMLParser.MacroCloseContext):
         macro_tag = '#'+ctx.children[1].getText().strip()
         while self.current:
             if macro_tag == self.current.tag_name:
@@ -194,17 +297,11 @@ class HTMLVisitor(PMLParserVisitor):
             raise IllegalStateException(f"macro close tag don't match {macro_tag}")
         self.current = self.current.parent
 
-    def visitInlineMacro(self, ctx: PMLParser.InlineMacroContext):
-        macro = HTMLTemplate('@macro', self.index, parent=self.current)
-        text = ctx.children[1].getText()
-        code = compile(text, f'<{self.current}:macro>', 'eval')
-        macro.content = MacroCode(MacroType.VALUE, ctx.children[0].getText().startswith('!'), code, text)
-
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')
 
 
-class ErrorVisitor(ErrorListener):
+class ErrorCatcher(ErrorListener):
     def __init__(self, filename, error_callback):
         super().__init__()
         self.filename = filename
@@ -217,10 +314,12 @@ class ErrorVisitor(ErrorListener):
 def load(filename: Path, error_callback: typing.Callable[[str], None]) -> typing.Optional[HTMLTemplate]:
     in_stream = FileStream(str(filename), encoding='utf-8')
     lexer = PMLLexer(in_stream)
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(ErrorCatcher(filename, error_callback))
     stream = CommonTokenStream(lexer)
     parser = PMLParser(stream)
     parser.removeErrorListeners()
-    parser.addErrorListener(ErrorVisitor(filename, error_callback))
+    parser.addErrorListener(ErrorCatcher(filename, error_callback))
     tree = parser.process()
 
     visitor = HTMLVisitor(filename)
@@ -236,7 +335,7 @@ def load(filename: Path, error_callback: typing.Callable[[str], None]) -> typing
     # find external code file
     code_filename = filename.with_suffix('.py')
     if code_filename.exists():
-        HTMLTemplate("@python", 0, visitor.root, text=code_filename.read_text(encoding='utf-8'))
+        HTMLTemplate("@python", visitor.root, text=code_filename.read_text(encoding='utf-8'))
         # raw nodes goes first
         visitor.root.children.insert(0, visitor.root.children.pop())
 
@@ -256,7 +355,7 @@ class StyleVisitor(PMLParserVisitor):
         self.in_style = False
         self.global_mode = False
 
-    def visitRawText(self, ctx: PMLParser.RawTextContext):
+    def visitScriptText(self, ctx: PMLParser.ScriptTextContext):
         if not self.in_style:
             return
 
@@ -347,28 +446,33 @@ class StyleVisitor(PMLParserVisitor):
             # recover css text with injections
             self.styles.append(str(sheet.cssText, 'utf8'))
 
-    def visitRawName(self, ctx: PMLParser.RawNameContext):
+    def visitScriptName(self, ctx: PMLParser.ScriptNameContext):
         name = ctx.getText()
         if name == 'global':
             self.global_mode = True
 
-    def visitRawTag(self, ctx: PMLParser.RawTagContext):
+    def visitScriptTag(self, ctx: PMLParser.ScriptTagContext):
         if ctx.getText().strip()[1:] == 'style':
             self.in_style = True
             self.global_mode = False
 
-    def visitRawCloseTag(self, ctx: PMLParser.RawCloseTagContext):
+    def visitScriptEnd(self, ctx: PMLParser.ScriptEndContext):
         self.in_style = False
 
     def visitErrorNode(self, node):
         raise IllegalStateException(f'wrong node {node.getText()}')
 
 
-def load_styles(app:str, name: str, template_filename: Path):
+def load_styles(app:str, name: str, template_filename: Path,
+                error_callback: typing.Callable[[str], None] | None = None):
     in_stream = FileStream(str(template_filename), encoding='utf-8')
     lexer = PMLLexer(in_stream)
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(ErrorCatcher(str(template_filename), error_callback))
     stream = CommonTokenStream(lexer)
     parser = PMLParser(stream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(ErrorCatcher(str(template_filename), error_callback))
     tree = parser.process()
 
     visitor = StyleVisitor(app, name, template_filename)

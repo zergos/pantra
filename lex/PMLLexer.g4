@@ -10,33 +10,41 @@ CDATA       : '<![CDATA[' .*? ']]>' -> skip;
 DTD         : '<!' .*? '>' -> skip ;
 
 // tags with raw inner text
-RAW_TAG     : ('<style' | '<python' | '<script' ) ' '* -> pushMode(RAW_BLOCK);
+SCRIPT_TAG     : ('<style' | '<python' | '<script' ) ' '* -> pushMode(SCRIPT_BLOCK);
 
 // open TAG
-OPEN_BEGIN  : '<' -> pushMode(TAG_PROPERTIES);
-OPEN_END    : '</' -> pushMode(TAG_PROPERTIES);
+TAG_OPEN    : '<' -> pushMode(TAG_PROPERTIES);
+TAG_CLOSE   : '</' -> pushMode(TAG_PROPERTIES);
 
 // macro command
-OPEN_MACRO_BEGIN
+MACRO_OPEN
             : ('!{{#' | '{{#') -> pushMode(MACRO);
-OPEN_MACRO_END
+MACRO_CLOSE
             : '{{/' -> pushMode(MACRO);
-INLINE_MACRO: ('!{{' | '{{') -> pushMode(MACRO);
 
-// text other content inside tags
-TEXT        : (~[<{!] | [{] ~[<{] | [!] ~[<{] | [!] [{] ~[<{] )+ ;
+MACRO_INLINE: ('{{' | '!{{') -> pushMode(MACRO);
 
+// text content
+TEXT        : ( ~[<{!] )+ ;
+OTHER       : . ;
+
+// tag definition
 mode TAG_PROPERTIES;
 
-// close TAG
-CLOSE       : '>' -> popMode;
-SLASH_CLOSE : '/>' -> popMode;
-EQ          : '=' ;
-COLON       : ':' ;
-STRING      : '"' ~["]* '"'
-            | '\'' ~[']* '\'';
-NAME        : NameStartChar NameChar* ;
-WS          : [ \t\r\n] -> skip;
+TAG_END       : '>' -> popMode;
+TAG_SLASH_END : '/>' -> popMode;
+EQ            : '=' ;
+COLON         : ':' ;
+STRING        : '"' ~["]* '"'
+              | '\'' ~[']* '\''
+              | '`' ~[`]* '`';
+EXPRESSION    : ([!#] | '::')* '{' ~[}]* '}'
+              | ([!#] | '::')* '@' NAME ;
+NUMBER        : DIGIT NameChar* ;
+BOOLEAN       : 'True'
+              | 'False' ;
+NAME          : NameStartChar NameChar* ;
+WS            : [ \t\r\n] -> skip ;
 
 fragment
 DIGIT       : [0-9] ;
@@ -57,28 +65,24 @@ NameStartChar
             | '\uFDF0'..'\uFFFD'
             ;
 
-/*
+// macro definition
 mode MACRO;
 
-CLOSE_MACRO : '}' -> popMode;
-COMMAND     : ~[}]+ ;
-*/
+MACRO_END     : '}}' -> popMode;
+MACRO_COMMAND : (~[}])+ ;
+MACRO_OTHER   : . ;
 
-mode MACRO;
+// raw script mode
+mode SCRIPT_BLOCK;
 
-CLOSE_MACRO : '}}' -> popMode;
-COMMAND     : (~[}] | [}] ~[}])+ ;
+SCRIPT_END     : '>' -> mode(SCRIPT_TEXT_MODE);
+SCRIPT_EQ      : EQ ;
+SCRIPT_STRING  : STRING ;
+SCRIPT_NAME    : NAME ;
+SCRIPT_WS      : [ \t\r\n] -> skip;
 
-mode RAW_BLOCK;
+mode SCRIPT_TEXT_MODE;
 
-RAW_CLOSE   : '>' -> mode(RAW_TEXT_MODE);
-RAW_EQ          : EQ ;
-RAW_STRING      : STRING ;
-RAW_NAME    : NAME ;
-RAW_WS      : [ \t\r\n] -> skip;
-
-mode RAW_TEXT_MODE;
-
-CLOSE_TAG   : ('</style>' | '</python>' | '</script>') -> popMode;
-RAW_TEXT    : (~[<] | [<] ~[/] | '</' ~[ps] | '</p' ~[y] | '</s' ~[tc])+ ;
-//RAW_TEXT    : (~[<] | [<] ~[/] | '</' )+ ;
+SCRIPT_TEXT_END : ('</style>' | '</python>' | '</script>') -> popMode;
+SCRIPT_TEXT    : (~[<])+ ;
+SCRIPT_OTHER : . ;
