@@ -11,7 +11,6 @@ authors = [
 maintainers = [
     {name = "Andrey Aseev", email = "andrey@aseev.biz"}
 ]
-urls = {Homepage = "https://github.com/zergos/pantra"}
 description = "Python Full-stack Web Framework"
 dependencies = [
 	'uvicorn==0.40.0',
@@ -34,6 +33,7 @@ quazy = ['quazydb']
 psycopg = ["psycopg[binary,pool]"]
 
 [project.urls]
+Homepage = "https://github.com/zergos/pantra"
 Documentation = "https://pantra.readthedocs.io/en/latest/"
 Repository = "https://github.com/zergos/pantra.git"
 Issues = "https://github.com/zergos/pantra/issues"
