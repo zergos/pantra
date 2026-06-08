@@ -8,121 +8,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"system\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2023-09-08 21:48+0800\n"
+"POT-Creation-Date: 2026-06-08 23:58+0700\n"
 "PO-Revision-Date: 2020-07-09 16:27+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.18.0\n"
 
 #. entity
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:10
-msgid "User"
-msgid_plural "Users"
-msgstr[0] "Пользаватель"
-msgstr[1] "Пользователя"
-msgstr[2] "Пользователей"
-
-#. entity plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:10
-msgid "Users"
-msgstr "Пользователи"
-
-#. title of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:11
-#, fuzzy
-msgid "user"
-msgid_plural "users"
-msgstr[0] "Пользаватель"
-msgstr[1] "Пользователя"
-msgstr[2] "Пользователей"
-
-#. title of `User` plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:11
-#, fuzzy
-msgid "users"
-msgstr "Пользователи"
-
-#. field `name` of `User`
-#. field `name` of `App`
-#. field `name` of `Catalog`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:12
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:34
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:56
-msgid "name"
-msgstr "наименование"
-
-#. field `password` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:13
-msgid "password"
-msgstr "пароль"
-
-#. field `salt` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:14
-msgid "salt"
-msgstr "соль"
-
-#. field `email` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:15
-msgid "email"
-msgstr "email"
-
-#. field `created_at` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:16
-#, fuzzy
-msgid "created_at"
-msgstr "создан"
-
-#. field title `created_at` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:16
-msgid "created"
-msgstr "создан"
-
-#. field `is_admin` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:17
-msgid "is_admin"
-msgstr "это админ"
-
-#. field title `is_admin` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:17
-msgid "A"
-msgstr "A"
-
-#. field `enabled` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:18
-msgid "enabled"
-msgstr ""
-
-#. field title `enabled` of `User`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:18
-msgid "E"
-msgstr "E"
-
-#. entity
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:33
-msgid "App"
-msgid_plural "Apps"
-msgstr[0] "Приложение"
-msgstr[1] "Приложения"
-msgstr[2] "Приложений"
-
-#. entity plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:33
-msgid "Apps"
-msgstr "Приложения"
-
-#. field `title` of `App`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:35
-msgid "title"
-msgstr "заголовок"
-
-#. entity
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:42
+#: C:/py/bol/bwf/apps/system/data/__init__.py:10
 msgid "Document"
 msgid_plural "Documents"
 msgstr[0] "Документ"
@@ -130,61 +29,25 @@ msgstr[1] "Документа"
 msgstr[2] "Документов"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:42
+#: C:/py/bol/bwf/apps/system/data/__init__.py:10
 msgid "Documents"
 msgstr "Документы"
 
-#. field `prefix` of `Document`
-#. field `prefix` of `Catalog`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:43
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:54
-msgid "prefix"
-msgstr "преф"
-
-#. field `number` of `Document`
-#. field `number` of `Catalog`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:44
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:55
-msgid "number"
-msgstr "номер"
-
-#. field `date` of `Document`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:45
-msgid "date"
-msgstr "дата"
-
-#. field `body` of `Document`
-#. field `body` of `Catalog`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:46
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:57
-msgid "body"
-msgstr "тело"
-
 #. entity
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:48
-msgid "DocumentLine"
-msgid_plural "DocumentLines"
+#: C:/py/bol/bwf/apps/system/data/__init__.py:21
+msgid "Row"
+msgid_plural "Rows"
 msgstr[0] "Строка документа"
 msgstr[1] "Строки документа"
 msgstr[2] "Строк документа"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:48
-msgid "DocumentLines"
+#: C:/py/bol/bwf/apps/system/data/__init__.py:21
+msgid "Rows"
 msgstr "Строки документа"
 
-#. field `pos` of `Document.DocumentLine`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:49
-msgid "pos"
-msgstr "поз"
-
-#. field `data` of `Document.DocumentLine`
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:50
-msgid "data"
-msgstr "данные"
-
 #. entity
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:53
+#: C:/py/bol/bwf/apps/system/data/__init__.py:27
 msgid "Catalog"
 msgid_plural "Catalogs"
 msgstr[0] "Справочник"
@@ -192,10 +55,7 @@ msgstr[1] "Справочника"
 msgstr[2] "Справочников"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/system/data/__init__.py:53
+#: C:/py/bol/bwf/apps/system/data/__init__.py:27
 msgid "Catalogs"
 msgstr "Справочники"
-
-#~ msgid "document"
-#~ msgstr "документ"
 

@@ -470,14 +470,14 @@ class Locale(AppProvider):
             f.write('[extractors]\n'
                     'python = pantra.trans:extract_python\n'
                     'html = pantra.trans:extract_html\n'
-                    'data = pantra.trans:extract_data\n'
-                    '[python: **.py]\n'
-                    '[html: **.html]\n')
+                    'data = pantra.trans:extract_data\n')
             try:
                 import quazy
-                f.write('[data: ** / data / __init__.py]\n')
+                f.write('[data: **/data/__init__.py]\n')
             except ImportError:
                 pass
+            f.write('[python: **.py]\n'
+                    '[html: **.html]\n')
 
         pot_name = path / 'app.po'
 

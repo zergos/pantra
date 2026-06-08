@@ -8,45 +8,45 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"storage\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-08-20 17:06+0300\n"
+"POT-Creation-Date: 2026-06-08 23:56+0700\n"
 "PO-Revision-Date: 2020-06-29 11:37+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:3
-#: D:/projects/bol/bwf/apps/storage/Main.html:32
+#: C:/py/bol/bwf/apps/storage/Main.html:3
+#: C:/py/bol/bwf/apps/storage/Main.html:33
 msgid "Storage management"
 msgstr "Управление складом"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:8
+#: C:/py/bol/bwf/apps/storage/Main.html:8
 msgid "Catalogs"
 msgstr "Справочники"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:13
+#: C:/py/bol/bwf/apps/storage/Main.html:13
 msgid "Documents"
 msgstr "Документы"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:14
+#: C:/py/bol/bwf/apps/storage/Main.html:14
 msgid "Rest entries"
 msgstr "Остатки"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:15
+#: C:/py/bol/bwf/apps/storage/Main.html:15
 msgid "Sales"
 msgstr "Продажи"
 
-#: D:/projects/bol/bwf/apps/storage/Main.html:16
+#: C:/py/bol/bwf/apps/storage/Main.html:16
 msgid "Incomes"
 msgstr "Приходы"
 
 #. entity
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:2
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:7
 msgid "Storage"
 msgid_plural "Storages"
 msgstr[0] "Склад"
@@ -54,12 +54,12 @@ msgstr[1] "Склада"
 msgstr[2] "Складов"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:2
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:7
 msgid "Storages"
 msgstr "Склады"
 
 #. entity
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:3
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:11
 msgid "Unit"
 msgid_plural "Units"
 msgstr[0] "Единица"
@@ -67,12 +67,12 @@ msgstr[1] "Единицы"
 msgstr[2] "Единиц"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:3
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:11
 msgid "Units"
 msgstr "Единицы"
 
 #. entity
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:4
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:15
 msgid "Good"
 msgid_plural "Goods"
 msgstr[0] "Товар"
@@ -80,24 +80,22 @@ msgstr[1] "Товара"
 msgstr[2] "Товаров"
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:4
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:15
 msgid "Goods"
 msgstr "Товары"
 
-#. prop of Good
-#. attr of PurchaseLine
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:5
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:14
+#. field `unit` of `Good`
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:16
 msgid "unit"
 msgstr "единица"
 
-#. prop of Good
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:6
+#. field `weight` of `Good`
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:17
 msgid "weight"
 msgstr "вес"
 
 #. entity
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:9
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:20
 msgid "Purchase"
 msgid_plural "Purchases"
 msgstr[0] ""
@@ -105,47 +103,25 @@ msgstr[1] ""
 msgstr[2] ""
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:9
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:20
 msgid "Purchases"
 msgstr ""
 
-#. attr of Purchase
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:10
+#. field `storage` of `Purchase`
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:21
 msgid "storage"
-msgstr ""
+msgstr "склад"
 
 #. entity
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:12
-msgid "PurchaseLine"
-msgid_plural "PurchaseLines"
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:23
+msgid "Row"
+msgid_plural "Rows"
 msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
 #. entity plural
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:12
-msgid "PurchaseLines"
+#: C:/py/bol/bwf/apps/storage/data/__init__.py:23
+msgid "Rows"
 msgstr ""
-
-#. attr of PurchaseLine
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:13
-msgid "good"
-msgstr ""
-
-#. attr of PurchaseLine
-#: D:/projects/bol/bwf/apps/storage/data/models.xml:15
-msgid "qty"
-msgstr ""
-
-#~ msgid "Refresh"
-#~ msgstr "Обновить"
-
-#~ msgid "Add"
-#~ msgstr "Добавить"
-
-#~ msgid "Delete"
-#~ msgstr "Удалить"
-
-#~ msgid "Confirm deletion of {}"
-#~ msgstr "Подтвердите удаление {}"
 

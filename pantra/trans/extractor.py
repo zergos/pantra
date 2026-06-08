@@ -110,6 +110,7 @@ class MyVisitor(PMLParserVisitor):
         self.in_python = False
         self.args = args
         self.res = []
+        self.in_content = False
         self._stripped_text = ""
         self._unstripped_text = ""
 
@@ -131,7 +132,7 @@ class MyVisitor(PMLParserVisitor):
         self.in_python = False
 
     def _text_to_render(self, text: str, double_brackets: bool) -> str | None:
-        if text in ('{}', '#', '::', '!', '@'):
+        if text in ('{}', '#', '::', '!', '@', ''):
             return text
 
         def template_i18n() -> str:
@@ -186,6 +187,10 @@ class MyVisitor(PMLParserVisitor):
             if rendered:
                 self.res.append((ctx.start.line, '_', rendered, []))
 
+    def visitTagOpen(self, ctx: PMLParser.TagOpenContext):
+        self.in_content = True
+        self.visitChildren(ctx)
+
     def visitContent(self, ctx: PMLParser.ContentContext):
         self._stripped_text = ""
         self._unstripped_text = ""
@@ -195,7 +200,7 @@ class MyVisitor(PMLParserVisitor):
             content = self._unstripped_text[:-1]
         else:
             content = self._stripped_text
-        if content:
+        if content and self.in_content:
             rendered = self._text_to_render(content, True)
             if rendered:
                 self.res.append((ctx.start.line, '_', rendered, []))
@@ -226,6 +231,9 @@ class ErrorVisitor(ErrorListener):
 def extract_html(fileobj, keywords, comment_tags, options):
     """Extract messages from HTML components"""
     print(f'HTML> {fileobj.name}')
+    if Path(fileobj.name).name == 'bootstrap.html':
+        print('Skipped')
+        return
     in_stream = InputStream(fileobj.read().decode('utf-8'))
     lexer = PMLLexer(in_stream)
     stream = CommonTokenStream(lexer)
@@ -307,6 +315,8 @@ def extract_data(fileobj, keywords, comment_tags, options):
                     yield subnode.lineno, 'ngettext', (title, plural(title)), [f'title of `{table.__qualname__}`']
                     yield subnode.lineno, '_', plural(title), [f'title of `{table.__qualname__}` plural']
                 elif type(subnode) == ast.ClassDef \
+                    and len(subnode.bases) > 0 \
+                    and type(subnode.bases[0]) == ast.Name \
                     and subnode.bases[0].id in ('StrEnum', 'IntEnum'):
                     #print(subnode.lineno, '!')
                     for subsubnode in ast.iter_child_nodes(subnode):

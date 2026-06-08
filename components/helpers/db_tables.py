@@ -59,7 +59,7 @@ def render_form(session: Session, caller: Context, row: DBTable | type[DBTable],
         title = ''
         code = ''
     _ = session.zgettext
-    parent, new = session['taskbar'].call("add_window", f'{table.__qualname__}#{code}', _('New: {}', _(table.__qualname__)) if not code else f'{_(table.__qualname__)}: {title}', caller)
+    parent, new = session['taskbar'].call("add_window", f'{table.__qualname__}#{code}', _('New: ') + _(table.__qualname__) if not code else f'{_(table.__qualname__)}: {title}', caller)
     if not new:
         return parent
     form_template_name = find_template(session, table, 'Form')

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pantra App \"Components\" VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-11 13:37+0700\n"
+"POT-Creation-Date: 2026-06-09 00:25+0700\n"
 "PO-Revision-Date: 2020-07-13 01:25+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -18,183 +18,125 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.15.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableForm.html:4
+#: C:/py/bol/bwf/components/DBTables/DBTableForm.html:4
 msgid "Save"
 msgstr "Записать"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableForm.html:5
-#: D:/projects/bazi/bazicalc/components/Dialogs/Dialog.html:43
+#: C:/py/bol/bwf/components/DBTables/DBTableForm.html:5
+#: C:/py/bol/bwf/components/Dialogs/Dialog.html:43
 msgid "Close"
 msgstr "Закрыть"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:3
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:3
 msgid "Refresh"
 msgstr "Обновить"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:4
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:4
 msgid "Add"
 msgstr "Добавить"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:5
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:5
 msgid "Copy"
 msgstr "Копировать"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:6
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:6
 msgid "Delete"
 msgstr "Удалить"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:37
-#, fuzzy
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:37
+#, python-brace-format
 msgid "Table `{}` not found"
 msgstr "сущность {} не найдена"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableList.html:61
-msgid "Confirm deletion of {}"
-msgstr "Подтвердите удаление {}"
+#: C:/py/bol/bwf/components/DBTables/DBTableList.html:61
+msgid "Confirm deletion of "
+msgstr "Подтвердите удаление "
 
-#: D:/projects/bazi/bazicalc/components/DBTables/DBTableSelect.html:3
+#: C:/py/bol/bwf/components/DBTables/DBTableSelect.html:2
 msgid "Select"
 msgstr "Выбрать"
 
-#: D:/projects/bazi/bazicalc/components/DBTables/__init__.py:44
-msgid "Select: {}"
-msgstr "Выбор: {}"
-
-#: D:/projects/bazi/bazicalc/components/DBTables/__init__.py:62
-msgid "New: {}"
-msgstr "Новый: {}"
-
-#: D:/projects/bazi/bazicalc/components/Dialogs/Dialog.html:41
+#: C:/py/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "Yes"
 msgstr "Да"
 
-#: D:/projects/bazi/bazicalc/components/Dialogs/Dialog.html:41
+#: C:/py/bol/bwf/components/Dialogs/Dialog.html:41
 msgid "No"
 msgstr "Нет"
 
-#: D:/projects/bazi/bazicalc/components/Dialogs/Dialog.html:42
+#: C:/py/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "OK"
 msgstr "ОК"
 
-#: D:/projects/bazi/bazicalc/components/Dialogs/Dialog.html:42
+#: C:/py/bol/bwf/components/Dialogs/Dialog.html:42
 msgid "Cancel"
 msgstr "Отмена"
 
-#: D:/projects/bazi/bazicalc/components/Forms/SelectBox.html:8
-#: D:/projects/bazi/bazicalc/components/Tables/BaseTable.html:46
-#: D:/projects/bazi/bazicalc/components/Widgets/SelectField.html:10
+#: C:/py/bol/bwf/components/Forms/SelectBox.html:8
+#: C:/py/bol/bwf/components/Tables/BaseTable.html:48
+#: C:/py/bol/bwf/components/Widgets/SelectField.html:10
 msgid "Empty"
 msgstr "Пусто"
 
-#: D:/projects/bazi/bazicalc/components/Forms/inputs.py:22
+#: C:/py/bol/bwf/components/Forms/inputs.py:22
 msgid "field is required"
 msgstr "поле не заполнено"
 
-#: D:/projects/bazi/bazicalc/components/Layout/SysTray.html:5
+#: C:/py/bol/bwf/components/Layout/SysTray.html:5
 msgid "Restart"
-msgstr "Перезагрузить"
+msgstr "Перезапустить"
 
-#: D:/projects/bazi/bazicalc/components/Layout/SysTray.html:6
+#: C:/py/bol/bwf/components/Layout/SysTray.html:6
 msgid "Switch App"
-msgstr "Переключить приложение"
+msgstr "Выбрать приложение"
 
-#: D:/projects/bazi/bazicalc/components/Layout/SysTray.html:11
+#: C:/py/bol/bwf/components/Layout/SysTray.html:11
 msgid "Logout"
 msgstr "Выйти"
 
-#: D:/projects/bazi/bazicalc/components/Layout/__init__.py:17
-msgid "Can not add window, session has no taskbar"
-msgstr "Не могу добавить окно, неопределена панель задач"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:3
-msgid "Starting facility"
-msgstr "Начальная установка"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:4
-msgid "Select app"
-msgstr "Выбор приложения"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:10
-msgid "Select user"
-msgstr "Выбор пользователя"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:14
-msgid "no users available"
-msgstr "пользователи недоступны"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:18
-msgid "Create new admin user"
-msgstr "Создать нового администратора"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:19
-#: D:/projects/bazi/bazicalc/components/Main.html:29
-msgid "Login"
-msgstr "Логин"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:20
-#: D:/projects/bazi/bazicalc/components/Main.html:27
-msgid "Password"
-msgstr "Пароль"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:21
-msgid "Password again"
-msgstr "Пароль ещё раз"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:23
-msgid "Create and login"
-msgstr "Создать и войти"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:42
-msgid "Authorization"
-msgstr "Авторизация"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:59
-msgid "Passwords dont match"
-msgstr "Пароли не совпадают"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:74
-msgid "User not available"
-msgstr "Пользователь не найден"
-
-#: D:/projects/bazi/bazicalc/components/Main.html:77
-msgid "Wrong password"
-msgstr "Неверный пароль"
-
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:4
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:4
 msgid "search..."
 msgstr "поиск..."
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:12
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:12
 msgid "Not filtered"
 msgstr "Без фильтров"
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:16
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:16
 msgid "Filters"
 msgstr "Фильтры"
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:21
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:21
 msgid "Apply"
 msgstr "Применить"
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:22
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:22
 msgid "Hide"
-msgstr "Скрыть"
+msgstr "Спрятать"
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:102
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:102
 msgid "contains"
 msgstr "содержит"
 
-#: D:/projects/bazi/bazicalc/components/Tables/FilterTable.html:103
+#: C:/py/bol/bwf/components/Tables/FilterTable.html:103
 msgid "between"
 msgstr "между"
 
-#: D:/projects/bazi/bazicalc/components/Widgets/Field.html:79
+#: C:/py/bol/bwf/components/Widgets/Field.html:79
 msgid "field is empty"
 msgstr "поле не заполнено"
 
-#: D:/projects/bazi/bazicalc/components/bootstrap.html:58
-msgid "000"
-msgstr ""
+#: C:/py/bol/bwf/components/helpers/db_tables.py:44
+msgid "Select: "
+msgstr "Выбрать: "
+
+#: C:/py/bol/bwf/components/helpers/db_tables.py:62
+msgid "New: "
+msgstr "Новый: "
+
+#: C:/py/bol/bwf/components/helpers/layout.py:17
+msgid "Can not add window, session has no taskbar"
+msgstr "Не могу добавить окно, неопределена панель задач"
 
