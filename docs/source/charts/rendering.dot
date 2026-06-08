@@ -1,0 +1,10 @@
+digraph "Rendering engine" {
+  size="4,4";
+  Templates -> Factory;
+  Factory [label="Renderer"];
+  Factory -> "DOM tree" [label="rendering"];
+  "DOM tree" -> Browser;
+  Browser -> Events;
+  Events [shape=diamond];
+  Events -> Factory [label="actions"];
+}  

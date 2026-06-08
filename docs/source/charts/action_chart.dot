@@ -1,0 +1,16 @@
+digraph "Action Flowchart" {
+  layout=circo;
+  size="4,4";
+  node [shape=circle];
+  User [style=filled, fillcolor=lightgreen];
+  Action, Thread, DOM [style=filled, fillcolor=lightblue];
+  WebUI, Event, Content [style=filled, fillcolor=lightyellow];
+
+  User -> WebUI [label="click"];
+  WebUI -> Event [label="on:click"];
+  Event -> Action [label="transmit"];
+  Action-> Thread [label="Python script"];
+  Thread -> DOM [label="update"];
+  DOM -> Content [label="receive"];
+  Content -> User [label="present"];
+}

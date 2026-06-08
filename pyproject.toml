@@ -14,9 +14,9 @@ maintainers = [
 urls = {Homepage = "https://github.com/zergos/pantra"}
 description = "Python Full-stack Web Framework"
 dependencies = [
-	'uvicorn',
-    'starlette',
-    'websockets',
+	'uvicorn==0.40.0',
+    'starlette==0.51.0',
+    'websockets==16.0',
     'antlr4-python3-runtime==4.10',
     'cssutils>=2.3.0',
     'requests>=2.31.0',
@@ -30,9 +30,13 @@ dynamic = ["version", "readme"]
 scripts = {pantra = "pantra.management:execute_from_command_line"}
 
 [project.optional-dependencies]
-quazy = [
-    'quazydb'
-]
+quazy = ['quazydb']
+psycopg = ["psycopg[binary,pool]"]
+
+[project.urls]
+Documentation = "https://pantra.readthedocs.io/en/latest/"
+Repository = "https://github.com/zergos/pantra.git"
+Issues = "https://github.com/zergos/pantra/issues"
 
 [tool.setuptools]
 package-dir = {pantra = "pantra"}
@@ -41,4 +45,4 @@ package-data = {pantra = ["*.pyi", "js/*.js", "js/*.json"]}
 
 [tool.setuptools.dynamic]
 version = {attr = "pantra.VERSION"}
-readme = {file = ["README.md"]}
+readme = {file = ["README.rst"]}

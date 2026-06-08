@@ -1,0 +1,64 @@
+digraph "Threading flowchart" {
+  node [shape=box];
+  Start [label="Function call", shape=ellipse];
+  End [shape=ellipse];
+
+  //AllocateThreads [label="Allocate\nSync Threads"];
+  CheckFType [label="function type?", shape=diamond];
+  AsyncThread [label="Put to\nasync thread"];
+  CheckThreads [label="Check threads\navailable?", shape=diamond];
+  WaitLag [label="Check 3 seconds\npassed?", shape=diamond];
+  CheckMaxThreads [label="Check max\nthreads count\nreached?", shape=diamond];
+  Loop [label="Wait 1 second"];
+  CreateThread [label="Create\nnew thread"];
+  RunThread [label="Put to\nsync thread"];
+
+  Start -> CheckFType;
+  CheckFType -> AsyncThread [label="async"];
+  AsyncThread -> End;
+  CheckFType -> CheckThreads [label="sync"];
+  CheckThreads -> WaitLag [label="no"];
+  CheckThreads -> RunThread [label="yes"];
+  WaitLag -> Loop [label="no"];
+  Loop -> CheckThreads;
+  WaitLag -> CheckMaxThreads [label="yes"];
+  CheckMaxThreads -> CreateThread [label="no"];
+  CheckMaxThreads -> Loop [label="yes"];
+  CreateThread -> RunThread;
+  RunThread -> End;
+
+  ServiceStart [label="Service thread", shape=ellipse];
+  SelectActiveThread [label="Select running\nthread"];
+  SelectStoppedThread [label="Select stopped\nthread"];
+  CreateMinThreads [label="Create some threads"];
+  CheckLong [label="Check thread\nrunning long?", shape=diamond];
+  CheckOld [label="Check stopped\nlong time ago?", shape=diamond];
+  CheckTooMany [label="Threads amount\ntoo many?", shape=diamond];
+  StopThread [label="Stop thread"];
+  KillThread [label="Kill thread"];
+  Wait1Active [label="Wait 1 second"];
+  Wait1Stopped [label="Wait 1 second"];
+
+  ServiceStart -> CreateMinThreads -> SelectActiveThread -> CheckLong;
+  CheckLong -> StopThread [label="yes"];
+  StopThread -> Wait1Active -> SelectActiveThread;
+  CheckLong -> Wait1Active [label="no"];
+
+  CreateMinThreads -> SelectStoppedThread -> CheckOld;
+  CheckOld -> CheckTooMany [label="yes"];
+  CheckOld -> Wait1Stopped [label="no"];
+  Wait1Stopped -> SelectStoppedThread;
+  CheckTooMany -> KillThread [label="yes"];
+  CheckTooMany -> Wait1Stopped [label="no"];
+  KillThread -> Wait1Stopped;
+
+  SessionLoop [label="Session loop", shape=ellipse];
+  CheckSessionTTL [label="Session is passive\nfor a long?"];
+  Wait5 [label="Wait 5 seconds"];
+  KillSession [label="Kill session"];
+
+  SessionLoop -> CheckSessionTTL;
+  CheckSessionTTL -> KillSession [label="yes"];
+  CheckSessionTTL -> Wait5 [label="no"];
+  KillSession -> Wait5 -> SessionLoop;
+}

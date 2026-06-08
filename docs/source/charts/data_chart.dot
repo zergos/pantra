@@ -1,0 +1,39 @@
+digraph "Data Flowchart" {
+  size="5,5";
+  JSEngine [label="JavaScript Engine", style=filled, fillcolor=lightyellow];
+  HTTP [label="Async HTTP Server", style=filled, fillcolor=palegreen];
+  WebSocket [label="Async Web Socket", style=filled, fillcolor=palegreen];
+  MQ [label="Async Message Queue", style=filled, fillcolor=plum];
+  TE [label="Thread Engine", style=filled, fillcolor=lightblue];
+  AsyncThread [label="Async Thread", style=filled, fillcolor=lightblue];
+  Thread1 [label="Thread 1", style=filled, fillcolor=lightblue];
+  Thread2 [label="Thread 2", style=filled, fillcolor=lightblue];
+  ThreadN [label="Thread N", style=filled, fillcolor=lightblue];
+
+  subgraph cluster_0 {
+    label="Web Backend";
+    labeljust="l";
+    style=filled;
+    color=black;
+    fillcolor=whitesmoke;
+    HTTP; WebSocket;
+  }
+
+  subgraph cluster_1 {
+    label="Compute Backend";
+    labeljust="l";
+    style=filled;
+    color=black;
+    fillcolor=whitesmoke;
+    TE; AsyncThread; Thread1; Thread2; ThreadN;
+  }
+
+  JSEngine -> HTTP [dir=both];
+  HTTP -> WebSocket [dir=both];
+  WebSocket -> MQ [dir=both];
+  MQ -> TE [dir=both];
+  TE -> AsyncThread [dir=both];
+  TE -> Thread1 [dir=both];
+  TE -> Thread2 [dir=both];
+  TE -> ThreadN [dir=both];
+}
