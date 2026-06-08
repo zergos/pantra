@@ -49,14 +49,14 @@ let SCRIPTS = {
         oids.splice(oids.indexOf(oid), 1);
         if (oids.length === 0) {
             this.uid2oids.delete(uid);
-            let elem = this.uid2script(uid);
-            elem.remove();
+            let script = this.uid2script(uid);
+            if (script) script.remove();
             this.uid2script.delete(uid);
         }
     },
     clear: function () {
         for (let script of this.uid2script.values()) {
-            script.remove();
+            if (script) script.remove();
         }
         this.uid2script.clear();
         this.oid2uid.clear();

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 import textwrap
 import typing
 from collections import defaultdict
@@ -14,8 +15,8 @@ from contextlib import contextmanager
 
 import sass
 
-from pantra.components.render.renderer_base import StrOrCode
-from pantra.components.render.render_node import RE_JS_VARS, RenderNode
+from pantra.components.render.renderer_base import ValueOrCode
+from pantra.components.render.render_node import RenderNode
 from pantra.components.template import NodeType, AttrType, MacroCode, MacroType, collect_template, collect_styles, \
     get_template_path, HTMLTemplate
 from pantra.jsmap.gen import make_js_bundle, JS_BUNDLE_FILENAME, JS_BUNDLE_MAP_FILENAME
@@ -109,14 +110,15 @@ def indent(s: str, tabs_amount: int) -> str:
     return textwrap.indent(s, '    ' * tabs_amount)
 
 def remix_this(s, new_name):
+    """Rename `this` to local node name."""
     tree = ast.parse(s)
     new_tree = NameTransformer(new_name).visit(tree)
     res = ast.unparse(new_tree)
     if res.startswith("f'"):
-        return f'f"{res[2:-1]}"'
+        return f'f"""{res[2:-1]}"""'
     return res
 
-def makeup_func(macro_prefix: str, macro: StrOrCode, node: str = None) -> str:
+def makeup_func(macro_prefix: str, macro: ValueOrCode, node: str = None) -> str:
     if macro_prefix == 'eval':
         return remix_this(macro.src, node)
     elif macro_prefix == 'js':
@@ -126,6 +128,7 @@ def makeup_func(macro_prefix: str, macro: StrOrCode, node: str = None) -> str:
 
 HELPERS_COPIED: set[PathLike] = set()
 def remix_imports(s):
+    """Align helper modules imports with cache directory"""
     tree = ast.parse(s)
     transformer = ImportTransformer()
     new_tree = transformer.visit(tree)
@@ -165,12 +168,12 @@ class CacheBuilder:
         (dest_path / 'basic.css').write_text(css, encoding='utf-8')
         # global.css
         print(f"    Collecting common styles...")
-        styles = collect_styles('Core', config.COMPONENTS_PATH, print)
+        styles = collect_styles('Core', config.COMPONENTS_PATH, lambda s: print(s, file=sys.stderr))
         (dest_path / 'global.css').write_text(styles, encoding='utf-8')
         # local css
         print(f"    [{self.app}] Collecting local styles...")
         app_path = config.APPS_PATH / self.app
-        styles = collect_styles(self.app, app_path, print)
+        styles = collect_styles(self.app, app_path, lambda s: print(s, file=sys.stderr))
         (dest_path / f'{self.app}.local.css').write_text(styles, encoding='utf-8')
 
     def collect_js(self):
@@ -227,68 +230,27 @@ class CacheBuilder:
         self.prefixes[prefix] += 1
         return prefix + "_" + str(self.prefixes[prefix])
 
-    def translate(self, s: str) -> str:
-        if s.startswith('\\'):
-            return repr(s[1:])
-        if s.startswith('#'):
-            return f'_({s[1:]!r})'
-        return repr(s)
-
-    def build_value(self, source: StrOrCode, node: str) -> str:
-        if isinstance(source, str):
-            if source.startswith('@'):
-                return source[1:]
-            return self.translate(source)
+    def build_value(self, source: ValueOrCode, node: str) -> str:
         if type(source) is MacroCode:
-            if source.reactive:
-                self.current_react_vars.update(source.vars)
+            if isinstance(source.code, str):
+                return source.code
             if type(source.code) == list:
                 if len(source.code) == 1:
                     value = source.code[0]
                 else:
                     value = '.'.join(source.code)
-            else:
-                return makeup_func("eval", source, node)
-                #macros = self.reg_macros('func', source)
-                # argument `this`
-                #value = f'{macros}({node})'
-
-            if source.type == MacroType.STRING:
-                return value + " or ''"
-            return value
+                return value
+            return makeup_func("eval", source, node)
         return repr(source)
 
-    def build_func(self, source: StrOrCode, node: str, var_list: str = '') -> str:
-        if isinstance(source, str):
-            return f'lambda {var_list}: {source}'
+    def makeup_value(self, source: ValueOrCode, node: str, evaluate_once: bool = False, var_list: str = '') -> Any:
         if type(source) is MacroCode:
-            #if source.reactive:
-            #    self.current_react_vars.update(source.vars)
-            return f'lambda {var_list}: '+self.build_value(source, node)
-        raise ValueError("Can't build a function with raw value")
-
-    def dynamic_string(self, source: StrOrCode, node: str) -> str:
-        if type(source) is MacroCode:
-            return f'{CI}.DynamicString({self.build_func(source, node)})'
+            if evaluate_once or source.evaluated:
+                return self.build_value(source, node)
+            if source.reactive:
+                self.current_react_vars.update(source.vars)
+            return f'lambda {var_list}: '+ self.build_value(source, node)
         return repr(source)
-
-    def dynamic_value(self, source: Any | MacroCode, node: str) -> str:
-        if type(source) is MacroCode:
-            return f'{CI}.DynamicValue({self.build_func(source, node)})'
-        return self.translate(source)
-
-    def dynamic_string_i10n(self, source: StrOrCode, node: str) -> str:
-        if type(source) is MacroCode:
-            return f'{CI}.DynamicString({self.build_func(source, node)})'
-        return self.translate(source)
-
-    def arrange_the_block(self, node: RenderNode, template) -> str:
-        # we have to render control nodes as Stubs to hold middle DOM position
-        if node and node.render_if_necessary:
-            if (node.index() < len(template.parent.children) - 1
-                and node.context.locals.has_reactions_to(node)):
-                return 'self.arrange_the_block(node)'
-        return ''
 
     def collect_react_vars(self, node: str) -> str:
         if self.current_react_vars:
@@ -324,6 +286,13 @@ class CacheBuilder:
                 funcs.append(f'def {k}({self_var_name}node):\n{indent(v, 1)}')
         return '\n'.join(funcs)
 
+    def arrange_the_block(self, node: str, template) -> str:
+        res = ''
+        if template.index() < len(template.parent.children) - 1:
+            res += f'{node}.render_this_node = True\n'
+            res += f'self.ctx.shot += {node}\n'
+        return res
+
     #region Attributes processor
 
     @staticmethod
@@ -344,7 +313,7 @@ class CacheBuilder:
         return res
 
     def _process_attr_scope(self, attr_name, value, node):
-        res = f"{node}.scope[{attr_name!r}] = {self.build_value(value, node)}\n"
+        res = f"{node}.scope[{attr_name!r}] = {self.makeup_value(value, node)}\n"
         return res
 
     def _process_attr_on_init(self, attr_name, value, node):
@@ -354,15 +323,14 @@ class CacheBuilder:
 
     def _process_attr_class_switch(self, attr_name, value, node):
         if value is None:
-            value = attr_name
-        func = self.build_func(value, node)
-        res = f"{node}.con_classes.append(({func}, {attr_name!r}))\n"
+            value = MacroCode(MacroType.VALUE, False, False, None, attr_name)
+        res = f"{node}.classes[{attr_name!r}] = {self.makeup_value(value, node)}\n"
         return res
 
     def _process_attr_dynamic_style(self, attr_name, value, node):
         if value is None:
-            value = MacroCode(MacroType.STRING, False, None, attr_name)
-        res = f"{node}.style[{attr_name!r}] = {self.dynamic_string(value, node)}\n"
+            value = MacroCode(MacroType.STRING, False, False, None, attr_name)
+        res = f"{node}.style[{attr_name!r}] = {self.makeup_value(value, node)}\n"
         return res
 
     def _process_attr_bind_value(self, attr_name, value, node):
@@ -375,22 +343,22 @@ class CacheBuilder:
 
     def _process_attr_dynamic_set(self, attr_name, value, node):
         if value is None:
-            value = MacroCode(MacroType.STRING, False, None, attr_name)
-        if attr_name in ('focus', 'localize'):
+            value = MacroCode(MacroType.STRING, False, False, None, attr_name)
+        if attr_name in ('focused', 'localize'):
             if isinstance(value, str) and value == "yes":
                 value = 'True'
             elif isinstance(value, str) and value == "no":
                 value = 'False'
             else:
-                value = self.build_value(value, node)
-            if attr_name == 'focus':
+                value = self.makeup_value(value, node, True)
+            if attr_name == 'focused':
                 res = f'{node}._set_focused = bool({value})\n'
             else:
                 res = f'{node}.localize = bool({value})\n'
         elif attr_name == 'type':
-            res = f'{node}.value_type = {self.build_value(value, node)}\n'
+            res = f'{node}.value_type = {self.makeup_value(value, node, True)}\n'
         else:
-            res = f'{node}.attributes[{attr_name!r}] = {self.dynamic_string(value, node)}\n'
+            res = f'{node}.attributes[{attr_name!r}] = {self.makeup_value(value, node)}\n'
         return res
 
     def _process_attr_dynamic_set_ctx(self, attr_name, value, node):
@@ -402,46 +370,46 @@ class CacheBuilder:
         elif isinstance(value, str) and value == "no":
             value = 'False'
         else:
-            value = self.dynamic_value(value, node)
-            res = f'_value = {value!r}\n'
-            res += f'{node}.attributes[{attr_name!r}] = _value\n'
-            value = '_value.update()'
+            res += f'{node}.attributes[{attr_name!r}] = {self.makeup_value(value, node)}\n'
+            value = f'{node}.attributes[{attr_name!r}]'
         res += f'{node}.locals[{attr_name!r}] = {value}\n'
         return res
 
     def _process_attr_data(self, attr_name, value, node):
-        res = f'{node}.data[{attr_name!r}] = {self.build_value(value, node)}\n'
+        res = f'{node}.data[{attr_name!r}] = {self.makeup_value(value, node)}\n'
         return res
 
-    def _process_attr_src_href(self, attr_name, value, node):
-        if type(value) is MacroCode:
-            value = self.build_value(value, node)
-        else:
-            value = repr(value)
-        res = f"{node}.attributes[{attr_name!r}] = self.ctx.static({attr_name!r}, {value})\n"
+    def _process_attr_src_href(self, attr_name, subdir, value, node):
+        value = self.makeup_value(value, node, True)
+        res = f"{node}.attributes[{attr_name!r}] = self.ctx.static({subdir!r}, {value})\n"
         return res
 
     def _process_attr_style(self, attr_name, value, node):
-        res = f"{node}.style = {self.dynamic_string(value, node)}\n"
+        expr = self.makeup_value(value, node)
+        if type(value) is MacroCode:
+            res = f"{node}.style['$'] = {expr}\n"
+        else:
+            res = f"{node}.style += {expr}\n"
         return res
 
     def _process_attr_class(self, attr_name, value, node):
+        expr = self.makeup_value(value, node)
         if type(value) is MacroCode:
-            res = f"{node}.classes = {self.dynamic_string(value, node)}\n"
+            res = f"{node}.classes['$'] = {expr}\n"
         else:
-            res = f"{node}.classes = {CI}.DynamicClasses({value!r})\n"
+            res = f"{node}.classes += {expr}\n"
         return res
 
     def _process_attr_type(self, attr_name, value, node):
-        res = f"{node}.value_type = {self.build_value(value, node)}\n"
+        res = f"{node}.value_type = {self.makeup_value(value, node, True)}\n"
         return res
 
     def _process_attr_value(self, attr_name, value, node):
-        res = f"{node}.value = {self.build_value(value, node)}\n"
+        res = f"{node}.value = {self.makeup_value(value, node, True)}\n"
         return res
 
     def _process_attr_localize(self, attr_name, value, node):
-        res = f"{node}.localize = bool({self.build_value(value, node)})\n"
+        res = f"{node}.localize = bool({self.makeup_value(value, node, True)})\n"
         return res
 
     def _process_attr_set_false_ctx(self, attr_name, value, node):
@@ -473,7 +441,8 @@ class CacheBuilder:
         AttrType.BIND_VALUE.value: _process_attr_bind_value,
         AttrType.DYNAMIC_SET.value: _process_attr_dynamic_set,
         AttrType.DATA.value: _process_attr_data,
-        AttrType.SRC_HREF.value: _process_attr_src_href,
+        AttrType.SRC.value: lambda self, *args: self._process_attr_src_href("src", *args),
+        AttrType.HREF.value: lambda self, *args: self._process_attr_src_href("href", *args),
         AttrType.REACTIVE.value: _return_true,
         AttrType.STYLE.value: _process_attr_style,
         AttrType.CLASS.value: _process_attr_class,
@@ -496,7 +465,8 @@ class CacheBuilder:
         AttrType.BIND_VALUE.value: _return_false,
         AttrType.DYNAMIC_SET.value: _process_attr_dynamic_set_ctx,
         AttrType.DATA.value:  _return_false,
-        AttrType.SRC_HREF.value:  _return_false,
+        AttrType.SRC.value:  _return_false,
+        AttrType.HREF.value:  _return_false,
         AttrType.REACTIVE.value: _return_false,
         AttrType.STYLE.value: _return_false,
         AttrType.CLASS.value: _return_false,
@@ -508,25 +478,24 @@ class CacheBuilder:
     }
     #endregion
 
-    def process_attribute_html(self, attr_type: tuple[AttrType, str | None], attr: str, value: StrOrCode, node: str) -> str:
+    def process_attribute_html(self, attr_type: tuple[AttrType, str | None], attr: str, value: ValueOrCode, node: str) -> str:
         res = self.PROCESS_HTML_ATTR[attr_type[0].value](self, attr_type[1], value, node)
         if res is None:
-            res = f'{node}.attributes[{attr!r}] = {value and self.dynamic_string_i10n(value, node) or "None"}\n'
+            res = f'{node}.attributes[{attr!r}] = {self.makeup_value(value, node)}\n'
         return res
 
-    def process_attribute_ctx(self, attr_type: tuple[AttrType, str | None], attr: str, value: StrOrCode, node: str) -> str:
+    def process_attribute_ctx(self, attr_type: tuple[AttrType, str | None], attr: str, value: ValueOrCode, node: str) -> str:
         res = self.PROCESS_CTX_ATTR[attr_type[0].value](self, attr_type[1], value, node)
         if res is None:
-            if isinstance(value, str) or type(value) is MacroCode:
-                value = self.dynamic_value(value, node)
-            elif value is None:
+            res = ""
+            if value is None:
                 value = 'True'
-            if value.startswith(f'{CI}.DynamicValue'):
-                res = f'_value = {value}\n'
-                res += f'{node}.attributes[{attr!r}] = _value\n'
-                res += f'{node}.locals[{attr!r}] = _value.update()\n'
+            elif type(value) is MacroCode:
+                res += f'{node}.attributes[{attr!r}] = {self.makeup_value(value, node)}\n'
+                value = f'{node}.attributes[{attr!r}]'
             else:
-                res = f'{node}.locals[{attr!r}] = {value}\n'
+                value = repr(value)
+            res += f'{node}[{attr!r}] = {value}\n'
         return res
 
     #region Node builders
@@ -554,18 +523,19 @@ class CacheBuilder:
         if len(template.children) == 1:
             single_child = template.children[0]
             if single_child.tag_name == '@text':
-                res += f'{node}.text = {self.translate(single_child.content)}\n'
-            elif single_child.tag_name == '@macro':
-                res += f'{node}.text = {self.dynamic_string(single_child.content, node)}\n'
-                res += self.collect_react_vars(node)
+                res += f"{node}.attributes['$'] = {self.makeup_value(single_child.content, node)}\n"
+                res += f"{node}.text = {node}.attributes['$']\n"
             else:
                 res += self.build_node(single_child, node)
         elif template.children:
-            for child in template.children:
-                res += self.build_node(child, node)
+            res += self._build_group(template, node)
 
         res += self._call_after_render(template, node)
 
+        return res
+
+    def _build_at_text(self, template, parent):
+        res = f'{CTX}.TextNode({parent}, {self.makeup_value(template.content, parent)})\n'
         return res
 
     def _build_template_tag(self, template, parent):
@@ -590,10 +560,10 @@ class CacheBuilder:
         if template.children:
             slot_func_name = self.gen_prefix('slot')
             res += f'{node}.slot = {CTX}.Slot(self.ctx, $func$, $reuse$)\n'
-            slot_template = HTMLTemplate('@component', 0, None)
+            slot_template = HTMLTemplate('@component')
             for child in template.children:
                 if child.tag_name == 'section':
-                    section_template = HTMLTemplate('@component', 0, None)
+                    section_template = HTMLTemplate('@component')
                     section_template.children.extend(child.children)
                     reuse = 'reuse' in child.attributes
                     if (name:=child.attributes.get('name')) is not None:
@@ -639,8 +609,7 @@ class CacheBuilder:
         node = 'node'
         res = f"{node} = self.ctx\n"
 
-        for child in template.children:
-            res += self.build_node(child, node)
+        res += self._build_group(template, node)
 
         if self.code_metrics.has_on_render:
             #res += f'{CI}.run_safe(self.ctx.session, on_render, dont_refresh=True)\n'
@@ -657,16 +626,21 @@ class CacheBuilder:
     def _build_macro_if(self, template, parent):
         node = next_node_name(parent)
         res = f'{node} = {CTX}.ConditionNode({parent}, None)\n'
+        has_react_vars: bool = False
         for i, child_template in enumerate(template.children):  # type: HTMLTemplate
             if child_template.tag_name != '#else':
                 func_prefix = self.gen_prefix('if')
-                condition_func = self.build_func(child_template.attributes["condition"], node)
+                condition_func = self.makeup_value(child_template.attributes["condition"], node)
                 res += f'{node}.conditions.append({CTX}.Condition({condition_func}, {self.func_ctx_prefix()}{func_prefix}))\n'
+                if self.current_react_vars:
+                    has_react_vars = True
                 res += self.collect_react_vars(node)
             else:
                 func_prefix = self.gen_prefix('else')
                 res += f'{node}.conditions.append({CTX}.Condition(lambda: True, {self.func_ctx_prefix()}{func_prefix}))\n'
             self.funcs[func_prefix] = self.build_node(child_template, 'node')
+        if has_react_vars:
+            res += self.arrange_the_block(node, template)
         res += f'self.update({node})\n'
         return res
 
@@ -677,9 +651,10 @@ class CacheBuilder:
         res += f'{node}.loop_template = {self.func_ctx_prefix()}{func_prefix}\n'
         loop_template = template[0]
         res += f'{node}.var_name = {loop_template.attributes["var_name"]!r}\n'
-        res += f'{node}.iterator = {self.build_func(loop_template.attributes["iter"], node)}\n'
+        res += f'{node}.iterator = {self.makeup_value(loop_template.attributes["iter"], node)}\n'
         if (index_func:=loop_template.attributes.get('index_func')) is not None:
-            res += f'{node}.index_func = {self.build_func(index_func, node, "forloop, "+loop_template.attributes["var_name"])}\n'
+            res += f'{node}.index_func = {self.makeup_value(index_func, node, var_list="forloop, "+loop_template.attributes["var_name"])}\n'
+        has_react_vars: bool = bool(self.current_react_vars)
         res += self.collect_react_vars(node)
 
         with self.sub_context():
@@ -697,25 +672,40 @@ class CacheBuilder:
 
         self.funcs[func_prefix] = loop_func
 
+        if has_react_vars:
+            res += self.arrange_the_block(node, template)
         res += f'self.update({node})\n'
         return res
 
     def _build_macro_set(self, template, parent):
         node = next_node_name(parent)
-        func_prefix = self.gen_prefix('set')
-        res = f'{node} = {CTX}.SetNode({parent}, {self.func_ctx_prefix()}{func_prefix})\n'
-        res += f'{node}.var_name = {template.attributes["var_name"]!r}\n'
-        res += f'{node}.value = {self.build_func(template.attributes["value"], node)}\n'
+        if template.tag_name == '#set:clear':
+            func_prefix = self.gen_prefix('set')
+            res = f'{node} = {CTX}.SetNode({parent}, {self.func_ctx_prefix()}{func_prefix})\n'
+        else:
+            func_prefix = ""
+            res = f'{node} = {CTX}.SetNode({parent}, None)\n'
+
+        for k, v in template.attributes.items():
+            res += f'{node}.variables[{k!r}] = {self.makeup_value(v, node)}\n'
+        if template.tag_name == '#set:scope':
+            res += f'{node}.scoped = True\n'
+        elif template.tag_name == '#set:clear':
+            res += f'{node}.self_clear = True\n'
+        else:
+            res += "global " + ", ".join(template.attributes.keys()) + '\n'
+
         res += f'self.update({node})\n'
+
         res += self.collect_react_vars(node)
 
-        with self.sub_context():
-            func_body = ''
-            for child in template.children:
-                func_body += self.build_node(child, 'node')
-            set_func = SetFunc(template.attributes["var_name"], self.collect_funcs() + func_body)
-
-        self.funcs[func_prefix] = set_func
+        if template.tag_name == '#set:clear':
+            with self.sub_context():
+                func_body = self._build_group(template, 'node')
+                set_func = SetFunc(', '.join(template.attributes.keys()), self.collect_funcs() + func_body)
+            self.funcs[func_prefix] = set_func
+        else:
+            res += self._build_group(template, node)
 
         return res
 
@@ -725,8 +715,7 @@ class CacheBuilder:
             renderer = template.attributes['render']
             res += f'{renderer}(parent)\n'
 
-        for child in template.children:
-            res += self.build_node(child, parent)
+        res += self._build_group(template, parent)
         return res
 
     def _build_at_slot(self, template, parent):
@@ -741,8 +730,7 @@ class CacheBuilder:
         res += indent(f"slot.template({parent})\n", 2)
         if template.children:
             res += "else:\n"
-            for child in template.children:
-                res += indent(self.build_node(child, parent), 1)
+            res += indent(self._build_group(template, parent), 1)
 
         res += self._call_after_render(template, parent)
         return res
@@ -775,20 +763,19 @@ class CacheBuilder:
         return res
 
     def _build_at_script(self, template, parent):
-        def subst(matchobj) -> str:
-            expr = matchobj.group(1)
-            return '{'+self.build_value(expr, parent)+'}'
-
-        text = 'f"' + RE_JS_VARS.sub(subst, template.content) + '"' if template.content else ""
-        #func = self.reg_macros("js", text)
-        func = makeup_func("js", text)
-        res = f"{CTX}.ScriptNode({parent}, f'{{self.__class__.__name__}}_{template.index}', attributes={template.attributes!r}, text={func}())\n"
+        attributes = template.attributes.copy()
+        put_to_head = attributes.pop('location', 'head') == 'head'
+        res = (f"{CTX}.ScriptNode({parent}, "
+               f"f'{{self.__class__.__name__}}_{template.script_index}', "
+               f"{attributes!r}, "
+               f"{self.makeup_value(template.content, parent, True)}, "
+               f"{put_to_head})\n")
         return res
 
     def _build_at_style(self, template, parent):
         # styles collected elsewhere
         if 'global' not in template.attributes:
-            res = 'self.ctx._restyle = True\n'
+            res = 'ctx._restyle = True\n'
         else:
             res = ''
         return res
@@ -799,27 +786,12 @@ class CacheBuilder:
         for k, v in template.attributes.items():
             if k == 'selector':
                 if 'global' in template.attributes:
-                    res += f'{node}.attributes[{k!r}] = {v!r}\n'
+                    res += f'{node}.selector = {v!r}\n'
                 else:
-                    res += f"{node}.attributes[{k!r}] = {','.join(f'.{template.root.name} {s}' for s in v.split(','))!r}\n"
+                    res += f"{node}.selector = {','.join(f'.{template.root.name} {s}' for s in v.split(','))!r}\n"
                     res += 'self.ctx._restyle = True\n'
-            else:
-                res += f'{node}.attributes[{k!r}] = {self.dynamic_string(v, node)}\n'
-        return res
-
-    def _build_at_scope(self, template, parent):
-        res = 'scope = {}\n'
-        for k, v in template.attributes.items():
-            res += f'scope[{k!r}] = {self.build_value(v, parent)}\n'
-        res += f'{parent}.set_scope(scope)\n'
-        return res
-
-    def _build_at_text(self, template, parent):
-        res = f'{CTX}.TextNode({parent}, {self.translate(template.content)})\n'
-        return res
-
-    def _build_at_macro(self, template, parent):
-        res = f'{CTX}.TextNode({parent}, {self.dynamic_string(template.content, parent)})\n'
+            elif k.startswith('on:'):
+                res += f'{node}.events[{k!r}] = {self.makeup_value(v, node)}\n'
         return res
 
     def _build_at_react(self, template, parent):
@@ -838,9 +810,7 @@ class CacheBuilder:
 
         if func_prefix and template.children:
             with self.sub_context():
-                func_body = ''
-                for child in template.children:
-                    func_body += self.build_node(child, 'node')
+                func_body = self._build_group(template, 'node')
                 func_body = self.collect_funcs() + func_body
 
             self.funcs[func_prefix] = func_body
@@ -850,6 +820,7 @@ class CacheBuilder:
 
     NODE_BUILDERS: dict[int, Callable[[Self, HTMLTemplate, str], str]] = {
         NodeType.HTML_TAG.value: _build_html_tag,
+        NodeType.AT_TEXT.value: _build_at_text,
         NodeType.TEMPLATE_TAG.value: _build_template_tag,
         NodeType.ROOT_NODE.value: _build_root_node,
         NodeType.MACRO_IF.value: _build_macro_if,
@@ -862,9 +833,6 @@ class CacheBuilder:
         NodeType.AT_SCRIPT.value: _build_at_script,
         NodeType.AT_STYLE.value: _build_at_style,
         NodeType.AT_EVENT.value: _build_at_event,
-        NodeType.AT_SCOPE.value: _build_at_scope,
-        NodeType.AT_TEXT.value: _build_at_text,
-        NodeType.AT_MACRO.value: _build_at_macro,
         NodeType.AT_REACT.value: _build_at_react,
     }
     #endregion
@@ -872,7 +840,7 @@ class CacheBuilder:
     def build_node(self, template: HTMLTemplate, parent: str) -> str:
         res = ''
         if (node_name := template.attributes.get('data-node')) is not None:
-            res += f'data_node = {CTX}.RenderNode("data-node", None, {CI}.NullContextShot(), {parent}.session)\n'
+            res += f'data_node = {CTX}.RenderNode(None, {CI}.NullContextShot(), {parent}.session)\n'
             res += f'data_node.context = {parent}.context\n'
             res += "if not self.ctx.data_nodes:\n"
             res += "    self.ctx.data_nodes = {}\n"
@@ -887,6 +855,8 @@ class CacheBuilder:
         print(f'    {template_name}')
 
         template = collect_template(template_name, app=self.app)
+        if template is None:
+            raise RuntimeError(f'Component `{template_name}` load error')
         code = self.build_node(template, 'None')
 
         funcs = self.collect_funcs()

@@ -9,7 +9,10 @@ from .parser import parse_xml
 
 if typing.TYPE_CHECKING:
     from typing import *
-    from quazy import DBFactory
+    try:
+        from quazy import DBFactory
+    except ImportError:
+        pass
 
 
 @dataclass
@@ -22,8 +25,11 @@ class DatabaseInfo:
 dbinfo: dict[str, dict[str, DatabaseInfo]] = {}  # app / db / DatabaseInfo
 
 
-def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
-    from quazy import DBFactory
+def expose_database(app: str, db_name: str = 'db') -> Union[DBFactory | None]:
+    try:
+        from quazy import DBFactory
+    except ImportError as e:
+        raise RuntimeError("`quazydb` is not installed") from e
 
     if app in dbinfo:
         app_info = dbinfo[app]
@@ -38,7 +44,7 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
 
     if app not in dbinfo:
         dbinfo[app] = {}
-    app_info = dbinfo[app]
+    app_info: dict[str, DatabaseInfo] = dbinfo[app]
 
     def start_element(name: str, attrs: dict):
         nonlocal app_info
@@ -49,8 +55,10 @@ def expose_database(app: str, db_name: str = 'db') -> DBFactory | None:
             if name == 'reuse':
                 parent_app = kwargs.pop('app')
                 expose_database(parent_app)
-                app_info[db_name] = copy.copy(dbinfo[parent_app]['db'])
-                app_info[db_name].schema = schema  # override schema
+                db_info = copy.copy(dbinfo[parent_app]['db'])
+                app_info[db_name] = db_info
+                db_info.schema = schema  # override schema
+                db_info.factory.bind_module(f'apps.{app}.data')
             else:
                 db: DBFactory = getattr(DBFactory, name)(**kwargs)
                 kwargs['provider'] = name

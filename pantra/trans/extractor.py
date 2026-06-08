@@ -5,59 +5,43 @@ import importlib
 import typing
 import ast
 import re
-from xml.parsers import expat
+import html
+import string
 
 from antlr4.error.ErrorListener import ErrorListener
+
+from .processor import demux_fstring
+from ..settings import config
+from ..components.loader import FORMATTED_EXPRESSION, FORMATTED_EXPRESSION2, UTF_BOM
+
 from ..components.grammar.PMLLexer import PMLLexer
 from ..components.grammar.PMLParser import PMLParser, InputStream, CommonTokenStream, IllegalStateException
 from ..components.grammar.PMLParserVisitor import PMLParserVisitor
-from ..defaults import BASE_PATH
 
-if typing.TYPE_CHECKING:
-    from typing import *
-
-
-def drain_fstring(f):
-    node = ast.parse(f"f'{f}'", mode='eval')
-
-    s = ''
-    for v in node.body.values:
-        if type(v) == ast.Str or type(v) == ast.Constant:
-            s += v.s
-        elif type(v) == ast.FormattedValue:
-            s += '{'
-            if v.format_spec:
-                s += ':'
-                for vv in v.format_spec.values:
-                    if type(vv) == ast.Str:
-                        s += vv.s
-                    elif type(vv) == ast.FormattedValue:
-                        s += '{}'
-            s += '}'
-    return s
-
-
-def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_tags: List[str], options: List[str]) -> Iterator[Tuple[int, str, List[str], List[str]]]:
+def extract_python(fileobj: str | typing.BinaryIO,
+                   keywords: list[str],
+                   comment_tags: list[str],
+                   options: list[str]) -> typing.Iterator[tuple[int, str, list[str], list[str]]]:
     """Extract messages from Python files. (borrowed from Babel)
 
-    :param fileobj: the file-like object the messages should be extracted
-                    from
-    :param keywords: a list of keywords (i.e. function names) that should
-                     be recognized as translation functions
-    :param comment_tags: a list of translator tags to search for and
-                         include in the results
-    :param options: a dictionary of additional options (optional)
-    :return: an iterator over ``(lineno, funcname, message, comments)``
-             tuples
-    :rtype: ``iterator``
+    Arguments:
+        fileobj: the file-like object the messages should be extracted from
+        keywords: a list of keywords (i.e. function names) that should
+            be recognized as translation functions
+        comment_tags: a list of translator tags to search for and
+            include in the results
+        options: a dictionary of additional options (optional)
     """
+    s: str
     if type(fileobj) == str:
         s = fileobj
     else:
         print(f'PY  > {fileobj.name}')
-        s = fileobj.read()
-        if type(s) is bytes:
-            s = str(s, 'utf8')
+        sb = fileobj.read()
+        if type(sb) is bytes:
+            s = str(sb, 'utf8')
+        else:
+            s = str(sb)
 
     root = ast.parse(s)
     lines = s.splitlines()
@@ -77,14 +61,13 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
 
     for node in ast.walk(root):
         if type(node) == ast.Call and type(node.func) == ast.Name and node.func.id == '_':
-            if len(node.args) != 1:
-                warn('args count should be exactly one')
+            if len(node.args) < 1:
+                warn('args count should be more then one')
                 continue
             ex = ast.Expression(body=node.args[0])
             msg = eval_ex(ex)
             if msg is None:
                 continue
-            msg = drain_fstring(msg)
             messages = []
             if node.keywords:
                 ex = ast.Expression(body=node)
@@ -100,7 +83,7 @@ def extract_python(fileobj: Union[BinaryIO, str], keywords: List[str], comment_t
                     warn("'plural' and 'n' should be set together")
                     continue
                 if 'plural' in kwargs:
-                    messages.append(drain_fstring(kwargs['plural']))
+                    messages.append(kwargs['plural'])
                     messages.append(kwargs['n'])
                 if 'plural' in kwargs and 'ctx' in kwargs:
                     func = 'npgettext'
@@ -127,13 +110,15 @@ class MyVisitor(PMLParserVisitor):
         self.in_python = False
         self.args = args
         self.res = []
+        self._stripped_text = ""
+        self._unstripped_text = ""
 
-    def visitRawTag(self, ctx:PMLParser.RawTagContext):
+    def visitScriptTag(self, ctx:PMLParser.ScriptTagContext):
         tag_name = ctx.getText().strip()[1:]
         if tag_name == 'python':
             self.in_python = True
 
-    def visitRawText(self, ctx:PMLParser.RawTextContext):
+    def visitScriptText(self, ctx:PMLParser.ScriptTextContext):
         if self.in_python:
             text = ctx.getText()
             if text.strip().strip('\uFEFF'):
@@ -142,23 +127,96 @@ class MyVisitor(PMLParserVisitor):
                 for row in extract_python(text, *self.args):
                     self.res.append(row)
 
-    def visitRawCloseTag(self, ctx:PMLParser.RawCloseTagContext):
+    def visitScriptEnd(self, ctx:PMLParser.ScriptEndContext):
         self.in_python = False
 
+    def _text_to_render(self, text: str, double_brackets: bool) -> str | None:
+        if text in ('{}', '#', '::', '!', '@'):
+            return text
+
+        def template_i18n() -> str:
+            text_demuxed, _ = demux_fstring(text)
+            return text_demuxed
+
+        translated = False
+        while True:
+            if text[0] == '!':
+                text = text[1:]
+                continue
+            if text[0] == '#':
+                text = text[1:]
+                translated = True
+                continue
+            if text.startswith('::'):
+                text = text[2:]
+                continue
+            break
+
+        if not translated:
+            return None
+
+        if not double_brackets and FORMATTED_EXPRESSION.search(text):
+            # check the whole string is an expression
+            if text.startswith('{') and text.endswith('}') and text.count('}') == 1:
+                return None
+            # check for string template
+            else:
+                text = text.replace('`{', '{').replace('}`', '}')
+                return template_i18n()
+
+        elif double_brackets and FORMATTED_EXPRESSION2.search(text):
+            # check the whole string is an expression
+            if text.startswith('{{') and text.endswith('}}') and text.count('}}') == 1:
+                return None
+            # check for string template
+            else:
+                text = (text.replace('`{', '\u0007').replace('{{', '\u0007')
+                        .replace('}`', '\u0008').replace('}}', '\u0008')
+                        .replace('{', '{{').replace('}', '}}')
+                        .replace('\u0007', '{').replace('\u0008', '}')
+                        )
+                return template_i18n()
+
+        return text
+
     def visitAttrValue(self, ctx:PMLParser.AttrValueContext):
-        value = ctx.getText().strip("' \"")
-        if value.startswith('#'):
-            self.res.append((ctx.start.line, '_', value[1:], []))
+        text = ctx.getText().strip('"\'`')
+        if ctx.stop.type in (ctx.parser.STRING, ctx.parser.EXPRESSION):
+            rendered = self._text_to_render(text, False)
+            if rendered:
+                self.res.append((ctx.start.line, '_', rendered, []))
+
+    def visitContent(self, ctx: PMLParser.ContentContext):
+        self._stripped_text = ""
+        self._unstripped_text = ""
+        self.visitChildren(ctx)
+
+        if self._unstripped_text.endswith('#') and not re.match(r'^#+$', self._stripped_text):
+            content = self._unstripped_text[:-1]
+        else:
+            content = self._stripped_text
+        if content:
+            rendered = self._text_to_render(content, True)
+            if rendered:
+                self.res.append((ctx.start.line, '_', rendered, []))
 
     def visitText(self, ctx:PMLParser.TextContext):
-        text = ctx.getText()
-        if text.strip() and text.strip().startswith('#'):
-            if text.startswith('#'):
-                text = re.sub(r'\s+', ' ', text)
-            else:
-                text = text.replace('\r\n', '\n')
-            self.res.append((ctx.start.line, '_', text[1:], []))
+        text = ctx.getText().lstrip(UTF_BOM)
+        text = html.unescape(text)
 
+        if (self._unstripped_text and
+                (self._unstripped_text[-1] in string.whitespace
+                or text[0] in string.whitespace)):
+            self._stripped_text += " "
+        self._stripped_text += re.sub(r"\s+", " ", text.strip())
+        self._unstripped_text += text
+
+    def visitMacroInline(self, ctx: PMLParser.MacroInlineContext):
+        if text:=ctx.getText().strip():
+            if self._unstripped_text and self._unstripped_text[-1] in string.whitespace:
+                self._stripped_text += ' '
+            self._stripped_text += text
+            self._unstripped_text += text
 
 class ErrorVisitor(ErrorListener):
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
@@ -166,9 +224,7 @@ class ErrorVisitor(ErrorListener):
 
 
 def extract_html(fileobj, keywords, comment_tags, options):
-    """
-    Extract messages from HTML components
-    """
+    """Extract messages from HTML components"""
     print(f'HTML> {fileobj.name}')
     in_stream = InputStream(fileobj.read().decode('utf-8'))
     lexer = PMLLexer(in_stream)
@@ -187,37 +243,12 @@ def extract_html(fileobj, keywords, comment_tags, options):
     yield from visitor.res
 
 
-def extract_xml(fileobj, keywords, comment_tags, options):
-    print(f'XML > {fileobj.name}')
-    p = expat.ParserCreate()
-    entity_name: str = ''
-
-    def start_element(name: str, attrs: dict):
-        nonlocal entity_name
-        if name == 'entity':
-            entity_name = attrs['name']
-            res.append((p.ErrorLineNumber, 'ngettext', (entity_name, f'{entity_name}s'), ['entity']))
-            res.append((p.ErrorLineNumber, '_', f'{entity_name}s', ['entity plural']))
-            if 'title' in attrs:
-                title = attrs['title']
-                res.append((p.ErrorLineNumber, 'ngettext', (title, f'{title}s'), [f'title of {entity_name}']))
-                res.append((p.ErrorLineNumber, '_', f'{title}s', [f'title of {entity_name} plural']))
-
-        if name in ('attr', 'prop'):
-            if 'title' in attrs:
-                title = attrs['title']
-                res.append((p.ErrorLineNumber, '_', title, [f'title of {attrs["name"]} {name} of {entity_name}']))
-            else:
-                res.append((p.ErrorLineNumber, '_', attrs['name'], [f'{name} of {entity_name}']))
-
-    p.StartElementHandler = start_element
-    res = []
-    p.ParseFile(fileobj)
-    yield from res
-
 def extract_data(fileobj, keywords, comment_tags, options):
-
-    from quazy import DBFactory, DBTable
+    """Extract messages from `quazydb` derived classes"""
+    try:
+        from quazy import DBFactory, DBTable
+    except ImportError as e:
+        raise RuntimeError("quazydb is not installed") from e
 
     if type(fileobj) == str:
         raise NotImplementedError
@@ -233,7 +264,7 @@ def extract_data(fileobj, keywords, comment_tags, options):
     path = Path(fileobj.name)
     if path.name == '__init__.py':
         path = path.parent
-    path = '.'.join(path.relative_to(BASE_PATH).parts)
+    path = '.'.join(path.relative_to(config.BASE_PATH).parts)
     module = importlib.import_module(path)
     db: DBFactory = module.db
     all_tables = db.all_tables()

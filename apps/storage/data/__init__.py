@@ -20,7 +20,7 @@ class Good(Catalog):
 class Purchase(Document):
     storage: Storage
 
-    class PurchaseLine(Document.DocumentLine):
+    class Row(Document.Row):
         good: Good
         unit: Unit
         qty: float
@@ -28,4 +28,5 @@ class Purchase(Document):
 
 from pantra.models import expose_database
 db = expose_database('storage')
-db.use_module()
+db._debug_mode = True
+db.bind_module()

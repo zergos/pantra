@@ -3,6 +3,8 @@ Python Full-stack Framework
 
 *Inspired by Svelte, React, Django, Web2Py and Zen of Python*
 
+![Logo](/docs/source/images/logo_cutted_mini.png)
+
 # What is it?
 
 Component based Web framework with specific features:
@@ -64,21 +66,20 @@ I need flexible, simple and rich tool to perform modern dynamic Web application.
 It still under active development and does not exist as special PYPI package.
 However, feel free to download and make your own Apps experience.
 
-```commandline
-mkdir pantra
-cd pantra
-python -m venv .
-git clone https://github.com/zergos/pantra .
-pip install -r requirements.txt 
-```
-Create Postgres local database `bwf` with login and password 'bwf'.
-```commandline
-python pantra.py migrate.apply system
-python pantra.py migrate.apply storage
-```
-Everything is ready to strart now.
-```commandline
-python pantra.py run
-```
+Execute:
 
-Now, you can open your browser and check demo app by local address <http://localhost:8005/storage>
+    pip install pantra
+    
+or use git::
+
+    pip install git+https://github.com/zergos/pantra.git
+    
+Install core components::
+
+    pantra get_boilerplate
+
+Everything is ready to start now::
+
+    python pantra.py run
+
+Now, you can open your browser and check demo app by local address <http://localhost:8005/demo>

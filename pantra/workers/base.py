@@ -1,3 +1,4 @@
+"""Abstract classes for managing threads and message queue"""
 from __future__ import annotations
 
 import asyncio
@@ -32,17 +33,25 @@ class WorkerStat:
     task_info: str = ""
 
 class BaseWorkerServer(ABC):
+    """Abstract thread management and communication server class
+
+    It has basic thread manager implementation and abstract communication methods.
+    Read :doc:`threads` and :doc:`message_queue` for more information"""
     run_with_web: typing.ClassVar[bool] = False
 
     class Listener(ABC):
+        """Abstract communication listener class"""
         @abstractmethod
-        async def send(self, session_id: str, data: bytes): ...
+        async def send(self, session_id: str, data: bytes):
+            """Send packed message to client by `session_id`"""
 
         @abstractmethod
-        async def receive(self) -> tuple[str, bytes]: ...
+        async def receive(self) -> tuple[str, bytes]:
+            """Read packed message from client and return tuple (session_id, data)"""
 
         @abstractmethod
-        async def close(self): ...
+        async def close(self):
+            """Close active connection"""
 
     workers: typing.ClassVar[dict[str, WorkerStat]] = {}
     task_queue: typing.ClassVar[queue.Queue | None] = queue.Queue()
@@ -53,6 +62,9 @@ class BaseWorkerServer(ABC):
 
     @classmethod
     def task_processor(cls):
+        """Single task thread processor.
+
+        It extracts new function call with args from `task_queue` and let it run in this thread"""
         try:
             ident = threading.current_thread().name
             logger.info('Task thread started')
@@ -81,7 +93,7 @@ class BaseWorkerServer(ABC):
     def wrap_session_task(node: RenderNode, func: typing.Callable):
         from ..session import SessionTask
         session = node.context.session
-        func_name = f'{node.oid}#{func.__name__}'
+        func_name = f'{node.context.oid}#{func.__name__}'
         session.tasks[func_name] = SessionTask(threading.current_thread(), func)
         yield
         if func_name in session.tasks: # other thread is stopped this already, or we have similar funcs names
@@ -101,6 +113,10 @@ class BaseWorkerServer(ABC):
 
     @classmethod
     def tasks_controller(cls):
+        """Common task controller
+
+        It supervises all task threads life cycle. See also :doc:`threads`.
+        """
         while True:
             time.sleep(1)
             tick = time.perf_counter()
@@ -134,6 +150,7 @@ class BaseWorkerServer(ABC):
 
     @staticmethod
     def session_killer():
+        """Session TTL controller"""
         from ..session import Session
         while True:
             time.sleep(5)
@@ -158,7 +175,13 @@ class BaseWorkerServer(ABC):
         threading.Thread(target=cls.session_killer, daemon=True).start()
 
     @abstractmethod
-    def start_listener(self): ...
+    def start_listener(self):
+        """Main entrypoint for listener subclass initialization
+
+        it should end by::
+
+            self.listener = WorkerServer.Listener(...)
+        """
 
     async def run_processor(self):
         from ..session import Session
@@ -186,22 +209,36 @@ class BaseWorkerServer(ABC):
 
 
 class BaseWorkerClient(ABC):
+    """Abstract thread management and communication client class
+
+    It contains abstract communication methods."""
     class Connection(ABC):
-        @abstractmethod
-        async def send(self, message: bytes): ...
+        """Abstract communication connection class"""
 
         @abstractmethod
-        async def receive(self) -> bytes: ...
+        async def send(self, message: bytes):
+            """Send a packed message to the server"""
 
         @abstractmethod
-        def close(self): ...
+        async def receive(self) -> bytes:
+            """Receive a packed message from the server"""
+
+        @abstractmethod
+        def close(self):
+            """Close the connection"""
 
     connection: Connection
     sync_task: asyncio.Task
     last_touch: datetime
 
     @abstractmethod
-    def open_connection(self, session_id: str): ...
+    def open_connection(self, session_id: str):
+        """Main entrypoint for connection subclass initialization
+
+        it should end by::
+
+            self.connection = WorkerClient.Connection(...)
+        """
 
     async def stop_websocket_binding(self):
         self.sync_task.cancel()

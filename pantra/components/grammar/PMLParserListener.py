@@ -35,21 +35,21 @@ class PMLParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#tagBegin.
-    def enterTagBegin(self, ctx:PMLParser.TagBeginContext):
+    # Enter a parse tree produced by PMLParser#tagOpen.
+    def enterTagOpen(self, ctx:PMLParser.TagOpenContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#tagBegin.
-    def exitTagBegin(self, ctx:PMLParser.TagBeginContext):
+    # Exit a parse tree produced by PMLParser#tagOpen.
+    def exitTagOpen(self, ctx:PMLParser.TagOpenContext):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#tagEnd.
-    def enterTagEnd(self, ctx:PMLParser.TagEndContext):
+    # Enter a parse tree produced by PMLParser#tagClose.
+    def enterTagClose(self, ctx:PMLParser.TagCloseContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#tagEnd.
-    def exitTagEnd(self, ctx:PMLParser.TagEndContext):
+    # Exit a parse tree produced by PMLParser#tagClose.
+    def exitTagClose(self, ctx:PMLParser.TagCloseContext):
         pass
 
 
@@ -89,30 +89,48 @@ class PMLParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#macroBegin.
-    def enterMacroBegin(self, ctx:PMLParser.MacroBeginContext):
+    # Enter a parse tree produced by PMLParser#macroOpen.
+    def enterMacroOpen(self, ctx:PMLParser.MacroOpenContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#macroBegin.
-    def exitMacroBegin(self, ctx:PMLParser.MacroBeginContext):
-        pass
-
-
-    # Enter a parse tree produced by PMLParser#macroEnd.
-    def enterMacroEnd(self, ctx:PMLParser.MacroEndContext):
-        pass
-
-    # Exit a parse tree produced by PMLParser#macroEnd.
-    def exitMacroEnd(self, ctx:PMLParser.MacroEndContext):
+    # Exit a parse tree produced by PMLParser#macroOpen.
+    def exitMacroOpen(self, ctx:PMLParser.MacroOpenContext):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#inlineMacro.
-    def enterInlineMacro(self, ctx:PMLParser.InlineMacroContext):
+    # Enter a parse tree produced by PMLParser#macroClose.
+    def enterMacroClose(self, ctx:PMLParser.MacroCloseContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#inlineMacro.
-    def exitInlineMacro(self, ctx:PMLParser.InlineMacroContext):
+    # Exit a parse tree produced by PMLParser#macroClose.
+    def exitMacroClose(self, ctx:PMLParser.MacroCloseContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#content.
+    def enterContent(self, ctx:PMLParser.ContentContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#content.
+    def exitContent(self, ctx:PMLParser.ContentContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#macroInline.
+    def enterMacroInline(self, ctx:PMLParser.MacroInlineContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#macroInline.
+    def exitMacroInline(self, ctx:PMLParser.MacroInlineContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#macroCommand.
+    def enterMacroCommand(self, ctx:PMLParser.MacroCommandContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#macroCommand.
+    def exitMacroCommand(self, ctx:PMLParser.MacroCommandContext):
         pass
 
 
@@ -125,66 +143,66 @@ class PMLParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#rawBlock.
-    def enterRawBlock(self, ctx:PMLParser.RawBlockContext):
+    # Enter a parse tree produced by PMLParser#scriptBlock.
+    def enterScriptBlock(self, ctx:PMLParser.ScriptBlockContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#rawBlock.
-    def exitRawBlock(self, ctx:PMLParser.RawBlockContext):
-        pass
-
-
-    # Enter a parse tree produced by PMLParser#rawTag.
-    def enterRawTag(self, ctx:PMLParser.RawTagContext):
-        pass
-
-    # Exit a parse tree produced by PMLParser#rawTag.
-    def exitRawTag(self, ctx:PMLParser.RawTagContext):
+    # Exit a parse tree produced by PMLParser#scriptBlock.
+    def exitScriptBlock(self, ctx:PMLParser.ScriptBlockContext):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#rawAttr.
-    def enterRawAttr(self, ctx:PMLParser.RawAttrContext):
+    # Enter a parse tree produced by PMLParser#scriptTag.
+    def enterScriptTag(self, ctx:PMLParser.ScriptTagContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#rawAttr.
-    def exitRawAttr(self, ctx:PMLParser.RawAttrContext):
-        pass
-
-
-    # Enter a parse tree produced by PMLParser#rawName.
-    def enterRawName(self, ctx:PMLParser.RawNameContext):
-        pass
-
-    # Exit a parse tree produced by PMLParser#rawName.
-    def exitRawName(self, ctx:PMLParser.RawNameContext):
+    # Exit a parse tree produced by PMLParser#scriptTag.
+    def exitScriptTag(self, ctx:PMLParser.ScriptTagContext):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#rawValue.
-    def enterRawValue(self, ctx:PMLParser.RawValueContext):
+    # Enter a parse tree produced by PMLParser#scriptAttr.
+    def enterScriptAttr(self, ctx:PMLParser.ScriptAttrContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#rawValue.
-    def exitRawValue(self, ctx:PMLParser.RawValueContext):
-        pass
-
-
-    # Enter a parse tree produced by PMLParser#rawText.
-    def enterRawText(self, ctx:PMLParser.RawTextContext):
-        pass
-
-    # Exit a parse tree produced by PMLParser#rawText.
-    def exitRawText(self, ctx:PMLParser.RawTextContext):
+    # Exit a parse tree produced by PMLParser#scriptAttr.
+    def exitScriptAttr(self, ctx:PMLParser.ScriptAttrContext):
         pass
 
 
-    # Enter a parse tree produced by PMLParser#rawCloseTag.
-    def enterRawCloseTag(self, ctx:PMLParser.RawCloseTagContext):
+    # Enter a parse tree produced by PMLParser#scriptName.
+    def enterScriptName(self, ctx:PMLParser.ScriptNameContext):
         pass
 
-    # Exit a parse tree produced by PMLParser#rawCloseTag.
-    def exitRawCloseTag(self, ctx:PMLParser.RawCloseTagContext):
+    # Exit a parse tree produced by PMLParser#scriptName.
+    def exitScriptName(self, ctx:PMLParser.ScriptNameContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#scriptValue.
+    def enterScriptValue(self, ctx:PMLParser.ScriptValueContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#scriptValue.
+    def exitScriptValue(self, ctx:PMLParser.ScriptValueContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#scriptText.
+    def enterScriptText(self, ctx:PMLParser.ScriptTextContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#scriptText.
+    def exitScriptText(self, ctx:PMLParser.ScriptTextContext):
+        pass
+
+
+    # Enter a parse tree produced by PMLParser#scriptEnd.
+    def enterScriptEnd(self, ctx:PMLParser.ScriptEndContext):
+        pass
+
+    # Exit a parse tree produced by PMLParser#scriptEnd.
+    def exitScriptEnd(self, ctx:PMLParser.ScriptEndContext):
         pass
 
 

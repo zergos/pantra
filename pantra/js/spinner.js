@@ -7,7 +7,7 @@ function showSpinner() {
             document.getElementById('progress-spinner-animation').beginElement();
             document.getElementById('progress-spinner').style.display = 'block';
         }
-    }, 100);
+    }, 1000);
 }
 
 function hideSpinner() {

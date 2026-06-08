@@ -12,10 +12,12 @@ if typing.TYPE_CHECKING:
     from typing import *
     from types import CodeType
     from pantra.session import Session
-    from pantra.components.context import Condition, LoopNode
+    from pantra.components.context import Condition, LoopNode, SetNode
     from pantra.components.render.render_node import RenderNode
 
 class RendererCached(RendererBase):
+    """Renderer from cached component classes"""
+
     templates: ClassVar[dict[str, CodeType]] = {}
     __slots__ = ()
 
@@ -42,10 +44,11 @@ class RendererCached(RendererBase):
         return code
 
     def build_node(self, template: HTMLTemplate, parent: Optional[RenderNode] = None) -> Optional[RenderNode]:
-        raise NotImplementedError()
+        raise NotImplementedError("All nodes are being built in derived component classes")
 
     def build(self):
         if self.__class__ is RendererCached:
+            # override self class to ComponentRenderer derived class from the compiled context
             initial_locals = {k: v for k, v in self.ctx.locals.items() if k not in ('init', 'on_restart', 'ctx', 'refs')}
             common_locals = {'ctx': self.ctx, 'refs': self.ctx.refs, 'session': self.ctx.session, '_': self.ctx.session.gettext, 'logger': logger}
             self.ctx.locals.update(common_locals)
@@ -81,7 +84,7 @@ class RendererCached(RendererBase):
             condition.template(node)
 
             return False
-        return True
+        return recursive
 
     def _update_loop_node(self, node: LoopNode, recursive):
         if not node.index_func:
@@ -150,11 +153,19 @@ class RendererCached(RendererBase):
 
         return False
 
-    def _update_set_node(self, node, recursive):
-        node.empty()
-        value = node.value()
-        node.template(node, value)
-        return False
+    def _update_set_node(self, node: SetNode, recursive):
+        node.variables.refresh()
+        if node.scoped:
+            self.ctx.scope.update(node.variables)
+        else:
+            self.ctx.locals.update(node.variables)
+        if node.self_clear:
+            node.empty()
+            node.template(node, *node.variables.values())
+            #del self.ctx.locals[node.var_name]
+            return False
+        else:
+            return recursive
 
     NODE_UPDATERS: dict[str, Callable[[Self, RenderNode, bool], bool]] = {
         'HTMLElement': RendererHTML._update_html_node,
@@ -169,5 +180,5 @@ class RendererCached(RendererBase):
     #endregion
 
     def update(self, node: RenderNode, recursive: bool = False):
-        if self.NODE_UPDATERS[typename(node)](self, node, recursive) and recursive:
+        if self.NODE_UPDATERS[typename(node)](self, node, recursive):
             self.update_children(node)

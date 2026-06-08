@@ -32,6 +32,8 @@ def run(host=None, port=8005):
         port=port,
         ws_ping_interval=config.WS_HEARTBEAT_INTERVAL,
         ws_ping_timeout=config.SOCKET_TIMEOUT,
+        ws_max_size=config.MAX_MESSAGE_SIZE,
+        log_config=None,
     )
 
 

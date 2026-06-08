@@ -55,7 +55,7 @@ def make_widget(parent: RenderNode, ux: UX, value: Any = None, **kwargs) -> Opti
         locals['step'] = 1
     if ux.name == 'name':
         locals['focused'] = True
-    if isinstance(ux.type, DBTable):
+    if issubclass(ux.type, DBTable):
         template = 'DBField'
         locals['table'] = ux.type
     elif issubclass(ux.type, str) and ux.multiline:

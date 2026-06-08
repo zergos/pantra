@@ -4,18 +4,18 @@ import typing
 from enum import Enum, IntEnum, auto
 from pathlib import Path
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import ast
 
 from pantra.common import UniNode
 from pantra.settings import config
+from pantra.compiler import CodeMetrics
 
 if typing.TYPE_CHECKING:
     from typing import Self, Optional, Any
     from types import CodeType
 
     from pantra.session import Session
-    from pantra.compiler import CodeMetrics
 
 __all__ = ['HTMLTemplate', 'MacroCode', 'collect_styles', 'collect_template', 'NodeType', 'AttrType', 'MacroType',
            'get_template_path']
@@ -34,6 +34,7 @@ def is_expression_canonical(expr: str) -> bool:
 is_expression_canonical.r = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+([.][a-zA-Z_][a-zA-Z0-9_]+)+$")
 
 class NodeType(IntEnum):
+    """Enumerated type of the node"""
     HTML_TAG = auto()
     TEMPLATE_TAG = auto()
     ROOT_NODE = auto()
@@ -41,16 +42,14 @@ class NodeType(IntEnum):
     MACRO_FOR = auto()
     MACRO_SET = auto()
     MACRO_INTERNAL = auto()
+    AT_TEXT = auto()
     AT_COMPONENT = auto()
     AT_SLOT = auto()
     AT_PYTHON = auto()
     AT_SCRIPT = auto()
     AT_STYLE = auto()
-    AT_EVENT = auto()
-    AT_SCOPE = auto()
-    AT_TEXT = auto()
-    AT_MACRO = auto()
     AT_REACT = auto()
+    AT_EVENT = auto()
 
     @staticmethod
     def detect(tag_name: str) -> NodeType:
@@ -65,7 +64,7 @@ class NodeType(IntEnum):
                 return NodeType.MACRO_IF
             if tag_name == '#for':
                 return NodeType.MACRO_FOR
-            if tag_name == '#set':
+            if tag_name.startswith('#set'):
                 return NodeType.MACRO_SET
             return NodeType.MACRO_INTERNAL
         if tag_name[0] == '@':
@@ -73,6 +72,7 @@ class NodeType(IntEnum):
         raise ValueError(f"Undetected TAG `{tag_name}`")
 
 class AttrType(IntEnum):
+    """Enumerated type of the attribute"""
     ATTR = auto()
     REF_NAME = auto()
     CREF_NAME = auto()
@@ -84,7 +84,8 @@ class AttrType(IntEnum):
     BIND_VALUE = auto()
     DYNAMIC_SET = auto()
     DATA = auto()
-    SRC_HREF = auto()
+    SRC = auto()
+    HREF = auto()
     REACTIVE = auto()
     STYLE = auto()
     CLASS = auto()
@@ -125,8 +126,12 @@ class AttrType(IntEnum):
             if attr.startswith('data:'):
                 attr = attr.split(':')[1].strip()
                 return AttrType.DATA, attr, False
-            if attr.startswith('src:') or attr.startswith('href:'):
-                return AttrType.SRC_HREF, attr, False
+            if attr.startswith('src:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.SRC, attr, False
+            if attr.startswith('href:'):
+                attr = attr.split(':')[1].strip()
+                return AttrType.HREF, attr, False
             if attr.startswith('not:'):
                 attr = attr.split(':')[1].strip()
                 return AttrType.SET_FALSE, attr, True
@@ -150,6 +155,7 @@ class AttrType(IntEnum):
         return AttrType.ATTR, attr, False
 
 class MacroType(Enum):
+    """Enumerated type of the macro"""
     STRING = auto()
     TEMPLATE = auto()
     BOOLEAN = auto()
@@ -165,11 +171,22 @@ class AstNamesVisitor(ast.NodeVisitor):
 
 @dataclass(slots=True)
 class MacroCode:
+    """Python code adaptation for scripts and expressions
+
+    Attributes:
+        type: type of this macro code
+        reactive: marked as reactive
+        evaluated: marked as evaluated
+        src: source text
+        code: compiled code in one of three forms
+        vars: reactive variables list
+    """
     type: MacroType
     reactive: bool
-    code: CodeType | list[str] | None
+    evaluated: bool
+    code: CodeType | list[str] | str | None
     src: str
-    vars: set[str] = None
+    vars: set[str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         visitor = AstNamesVisitor()
@@ -177,7 +194,7 @@ class MacroCode:
         self.vars = visitor.vars
 
         if is_expression_id(self.src):
-            self.code = [self.src]
+            self.code = self.src
         elif is_expression_canonical(self.src):
             self.code = self.src.split('.')
 
@@ -188,10 +205,25 @@ def get_template_path(t: HTMLTemplate | CodeType) -> Path:
         return Path(t.co_filename).parent
 
 class HTMLTemplate(UniNode):
-    __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'content', 'name', 'filename', 'code',
-                 'index', 'hex_digest', 'code_metrics')
+    """The rendering node template based on HTML-like source file
 
-    def __init__(self, tag_name: str, index: int, parent: Self | None = None, attributes: dict | None = None, text: str = None):
+    Attributes:
+        tag_name (str): tag name of the node
+        node_type (NodeType): node type
+        attributes (dict[str, ...]): node attributes
+        attr_specs (dict[str, tuple[AttrType, str | None, bool]]): attribute specifications
+        content (str | MacroCode | None): content of the node
+        name (str): component name for the root node
+        filename (Path): component source file name (for the root node)
+        code (str | CodeType | None): compiled Python script
+        code_metrics (CodeMetrics): compiled Python code metrics
+        script_index (int): JavaScript index for renderer
+        hex_digest (str): hexadecimal digest of the source text file for :ref:`observer <observer>` watchdog
+    """
+    __slots__ = ('tag_name', 'node_type', 'attributes', 'attr_specs', 'content', 'name', 'filename', 'code',
+                 'script_index', 'hex_digest', 'code_metrics')
+
+    def __init__(self, tag_name: str, parent: Self | None = None, attributes: dict | None = None, text: str = None):
         super().__init__(parent)
         self.tag_name: str = tag_name
         self.node_type: NodeType = NodeType.detect(tag_name)
@@ -201,18 +233,9 @@ class HTMLTemplate(UniNode):
         self.name: str | None = None
         self.filename: Optional[Path] = None
         self.code: str | CodeType | None = None
-        self.code_metrics: Optional[CodeMetrics] = None
-        self.index: int = index
+        self.code_metrics: CodeMetrics = CodeMetrics()
+        self.script_index: int = 0
         self.hex_digest: str = ''
-
-    def fold(self) -> Self:
-        res = HTMLTemplate('@component', 0, None)
-        res._parent = self
-        res._children = self._children
-        self._children = [res]
-        for child in res._children:
-            child._parent = res
-        return res
 
     def __str__(self):
         return self.tag_name
@@ -223,9 +246,23 @@ class HTMLTemplate(UniNode):
 
 
 def collect_template(name: str, session: Optional[Session] = None, app: Optional[str] = None) -> Optional[HTMLTemplate]:
+    """Use `DEFAULT_RENDERER` to collect template of the specified component name
+
+    Arguments:
+        name: name of the component
+        session: Optional session instance, used for loading feedback messages
+        app: Optional application instance if session is not defined
+    """
     return config.DEFAULT_RENDERER.collect_template(name, session, app)
 
 def collect_styles(app:str, app_path: Path, error_callback: typing.Callable[[str], None]) -> str:
+    """Collect and compile all CSS styles from all components
+
+    Arguments:
+        app: application name (needed to generate static file urls)
+        app_path: application path (needed to find template files)
+        error_callback: callback function to handle errors during parsing and compilation
+    """
     from .loader import load_styles
 
     styles = []
@@ -233,7 +270,7 @@ def collect_styles(app:str, app_path: Path, error_callback: typing.Callable[[str
         if file == config.BOOTSTRAP_FILENAME:
             continue
         try:
-            res = load_styles(app, file.stem, file)
+            res = load_styles(app, file.stem, file, error_callback)
         except Exception as e:
             error_callback(f'{file}> Style collector> {e}')
         else:

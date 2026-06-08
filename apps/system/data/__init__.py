@@ -1,90 +1,63 @@
 import uuid
 import hashlib
 
-from quazy.db import *
-from quazy.db_types import *
+from quazy import *
 
-from pantra.ctx import _, session
+from pantra.ctx import *
 
 _SCHEMA_ = "system"
 
-
-class User(DBTable):
-    _title_ = "user"
-    name: str
-    password: str | None
-    salt: str | None
-    email: str | None
-    created_at: datetime = DBField(default=datetime.now, ux=UX('created'))
-    is_admin: bool = DBField(default=False, ux=UX('A', width=3))
-    enabled: bool = DBField(default=False, ux=UX('E', width=3))
-    apps: ManyToMany['App']
-
-    def _view(self, s):
-        return s.name
-
-    def set_password(self, password):
-        self.salt = uuid.uuid4().hex
-        self.password = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
-
-    def check_password(self, password):
-        check = hashlib.sha512((password + self.salt).encode('utf-8')).hexdigest()
-        return check == self.password
-
-
-class App(DBTable):
-    name: str
-    title: str | None
-    users: ManyToMany[User]
-
-    def _view(self, s):
-        return s.name
-
-
 class Document(DBTable):
     _lookup_field_ = 'number'
+    _meta_ = True
+    id: int = DBField(pk=True, ux=UX(blank=True, hidden=True))
 
-    prefix: str = DBField(default="", ux=UX(width=2))
-    number: int = DBField(ux=UX(width=6))
+    number: int = DBField(ux=UX(width=6, blank=True))
     date: datetime = DBField(default=datetime.now)
-    body: dict = DBField(body=True)
 
     def __str__(self):
         return f'{_(type(self).__name__)} - {self.number} - {session.locale.datetime(self.date)}'
 
-    class DocumentLine(DBTable):
+    class Row(DBTable):
+        _meta_ = True
         pos: int = DBField(ux=UX(width=5))
-        data: dict = DBField(body=True)
+        data: FieldBody
 
 
 class Catalog(DBTable):
     _lookup_field_ = 'name'
+    _meta_ = True
+    id: int = DBField(pk=True, ux=UX(blank=True, hidden=True))
 
-    prefix: str = DBField(default="", ux=UX(width=2))
-    number: int = DBField(ux=UX(width=6))
+    number: int = DBField(ux=UX(width=6, blank=True))
     name: str | None
-    body: dict = DBField(body=True)
 
     def __str__(self):
         return self.name
 
-    def _before_update(self, db: DBFactory):
-        if not self.number:
-            check = db.query(Catalog).filter(prefix=self.prefix)
-            if not check.exists():
-                self.number = 1
-            else:
-                max = db.query(Catalog)\
-                    .filter(prefix=self.prefix)\
-                    .exclude(pk=self)\
-                    .fetch_max('number')
-                self.number = max and max + 1 or 1
-        else:
-            look_up = db.get(Catalog, prefix=self.prefix, number=self.number)
-            if look_up != self:
-                raise ValueError(f'Catalog number {self.number} is not unique')
+    @classmethod
+    def _view_(cls, item: DBQueryField[typing.Self]):
+        return item.name
 
+    def check_number(self, db: DBFactory):
+        table_class = self.__class__
+        if not self.number:
+            q = db.query(table_class)
+            max = (q
+                   .exclude(id=q.arg(self.id).coalesce(0))
+                   .fetch_max('number'))
+            self.number = max and max + 1 or 1
+        else:
+            look_up = db.get(table_class, number=self.number)
+            if look_up != self:
+                raise ValueError(f'Catalog number <{self.number}> is not unique')
+
+    def _before_insert(self, db: DBFactory):
+        self.check_number(db)
+
+    def _before_update(self, db: DBFactory):
+        self.check_number(db)
 
 from pantra.models import expose_database
 db = expose_database('system')
-db.use_module()
+db.bind_module()

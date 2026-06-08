@@ -107,6 +107,8 @@ const TextSerializer = {
         let element = OID.node(v.i);
         if (!element) {
             let parent = OID.node(v.p);
+            if (!parent)
+                return null;
             element = document.createElement('text');
             if (config.JS_ADD_IDS)
                 element.setAttribute('id',  `o${v.i}`);
@@ -154,9 +156,8 @@ const StubElementSerializer = {
 const EventSerializer = {
     name: 'e',
     decode: function (s, v) {
-        for (let attr in v.a) {
-            if (attr.startsWith('on:'))
-                processEventAttribute(v.ctx, v.a.selector || "", attr, v.a[attr], v.oid);
+        for (let event in v.e) {
+            processEventAttribute(v.ctx, v.s || "", event, v.e[event], v.oid);
         }
     }
 };
@@ -193,17 +194,24 @@ const TimeSerializer = {
 const ScriptSerializer = {
     name: 's',
     decode: function(s, v) {
-        if (!SCRIPTS.exists(v.u)) {
-            let script = document.createElement('script');
-            SCRIPTS.new(script, v.u);
-            document.getElementsByTagName("head")[0].appendChild(script);
-
+        function fill_content(node) {
             for (let at in v.a) {
                 if (v.a[at])
-                    script.setAttribute(at, v.a[at]);
+                    node.setAttribute(at, v.a[at]);
             }
 
-            if (v.t) script.textContent = v.t;
+            if (v.t) node.textContent = v.t;
+        }
+
+        if (!SCRIPTS.exists(v.u)) {
+            if (v.h) {
+                let script = document.createElement('script');
+                SCRIPTS.new(script, v.u);
+                document.getElementsByTagName("head")[0].appendChild(script);
+                fill_content(script);
+            } else {
+                SCRIPTS.new(null, v.u);
+            }
         }
 
         let element =  OID.node(v.i);
@@ -216,9 +224,11 @@ const ScriptSerializer = {
                     contentFilled = true;
                 }
             }
+            // in case of head location create empty node as an anchor to track script destruction moment
             element = document.createElement('script');
             OID.set(element, v.i);
             parent.appendChild(element);
+            if (!v.h) fill_content(element);
         }
 
         SCRIPTS.addref(v.u, v.i);

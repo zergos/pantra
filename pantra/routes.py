@@ -1,3 +1,4 @@
+"""Web routes definitions"""
 import asyncio
 import sys
 from importlib import import_module
@@ -20,7 +21,9 @@ from pantra.session import Session
 from pantra.settings import config, logger
 from pantra import jsmap
 
-def get(pattern: str, method: str = None):
+
+def route(pattern: str, method: str = None):
+    """The decorator to mark method as a router to specific regex pattern"""
     def inner(func):
         if not hasattr(func, "patterns"):
             func.patterns = [(pattern, method)]
@@ -29,9 +32,28 @@ def get(pattern: str, method: str = None):
         return func
     return inner
 
+
+def get(pattern: str):
+    """Decorator shortcut for GET method"""
+    return route(pattern)
+
+def post(pattern: str):
+    """Decorator shortcut for POST method"""
+    return route(pattern, "POST")
+
+
 class BaseRouter:
+    """Basic router class.
+
+    It has all needed to startup and shutdown router, and also has websocket processor.
+    All other derived classes are responsible for processing:
+    * static files, including engine JS
+    * any additional API calls
+
+    It is recommended to inherit from :class:`DevRouter` or :class:`CachedRouter` instead of base class
+    """
     routes: list[Route]
-    CACHE_ID = Session.gen_session_id()
+    INSTANCE_ID = Session.gen_session_id()
 
     def __init__(self):
         super().__init__()
@@ -64,7 +86,8 @@ class BaseRouter:
             from pantra.watchers import stop_observer
             stop_observer()
 
-    def static_routes(self):
+    def static_routes(self) -> list[Mount]:
+        """Define static routes"""
         return []
 
     def routes(self):
@@ -86,18 +109,22 @@ class BaseRouter:
 
     @staticmethod
     def forbidden(message: str) -> Response:
+        """Shortcut method to return 403"""
         return PlainTextResponse(message, 403)
 
     @staticmethod
     def not_found(message: str) -> Response:
+        """Shortcut method to return 404"""
         return PlainTextResponse(message, 404)
 
     @staticmethod
     def bad_request(message: str = '') -> Response:
+        """Shortcut method to return 400"""
         return PlainTextResponse(message, 400)
 
     @staticmethod
     def css(value: str) -> Response:
+        """Shortcut method to return CSS content"""
         return Response(value, 200, media_type="text/css")
 
     @get("/{app}")
@@ -121,13 +148,13 @@ class BaseRouter:
             .replace('{{TAB_ID}}', session_id)\
             .replace('{{WEB_PATH}}', config.WEB_PATH)\
             .replace('{{APP_TITLE}}', app_title)\
-            .replace('{{CACHE_ID}}', self.CACHE_ID)
+            .replace('{{INSTANCE_ID}}', self.INSTANCE_ID)
 
         logger.debug(f"Bootstrap page rendered {local_id}/{session_id}")
         return HTMLResponse(body)
 
-    @get('/ws/{local_id}/{session_id}', method="ws")
-    @get('/{app}/ws/{local_id}/{session_id}', method="ws")
+    @route('/ws/{local_id}/{session_id}', method="ws")
+    @route('/{app}/ws/{local_id}/{session_id}', method="ws")
     async def get_ws(self, websocket: WebSocket):
         local_id: str = websocket.path_params['local_id']
         session_id: str = websocket.path_params['session_id']
@@ -143,7 +170,7 @@ class BaseRouter:
         logger.debug(
             f"WebSocket connected {{{app}}} {local_id}/{session_id}")
 
-        lang_info = websocket.headers.get('Accept-Language', 'en')
+        lang_info = websocket.headers.get('Accept-Language', config.DEFAULT_LANGUAGE)
         lang = [part.split(';')[0].replace('-', '_') for part in lang_info.split(',')]
 
         # session = Session(request.match_info['local_id'], session_id, ws, app, lang)
@@ -171,15 +198,19 @@ class BaseRouter:
 
 @wipe_logger
 class DevRouter(BaseRouter):
+    """Router intended for development process.
+
+    It provides logic to use raw components, generate data on the fly, slow yet handy
+    """
     def static_routes(self):
         res = [Mount('/css', StaticFiles(directory=config.CSS_PATH)),
                Mount('/js', StaticFiles(directory=config.JS_PATH))]
         return res
 
-    @get('/static/{file}')
-    @get('/static/${template}/{file}')
-    @get('/static/@{virt_dir}/{file}')
-    @get('/static/~{app}/{file}')
+    @get('/static/{file:path}')
+    @get('/static/${template}/{file:path}')
+    @get('/static/@{virt_dir}/{file:path}')
+    @get('/static/~{app}/{file:path}')
     async def get_media(self, request: Request):
         file_name = request.path_params.get('file')
         template_name = request.path_params.get('template')
@@ -195,8 +226,12 @@ class DevRouter(BaseRouter):
                 return self.not_found(f'Directory `{virt_dir}` not found')
             search_path = config.ALLOWED_DIRS[virt_dir]
         elif template_name:
-            if (t := collect_template(template_name[1:])) is None:
-                return self.not_found(f'`{template_name[1:]}` not found')
+            if ':' in template_name:
+                app, template_name = template_name.split(':')
+            else:
+                app = config.DEFAULT_APP
+            if (t := collect_template(template_name, app=app)) is None:
+                return self.not_found(f'`{template_name}` not found')
             search_path = get_template_path(t) / config.STATIC_DIR
         elif app:
             search_path = config.APPS_PATH / app / config.STATIC_DIR
@@ -266,6 +301,10 @@ class DevRouter(BaseRouter):
 
 @wipe_logger
 class CachedRouter(BaseRouter):
+    """Router intended for production.
+
+    It uses pre-cached components data only. Fast and efficient.
+    """
     @get('/css/.local.css')
     async def get_local_css(self, request: Request):
         return RedirectResponse(f'/css/{config.DEFAULT_APP}.local.css')

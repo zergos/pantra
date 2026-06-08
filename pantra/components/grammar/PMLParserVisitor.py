@@ -24,13 +24,13 @@ class PMLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#tagBegin.
-    def visitTagBegin(self, ctx:PMLParser.TagBeginContext):
+    # Visit a parse tree produced by PMLParser#tagOpen.
+    def visitTagOpen(self, ctx:PMLParser.TagOpenContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#tagEnd.
-    def visitTagEnd(self, ctx:PMLParser.TagEndContext):
+    # Visit a parse tree produced by PMLParser#tagClose.
+    def visitTagClose(self, ctx:PMLParser.TagCloseContext):
         return self.visitChildren(ctx)
 
 
@@ -54,18 +54,28 @@ class PMLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#macroBegin.
-    def visitMacroBegin(self, ctx:PMLParser.MacroBeginContext):
+    # Visit a parse tree produced by PMLParser#macroOpen.
+    def visitMacroOpen(self, ctx:PMLParser.MacroOpenContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#macroEnd.
-    def visitMacroEnd(self, ctx:PMLParser.MacroEndContext):
+    # Visit a parse tree produced by PMLParser#macroClose.
+    def visitMacroClose(self, ctx:PMLParser.MacroCloseContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#inlineMacro.
-    def visitInlineMacro(self, ctx:PMLParser.InlineMacroContext):
+    # Visit a parse tree produced by PMLParser#content.
+    def visitContent(self, ctx:PMLParser.ContentContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by PMLParser#macroInline.
+    def visitMacroInline(self, ctx:PMLParser.MacroInlineContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by PMLParser#macroCommand.
+    def visitMacroCommand(self, ctx:PMLParser.MacroCommandContext):
         return self.visitChildren(ctx)
 
 
@@ -74,38 +84,38 @@ class PMLParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawBlock.
-    def visitRawBlock(self, ctx:PMLParser.RawBlockContext):
+    # Visit a parse tree produced by PMLParser#scriptBlock.
+    def visitScriptBlock(self, ctx:PMLParser.ScriptBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawTag.
-    def visitRawTag(self, ctx:PMLParser.RawTagContext):
+    # Visit a parse tree produced by PMLParser#scriptTag.
+    def visitScriptTag(self, ctx:PMLParser.ScriptTagContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawAttr.
-    def visitRawAttr(self, ctx:PMLParser.RawAttrContext):
+    # Visit a parse tree produced by PMLParser#scriptAttr.
+    def visitScriptAttr(self, ctx:PMLParser.ScriptAttrContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawName.
-    def visitRawName(self, ctx:PMLParser.RawNameContext):
+    # Visit a parse tree produced by PMLParser#scriptName.
+    def visitScriptName(self, ctx:PMLParser.ScriptNameContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawValue.
-    def visitRawValue(self, ctx:PMLParser.RawValueContext):
+    # Visit a parse tree produced by PMLParser#scriptValue.
+    def visitScriptValue(self, ctx:PMLParser.ScriptValueContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawText.
-    def visitRawText(self, ctx:PMLParser.RawTextContext):
+    # Visit a parse tree produced by PMLParser#scriptText.
+    def visitScriptText(self, ctx:PMLParser.ScriptTextContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by PMLParser#rawCloseTag.
-    def visitRawCloseTag(self, ctx:PMLParser.RawCloseTagContext):
+    # Visit a parse tree produced by PMLParser#scriptEnd.
+    def visitScriptEnd(self, ctx:PMLParser.ScriptEndContext):
         return self.visitChildren(ctx)
 
 

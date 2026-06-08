@@ -35,7 +35,7 @@ function process_message(obj) {
         case 'm': {
             let node = OID.node(obj.l);
             let rect = node.getBoundingClientRect();
-            sendMessage(Messages.metrics(obj.l, rect));
+            sendMessage(Messages.measures(obj.l, rect));
             break;
         }
 
@@ -122,7 +122,7 @@ let Messages = {
     bindValue: (variable, oid, value) => { return {C: 'B', v: variable, oid: oid, x: value} },
     key: (method, oid, key) => { return {C: 'KEY', method: method, oid: oid, key: key} },
     call: (oid, method, args) => { return {C: 'CALL', oid: oid, method: method, args: args} },
-    metrics: (oid, rect) => {
+    measures: (oid, rect) => {
         return {
                 C: 'M',
                 oid: oid,

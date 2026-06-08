@@ -4,55 +4,84 @@ import typing
 import time
 from abc import ABC, abstractmethod
 from typing import NamedTuple
+from weakref import WeakValueDictionary
 
 from pantra.settings import config
 
 if typing.TYPE_CHECKING:
+    from typing import Any, Mapping
     from .session import Session
 
 
-class BindingTuple(NamedTuple):
-    dict_ref: dict
-    key: str
-
-
 class SessionStorage(ABC):
-    bindings: dict[str, BindingTuple]
-    session: Session
+    """Abstract session storage.
+
+    Allows to keep user values between sessions.
+    """
+    __slots__ = ("_binding_dicts", "_binding_keys", "_session")
 
     def __init__(self, session: Session):
-        self.bindings = {}
-        self.session = session
+        self._binding_dicts: WeakValueDictionary[str, dict[str, Any]] = WeakValueDictionary()
+        self._binding_keys: dict[str, str] = {}
+        self._session = session
 
     @abstractmethod
-    def load(self): ...
+    def _load(self) -> dict[str, Any]:
+        """Load session data from the specific storage"""
 
     @abstractmethod
-    def dump(self): ...
+    def _put(self, data: dict[str, Any]):
+        """Put session data to the specific storage"""
 
-    def add_binding(self, name: str, dict_ref: dict, key: str):
-        if name not in self.bindings:
-            self.bindings[name] = BindingTuple(dict_ref, key)
-        if name in self.session.state:
-            dict_ref[key] = self.session[name]
+    def add_binding(self, name: str, dict_ref: dict[str, Any], key: str):
+        """Bind storage record to the specific key of the dictionary
+
+        Arguments:
+            name: The name of the record
+            dict_ref: The dictionary to bind
+            key: The key (of `dict_ref`) to bind
+        """
+        if name not in self._binding_dicts:
+            self._binding_dicts[name] = dict_ref
+            self._binding_keys[name] = key
+        if name in self._session.state:
+            dict_ref[key] = self._session[name]
 
     def gather(self):
-        for name, binding in self.bindings.items():
-            self.session[name] = binding.dict_ref[binding.key]
+        """Gather all bound values from dictionaries to set session state"""
+        for name, binding in list(self._binding_dicts.items()):
+            self._session[name] = binding[self._binding_keys[name]]
 
     def distribute(self):
-        for name, binging in self.bindings.items():
-            binging.dict_ref[binging.key] = self.session[name]
+        """Distribute values from session state to bound dictionaries"""
+        for name, binging in list(self._binding_dicts.items()):
+            binging[self._binding_keys[name]] = self._session[name]
 
+    def reload(self):
+        """Reload session state"""
+        self._session.state.update(self._load())
+
+    def sync(self):
+        """Sync session state"""
+        self._put({k: v for k, v in self._session.state.items() if k in self._binding_dicts})
+
+class NullSessionStorage(SessionStorage):
+    """Default session storage behavior - just keep in session state"""
+    def _load(self) -> dict[str, typing.Any]:
+        return {}
+
+    def _put(self, data: dict[str, typing.Any]):
+        pass
 
 class ShelveSessionStorage(SessionStorage):
+    """Use `shelve <https://docs.python.org/3/library/shelve.html>`__ to keep user data"""
     def __init__(self, session: Session):
         super().__init__(session)
-        self.filename = config.APPS_PATH / session.app / "storage" / (session.user or "common")
-        if not self.filename.parent.exists():
-            self.filename.parent.mkdir()
+        session_path = config.APPS_PATH / session.app / "storage"
+        if not session_path.exists():
+            session_path.mkdir()
 
-    def load(self):
+    def _load(self) -> dict[str, typing.Any]:
         import shelve
         try:
             from dbm.gnu import error
@@ -60,15 +89,16 @@ class ShelveSessionStorage(SessionStorage):
         except ModuleNotFoundError:
             exc = Exception
 
+        filename = config.APPS_PATH / self._session.app / "storage" / (self._session.user or "common")
         while True:
             try:
-                with shelve.open(str(self.filename)) as db:
-                    self.session.state |= dict(db.items())
+                with shelve.open(str(filename)) as db:
+                    return dict(db.items())
                 break
             except exc:
                 time.sleep(1)
 
-    def dump(self):
+    def _put(self, data: dict[str, typing.Any]):
         import shelve
         try:
             from dbm.gnu import error
@@ -76,12 +106,12 @@ class ShelveSessionStorage(SessionStorage):
         except ModuleNotFoundError:
             exc = Exception
 
+        filename = config.APPS_PATH / self._session.app / "storage" / (self._session.user or "common")
         while True:
             try:
-                with shelve.open(str(self.filename)) as db:
-                    for name in self.bindings:
-                        db[name] = self.session[name]
+                with shelve.open(str(filename)) as db:
+                    for name, value in data.items():
+                        db[name] = value
                 break
             except exc:
                 time.sleep(1)
-

@@ -2,7 +2,7 @@ import typing
 from datetime import date, time, datetime, timezone
 
 from .contrib import bsdf_lite as bsdf
-from .common import DynamicString
+from .common import HTML
 from .components.render.render_node import RenderNode
 from .components.context import HTMLElement, TextNode, EventNode, NSElement, ScriptNode, ConditionNode, LoopNode, \
     ReactNode
@@ -19,9 +19,7 @@ def get_parent_oid(node: RenderNode) -> typing.Optional[int]:
 
 class HTMLElementSerializer(bsdf.Extension):
     name = 'h'
-
-    def match(self, s, v):
-        return isinstance(v, HTMLElement)
+    cls = HTMLElement
 
     def encode(self, s, v: typing.Union[HTMLElement, NSElement]):
         res = {
@@ -29,12 +27,12 @@ class HTMLElementSerializer(bsdf.Extension):
             'i': v.oid,
             'p': get_parent_oid(v),
             'a': v.attributes,
-            'C': v.classes + str(v.con_classes),
+            'C': str(v.classes),
             's': str(v.style),
             'f': v._set_focused,
             'l': v.localize,
         }
-        if isinstance(v.text, DynamicString) and v.text.html:
+        if isinstance(v.text, HTML):
             res['T'] = v.text
         else:
             res['t'] = v.text
@@ -57,9 +55,7 @@ class HTMLElementSerializer(bsdf.Extension):
 
 class TextSerializer(bsdf.Extension):
     name = 't'
-
-    def match(self, s, v):
-        return type(v) == TextNode
+    cls = TextNode
 
     def encode(self, s, v: TextNode):
         res = {'i': v.oid, 'p': get_parent_oid(v), 't': v.text}
@@ -71,9 +67,7 @@ class TextSerializer(bsdf.Extension):
 
 class StubElementSerializer(bsdf.Extension):
     name = 'd'
-
-    def match(self, s, v):
-        return type(v) in (ConditionNode, LoopNode, ReactNode)
+    cls = (ConditionNode, LoopNode, ReactNode)
 
     def encode(self, s, v: RenderNode):
         res = {
@@ -90,19 +84,15 @@ class StubElementSerializer(bsdf.Extension):
 
 class EventSerializer(bsdf.Extension):
     name = 'e'
+    cls = EventNode
 
-    def match(self, s, v):
-        return type(v) == EventNode
-
-    def encode(self, s, v):
-        return {'ctx': v.context.name, 'a': v.attributes, 'oid': v.context.oid}
+    def encode(self, s, v: EventNode):
+        return {'ctx': v.context.name, 's': v.selector, 'e': v.events, 'oid': v.context.oid}
 
 
 class DateSerializer(bsdf.Extension):
     name = 'D'
-
-    def match(self, s, v):
-        return type(v) == date
+    cls = date
 
     def encode(self, s, v: date):
         return datetime(v.year, v.month, v.day, tzinfo=timezone.utc).timestamp()*1000
@@ -119,9 +109,7 @@ class DateSerializer(bsdf.Extension):
 
 class TimeSerializer(bsdf.Extension):
     name = 'T'
-
-    def match(self, s, v):
-        return type(v) == time
+    cls = time
 
     def encode(self, s, v: time):
         return datetime(1970, 1, 1, v.hour, v.minute, v.second, tzinfo=timezone.utc).timestamp()*1000
@@ -129,12 +117,10 @@ class TimeSerializer(bsdf.Extension):
 
 class ScriptSerializer(bsdf.Extension):
     name = 's'
-
-    def match(self, s, v):
-        return isinstance(v, ScriptNode)
+    cls = ScriptNode
 
     def encode(self, s, v: ScriptNode):
-        return {'i': v.oid, 'u': v.uid, 'p': get_parent_oid(v), 'a': v.attributes, 't': v.text}
+        return {'i': v.oid, 'u': v.uid, 'p': get_parent_oid(v), 'a': v.attributes, 't': v.text, 'h': v.put_to_head}
 
 
 serializer = bsdf.BsdfLiteSerializer([HTMLElementSerializer, TextSerializer, EventSerializer,

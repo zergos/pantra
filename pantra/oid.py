@@ -9,16 +9,20 @@ if typing.TYPE_CHECKING:
     from pantra.components.render.render_node import RenderNode
 
 
-def gen_id(obj: UniqueNode) -> int:
-    idx = next(gen_id.counter)
-    get_node.oids[idx] = obj
-    return idx
-gen_id.counter = count()
+class OIDGenerator:
+    __slots__ = ('counter', 'oids')
 
+    def __init__(self):
+        self.counter = count()
+        self.oids: weakref.WeakValueDictionary[int, typing.Any] = weakref.WeakValueDictionary()
 
-def get_node(oid: int) -> RenderNode:
-    return get_node.oids.get(oid)
-get_node.oids: weakref.WeakValueDictionary[int, typing.Any] = weakref.WeakValueDictionary()
+    def gen_id(self, obj: UniqueNode) -> int:
+        idx = next(self.counter)
+        self.oids[idx] = obj
+        return idx
+
+    def get_node(self, oid: int) -> RenderNode:
+        return self.oids.get(oid)
 
 
 '''

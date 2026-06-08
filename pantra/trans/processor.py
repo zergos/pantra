@@ -3,18 +3,11 @@ from __future__ import annotations
 import sys
 import typing
 import ast
-from dataclasses import dataclass, field
-from collections import defaultdict
 from functools import lru_cache
-from pathlib import Path
 
 from babel.support import Translations, NullTranslations
 from pantra.settings import config
 from .locale import Locale
-
-if typing.TYPE_CHECKING:
-    from typing import *
-    from types import CodeType
 
 
 class TranslationsExtra(Translations):
@@ -33,7 +26,7 @@ def get_locale(lang: str) -> Locale:
 
 
 # TODO: make compatible with file watcher
-def get_translation(app: str, lang: Union[str, Iterable]) -> Translations:
+def get_translation(app: str, lang: str | typing.Iterable) -> Translations:
     lang_lst = (lang, 'en') if isinstance(lang, str) else lang
     transes = [
         TranslationsExtra.load(config.COMPONENTS_PATH / 'locale', lang_lst),
@@ -50,38 +43,13 @@ def get_translation(app: str, lang: Union[str, Iterable]) -> Translations:
     return trans
 
 
-@dataclass
-class FRecord:
-    s: str = field(default_factory=str)
-    args: List[CodeType] = field(default_factory=list)
-
-
-f_cache: Dict[str, FRecord] = defaultdict(FRecord)
-
-
-def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
-    if f in f_cache:
-        if not f_cache[f].args:
-            return f, None
-        locals = sys._getframe(3).f_locals
-        globals = sys._getframe(3).f_globals
-        args = []
-        for co in f_cache[f].args:
-            args.append(eval(co, globals, locals))
-        return f_cache[f].s, args
-
+def demux_fstring(f) -> tuple[str, list[str]]:
     node = ast.parse(f"f'''{f}'''", mode='eval')
-    frame = sys._getframe(3)
-    locals = frame.f_locals
-    globals = frame.f_globals
-    filename = frame.f_code.co_filename
-    del frame
 
-    def reveal(node):
-        ex = ast.Expression(body=node)
-        co = compile(ex, filename, 'eval')
-        f_cache[f].args.append(co)
-        args.append(eval(co, globals, locals))
+    if sys.version_info < (3, 14):
+        str_term = ast.Str
+    else:
+        str_term = ast.Constant
 
     s = ''
     args = []
@@ -90,36 +58,33 @@ def eval_fstring(f) -> Tuple[str, Optional[List[Any]]]:
             s += v.s
         elif type(v) == ast.FormattedValue:
             s += '{'
-            reveal(v.value)
+            if v.conversion > 0 and chr(v.conversion) == "r":
+                args.append(f'repr({ast.unparse(v.value)})')
+            else:
+                args.append(ast.unparse(v.value))
             if v.format_spec:
                 s += ':'
                 for vv in v.format_spec.values:
-                    if type(vv) == ast.Str:
+                    if type(vv) == str_term:
                         s += vv.s
                     elif type(vv) == ast.FormattedValue:
                         s += '{}'
-                        reveal(vv.value)
+                        args.append(ast.unparse(vv.value))
             s += '}'
-    f_cache[f].s = s
     return s, args
 
 
-def zgettext(trans: Translations, message: str, *, plural: str = None, n: int = None, ctx: str = None, many: bool = False):
+def zgettext(trans: Translations, message: str, *args, plural: str = None, n: int = None, ctx: str = None, many: bool = False):
     if many:
         message = f'{message}s'
     if plural is None and ctx is None:
-        s, args = eval_fstring(message)
-        t = trans.gettext(s)
+        t = trans.gettext(message)
     elif plural is not None:
-        s, args = eval_fstring(message)
-        s2, args2 = eval_fstring(plural)
         if ctx is not None:
-            t = trans.npgettext(ctx, s, s2, n)
+            t = trans.npgettext(ctx, message, plural, n)
         else:
-            t = trans.ngettext(s, s2, n)
-    else:
-        s, args = eval_fstring(message)
-        t = trans.pgettext(ctx, s)
+            t = trans.ngettext(message, plural, n)
+    else: # if ctx is not None:
+        t = trans.pgettext(ctx, message)
     if args: t = t.format(*args)
     return t
-

@@ -7,7 +7,7 @@ def thread_worker(func):
     @functools.wraps(func)
     def res(*args, **kwargs):
         from ..session import Session
-        Session.server_worker.task_queue.put((func, args, kwargs))
+        Session.server_worker.task_queue._put((func, args, kwargs))
     return res
 
 

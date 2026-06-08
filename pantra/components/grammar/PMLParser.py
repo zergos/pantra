@@ -10,47 +10,56 @@ else:
 
 def serializedATN():
     return [
-        4,1,26,133,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,32,153,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
-        2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,1,0,
-        5,0,42,8,0,10,0,12,0,45,9,0,1,1,1,1,1,1,1,1,1,1,3,1,52,8,1,1,2,1,
-        2,3,2,56,8,2,1,3,1,3,1,3,5,3,61,8,3,10,3,12,3,64,9,3,1,3,1,3,1,4,
-        1,4,1,4,1,4,1,5,1,5,1,5,3,5,75,8,5,1,6,1,6,1,6,5,6,80,8,6,10,6,12,
-        6,83,9,6,1,7,1,7,1,8,1,8,3,8,89,8,8,1,9,1,9,1,9,1,9,1,10,1,10,1,
-        10,1,10,1,11,1,11,1,11,1,11,1,12,1,12,1,13,1,13,5,13,107,8,13,10,
-        13,12,13,110,9,13,1,13,1,13,3,13,114,8,13,1,13,1,13,1,14,1,14,1,
-        15,1,15,1,15,3,15,123,8,15,1,16,1,16,1,17,1,17,1,18,1,18,1,19,1,
-        19,1,19,0,0,20,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,
-        36,38,0,1,1,0,11,12,125,0,43,1,0,0,0,2,51,1,0,0,0,4,55,1,0,0,0,6,
-        57,1,0,0,0,8,67,1,0,0,0,10,71,1,0,0,0,12,76,1,0,0,0,14,84,1,0,0,
-        0,16,88,1,0,0,0,18,90,1,0,0,0,20,94,1,0,0,0,22,98,1,0,0,0,24,102,
-        1,0,0,0,26,104,1,0,0,0,28,117,1,0,0,0,30,119,1,0,0,0,32,124,1,0,
-        0,0,34,126,1,0,0,0,36,128,1,0,0,0,38,130,1,0,0,0,40,42,3,2,1,0,41,
-        40,1,0,0,0,42,45,1,0,0,0,43,41,1,0,0,0,43,44,1,0,0,0,44,1,1,0,0,
-        0,45,43,1,0,0,0,46,52,3,4,2,0,47,52,3,16,8,0,48,52,3,22,11,0,49,
-        52,3,24,12,0,50,52,3,26,13,0,51,46,1,0,0,0,51,47,1,0,0,0,51,48,1,
-        0,0,0,51,49,1,0,0,0,51,50,1,0,0,0,52,3,1,0,0,0,53,56,3,6,3,0,54,
-        56,3,8,4,0,55,53,1,0,0,0,55,54,1,0,0,0,56,5,1,0,0,0,57,58,5,5,0,
-        0,58,62,5,16,0,0,59,61,3,10,5,0,60,59,1,0,0,0,61,64,1,0,0,0,62,60,
-        1,0,0,0,62,63,1,0,0,0,63,65,1,0,0,0,64,62,1,0,0,0,65,66,7,0,0,0,
-        66,7,1,0,0,0,67,68,5,6,0,0,68,69,5,16,0,0,69,70,5,11,0,0,70,9,1,
-        0,0,0,71,74,3,12,6,0,72,73,5,13,0,0,73,75,3,14,7,0,74,72,1,0,0,0,
-        74,75,1,0,0,0,75,11,1,0,0,0,76,81,5,16,0,0,77,78,5,14,0,0,78,80,
-        5,16,0,0,79,77,1,0,0,0,80,83,1,0,0,0,81,79,1,0,0,0,81,82,1,0,0,0,
-        82,13,1,0,0,0,83,81,1,0,0,0,84,85,5,15,0,0,85,15,1,0,0,0,86,89,3,
-        18,9,0,87,89,3,20,10,0,88,86,1,0,0,0,88,87,1,0,0,0,89,17,1,0,0,0,
-        90,91,5,7,0,0,91,92,5,19,0,0,92,93,5,18,0,0,93,19,1,0,0,0,94,95,
-        5,8,0,0,95,96,5,19,0,0,96,97,5,18,0,0,97,21,1,0,0,0,98,99,5,9,0,
-        0,99,100,5,19,0,0,100,101,5,18,0,0,101,23,1,0,0,0,102,103,5,10,0,
-        0,103,25,1,0,0,0,104,108,3,28,14,0,105,107,3,30,15,0,106,105,1,0,
-        0,0,107,110,1,0,0,0,108,106,1,0,0,0,108,109,1,0,0,0,109,111,1,0,
-        0,0,110,108,1,0,0,0,111,113,5,20,0,0,112,114,3,36,18,0,113,112,1,
-        0,0,0,113,114,1,0,0,0,114,115,1,0,0,0,115,116,3,38,19,0,116,27,1,
-        0,0,0,117,118,5,4,0,0,118,29,1,0,0,0,119,122,3,32,16,0,120,121,5,
-        21,0,0,121,123,3,34,17,0,122,120,1,0,0,0,122,123,1,0,0,0,123,31,
-        1,0,0,0,124,125,5,23,0,0,125,33,1,0,0,0,126,127,5,22,0,0,127,35,
-        1,0,0,0,128,129,5,26,0,0,129,37,1,0,0,0,130,131,5,25,0,0,131,39,
-        1,0,0,0,10,43,51,55,62,74,81,88,108,113,122
+        2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
+        7,20,2,21,7,21,1,0,5,0,46,8,0,10,0,12,0,49,9,0,1,1,1,1,1,1,1,1,3,
+        1,55,8,1,1,2,1,2,3,2,59,8,2,1,3,1,3,1,3,5,3,64,8,3,10,3,12,3,67,
+        9,3,1,3,1,3,1,4,1,4,1,4,1,4,1,5,1,5,1,5,3,5,78,8,5,1,6,1,6,1,6,5,
+        6,83,8,6,10,6,12,6,86,9,6,1,7,1,7,1,8,1,8,3,8,92,8,8,1,9,1,9,1,9,
+        1,9,1,10,1,10,1,10,1,10,1,11,1,11,4,11,104,8,11,11,11,12,11,105,
+        1,12,1,12,1,12,1,12,1,13,4,13,113,8,13,11,13,12,13,114,1,14,4,14,
+        118,8,14,11,14,12,14,119,1,15,1,15,5,15,124,8,15,10,15,12,15,127,
+        9,15,1,15,1,15,3,15,131,8,15,1,15,1,15,1,16,1,16,1,17,1,17,1,17,
+        3,17,140,8,17,1,18,1,18,1,19,1,19,1,20,4,20,147,8,20,11,20,12,20,
+        148,1,21,1,21,1,21,0,0,22,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,
+        30,32,34,36,38,40,42,0,5,1,0,12,13,1,0,16,19,1,0,23,24,1,0,10,11,
+        1,0,31,32,147,0,47,1,0,0,0,2,54,1,0,0,0,4,58,1,0,0,0,6,60,1,0,0,
+        0,8,70,1,0,0,0,10,74,1,0,0,0,12,79,1,0,0,0,14,87,1,0,0,0,16,91,1,
+        0,0,0,18,93,1,0,0,0,20,97,1,0,0,0,22,103,1,0,0,0,24,107,1,0,0,0,
+        26,112,1,0,0,0,28,117,1,0,0,0,30,121,1,0,0,0,32,134,1,0,0,0,34,136,
+        1,0,0,0,36,141,1,0,0,0,38,143,1,0,0,0,40,146,1,0,0,0,42,150,1,0,
+        0,0,44,46,3,2,1,0,45,44,1,0,0,0,46,49,1,0,0,0,47,45,1,0,0,0,47,48,
+        1,0,0,0,48,1,1,0,0,0,49,47,1,0,0,0,50,55,3,4,2,0,51,55,3,16,8,0,
+        52,55,3,22,11,0,53,55,3,30,15,0,54,50,1,0,0,0,54,51,1,0,0,0,54,52,
+        1,0,0,0,54,53,1,0,0,0,55,3,1,0,0,0,56,59,3,6,3,0,57,59,3,8,4,0,58,
+        56,1,0,0,0,58,57,1,0,0,0,59,5,1,0,0,0,60,61,5,5,0,0,61,65,5,20,0,
+        0,62,64,3,10,5,0,63,62,1,0,0,0,64,67,1,0,0,0,65,63,1,0,0,0,65,66,
+        1,0,0,0,66,68,1,0,0,0,67,65,1,0,0,0,68,69,7,0,0,0,69,7,1,0,0,0,70,
+        71,5,6,0,0,71,72,5,20,0,0,72,73,5,12,0,0,73,9,1,0,0,0,74,77,3,12,
+        6,0,75,76,5,14,0,0,76,78,3,14,7,0,77,75,1,0,0,0,77,78,1,0,0,0,78,
+        11,1,0,0,0,79,84,5,20,0,0,80,81,5,15,0,0,81,83,5,20,0,0,82,80,1,
+        0,0,0,83,86,1,0,0,0,84,82,1,0,0,0,84,85,1,0,0,0,85,13,1,0,0,0,86,
+        84,1,0,0,0,87,88,7,1,0,0,88,15,1,0,0,0,89,92,3,18,9,0,90,92,3,20,
+        10,0,91,89,1,0,0,0,91,90,1,0,0,0,92,17,1,0,0,0,93,94,5,7,0,0,94,
+        95,3,26,13,0,95,96,5,22,0,0,96,19,1,0,0,0,97,98,5,8,0,0,98,99,3,
+        26,13,0,99,100,5,22,0,0,100,21,1,0,0,0,101,104,3,24,12,0,102,104,
+        3,28,14,0,103,101,1,0,0,0,103,102,1,0,0,0,104,105,1,0,0,0,105,103,
+        1,0,0,0,105,106,1,0,0,0,106,23,1,0,0,0,107,108,5,9,0,0,108,109,3,
+        26,13,0,109,110,5,22,0,0,110,25,1,0,0,0,111,113,7,2,0,0,112,111,
+        1,0,0,0,113,114,1,0,0,0,114,112,1,0,0,0,114,115,1,0,0,0,115,27,1,
+        0,0,0,116,118,7,3,0,0,117,116,1,0,0,0,118,119,1,0,0,0,119,117,1,
+        0,0,0,119,120,1,0,0,0,120,29,1,0,0,0,121,125,3,32,16,0,122,124,3,
+        34,17,0,123,122,1,0,0,0,124,127,1,0,0,0,125,123,1,0,0,0,125,126,
+        1,0,0,0,126,128,1,0,0,0,127,125,1,0,0,0,128,130,5,25,0,0,129,131,
+        3,40,20,0,130,129,1,0,0,0,130,131,1,0,0,0,131,132,1,0,0,0,132,133,
+        3,42,21,0,133,31,1,0,0,0,134,135,5,4,0,0,135,33,1,0,0,0,136,139,
+        3,36,18,0,137,138,5,26,0,0,138,140,3,38,19,0,139,137,1,0,0,0,139,
+        140,1,0,0,0,140,35,1,0,0,0,141,142,5,28,0,0,142,37,1,0,0,0,143,144,
+        5,27,0,0,144,39,1,0,0,0,145,147,7,4,0,0,146,145,1,0,0,0,147,148,
+        1,0,0,0,148,146,1,0,0,0,148,149,1,0,0,0,149,41,1,0,0,0,150,151,5,
+        30,0,0,151,43,1,0,0,0,15,47,54,58,65,77,84,91,103,105,114,119,125,
+        130,139,148
     ]
 
 class PMLParser ( Parser ):
@@ -65,69 +74,80 @@ class PMLParser ( Parser ):
 
     literalNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "'<'", "'</'", "<INVALID>", "'{{/'", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "'/>'", "'='", "':'", "<INVALID>", 
+                     "<INVALID>", "<INVALID>", "<INVALID>", "'/>'", "'='", 
+                     "':'", "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "<INVALID>", "'}}'" ]
 
-    symbolicNames = [ "<INVALID>", "COMMENT", "CDATA", "DTD", "RAW_TAG", 
-                      "OPEN_BEGIN", "OPEN_END", "OPEN_MACRO_BEGIN", "OPEN_MACRO_END", 
-                      "INLINE_MACRO", "TEXT", "CLOSE", "SLASH_CLOSE", "EQ", 
-                      "COLON", "STRING", "NAME", "WS", "CLOSE_MACRO", "COMMAND", 
-                      "RAW_CLOSE", "RAW_EQ", "RAW_STRING", "RAW_NAME", "RAW_WS", 
-                      "CLOSE_TAG", "RAW_TEXT" ]
+    symbolicNames = [ "<INVALID>", "COMMENT", "CDATA", "DTD", "SCRIPT_TAG", 
+                      "TAG_OPEN", "TAG_CLOSE", "MACRO_OPEN", "MACRO_CLOSE", 
+                      "MACRO_INLINE", "TEXT", "OTHER", "TAG_END", "TAG_SLASH_END", 
+                      "EQ", "COLON", "STRING", "EXPRESSION", "NUMBER", "BOOLEAN", 
+                      "NAME", "WS", "MACRO_END", "MACRO_COMMAND", "MACRO_OTHER", 
+                      "SCRIPT_END", "SCRIPT_EQ", "SCRIPT_STRING", "SCRIPT_NAME", 
+                      "SCRIPT_WS", "SCRIPT_TEXT_END", "SCRIPT_TEXT", "SCRIPT_OTHER" ]
 
     RULE_process = 0
     RULE_atom = 1
     RULE_tag = 2
-    RULE_tagBegin = 3
-    RULE_tagEnd = 4
+    RULE_tagOpen = 3
+    RULE_tagClose = 4
     RULE_attr = 5
     RULE_attrName = 6
     RULE_attrValue = 7
     RULE_macro = 8
-    RULE_macroBegin = 9
-    RULE_macroEnd = 10
-    RULE_inlineMacro = 11
-    RULE_text = 12
-    RULE_rawBlock = 13
-    RULE_rawTag = 14
-    RULE_rawAttr = 15
-    RULE_rawName = 16
-    RULE_rawValue = 17
-    RULE_rawText = 18
-    RULE_rawCloseTag = 19
+    RULE_macroOpen = 9
+    RULE_macroClose = 10
+    RULE_content = 11
+    RULE_macroInline = 12
+    RULE_macroCommand = 13
+    RULE_text = 14
+    RULE_scriptBlock = 15
+    RULE_scriptTag = 16
+    RULE_scriptAttr = 17
+    RULE_scriptName = 18
+    RULE_scriptValue = 19
+    RULE_scriptText = 20
+    RULE_scriptEnd = 21
 
-    ruleNames =  [ "process", "atom", "tag", "tagBegin", "tagEnd", "attr", 
-                   "attrName", "attrValue", "macro", "macroBegin", "macroEnd", 
-                   "inlineMacro", "text", "rawBlock", "rawTag", "rawAttr", 
-                   "rawName", "rawValue", "rawText", "rawCloseTag" ]
+    ruleNames =  [ "process", "atom", "tag", "tagOpen", "tagClose", "attr", 
+                   "attrName", "attrValue", "macro", "macroOpen", "macroClose", 
+                   "content", "macroInline", "macroCommand", "text", "scriptBlock", 
+                   "scriptTag", "scriptAttr", "scriptName", "scriptValue", 
+                   "scriptText", "scriptEnd" ]
 
     EOF = Token.EOF
     COMMENT=1
     CDATA=2
     DTD=3
-    RAW_TAG=4
-    OPEN_BEGIN=5
-    OPEN_END=6
-    OPEN_MACRO_BEGIN=7
-    OPEN_MACRO_END=8
-    INLINE_MACRO=9
+    SCRIPT_TAG=4
+    TAG_OPEN=5
+    TAG_CLOSE=6
+    MACRO_OPEN=7
+    MACRO_CLOSE=8
+    MACRO_INLINE=9
     TEXT=10
-    CLOSE=11
-    SLASH_CLOSE=12
-    EQ=13
-    COLON=14
-    STRING=15
-    NAME=16
-    WS=17
-    CLOSE_MACRO=18
-    COMMAND=19
-    RAW_CLOSE=20
-    RAW_EQ=21
-    RAW_STRING=22
-    RAW_NAME=23
-    RAW_WS=24
-    CLOSE_TAG=25
-    RAW_TEXT=26
+    OTHER=11
+    TAG_END=12
+    TAG_SLASH_END=13
+    EQ=14
+    COLON=15
+    STRING=16
+    EXPRESSION=17
+    NUMBER=18
+    BOOLEAN=19
+    NAME=20
+    WS=21
+    MACRO_END=22
+    MACRO_COMMAND=23
+    MACRO_OTHER=24
+    SCRIPT_END=25
+    SCRIPT_EQ=26
+    SCRIPT_STRING=27
+    SCRIPT_NAME=28
+    SCRIPT_WS=29
+    SCRIPT_TEXT_END=30
+    SCRIPT_TEXT=31
+    SCRIPT_OTHER=32
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -179,13 +199,13 @@ class PMLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 43
+            self.state = 47
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << PMLParser.RAW_TAG) | (1 << PMLParser.OPEN_BEGIN) | (1 << PMLParser.OPEN_END) | (1 << PMLParser.OPEN_MACRO_BEGIN) | (1 << PMLParser.OPEN_MACRO_END) | (1 << PMLParser.INLINE_MACRO) | (1 << PMLParser.TEXT))) != 0):
-                self.state = 40
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << PMLParser.SCRIPT_TAG) | (1 << PMLParser.TAG_OPEN) | (1 << PMLParser.TAG_CLOSE) | (1 << PMLParser.MACRO_OPEN) | (1 << PMLParser.MACRO_CLOSE) | (1 << PMLParser.MACRO_INLINE) | (1 << PMLParser.TEXT) | (1 << PMLParser.OTHER))) != 0):
+                self.state = 44
                 self.atom()
-                self.state = 45
+                self.state = 49
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -213,16 +233,12 @@ class PMLParser ( Parser ):
             return self.getTypedRuleContext(PMLParser.MacroContext,0)
 
 
-        def inlineMacro(self):
-            return self.getTypedRuleContext(PMLParser.InlineMacroContext,0)
+        def content(self):
+            return self.getTypedRuleContext(PMLParser.ContentContext,0)
 
 
-        def text(self):
-            return self.getTypedRuleContext(PMLParser.TextContext,0)
-
-
-        def rawBlock(self):
-            return self.getTypedRuleContext(PMLParser.RawBlockContext,0)
+        def scriptBlock(self):
+            return self.getTypedRuleContext(PMLParser.ScriptBlockContext,0)
 
 
         def getRuleIndex(self):
@@ -250,33 +266,28 @@ class PMLParser ( Parser ):
         localctx = PMLParser.AtomContext(self, self._ctx, self.state)
         self.enterRule(localctx, 2, self.RULE_atom)
         try:
-            self.state = 51
+            self.state = 54
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [PMLParser.OPEN_BEGIN, PMLParser.OPEN_END]:
+            if token in [PMLParser.TAG_OPEN, PMLParser.TAG_CLOSE]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 46
+                self.state = 50
                 self.tag()
                 pass
-            elif token in [PMLParser.OPEN_MACRO_BEGIN, PMLParser.OPEN_MACRO_END]:
+            elif token in [PMLParser.MACRO_OPEN, PMLParser.MACRO_CLOSE]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 47
+                self.state = 51
                 self.macro()
                 pass
-            elif token in [PMLParser.INLINE_MACRO]:
+            elif token in [PMLParser.MACRO_INLINE, PMLParser.TEXT, PMLParser.OTHER]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 48
-                self.inlineMacro()
+                self.state = 52
+                self.content()
                 pass
-            elif token in [PMLParser.TEXT]:
+            elif token in [PMLParser.SCRIPT_TAG]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 49
-                self.text()
-                pass
-            elif token in [PMLParser.RAW_TAG]:
-                self.enterOuterAlt(localctx, 5)
-                self.state = 50
-                self.rawBlock()
+                self.state = 53
+                self.scriptBlock()
                 pass
             else:
                 raise NoViableAltException(self)
@@ -297,12 +308,12 @@ class PMLParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def tagBegin(self):
-            return self.getTypedRuleContext(PMLParser.TagBeginContext,0)
+        def tagOpen(self):
+            return self.getTypedRuleContext(PMLParser.TagOpenContext,0)
 
 
-        def tagEnd(self):
-            return self.getTypedRuleContext(PMLParser.TagEndContext,0)
+        def tagClose(self):
+            return self.getTypedRuleContext(PMLParser.TagCloseContext,0)
 
 
         def getRuleIndex(self):
@@ -330,18 +341,18 @@ class PMLParser ( Parser ):
         localctx = PMLParser.TagContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_tag)
         try:
-            self.state = 55
+            self.state = 58
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [PMLParser.OPEN_BEGIN]:
+            if token in [PMLParser.TAG_OPEN]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 53
-                self.tagBegin()
+                self.state = 56
+                self.tagOpen()
                 pass
-            elif token in [PMLParser.OPEN_END]:
+            elif token in [PMLParser.TAG_CLOSE]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 54
-                self.tagEnd()
+                self.state = 57
+                self.tagClose()
                 pass
             else:
                 raise NoViableAltException(self)
@@ -355,24 +366,24 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class TagBeginContext(ParserRuleContext):
+    class TagOpenContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def OPEN_BEGIN(self):
-            return self.getToken(PMLParser.OPEN_BEGIN, 0)
+        def TAG_OPEN(self):
+            return self.getToken(PMLParser.TAG_OPEN, 0)
 
         def NAME(self):
             return self.getToken(PMLParser.NAME, 0)
 
-        def CLOSE(self):
-            return self.getToken(PMLParser.CLOSE, 0)
+        def TAG_END(self):
+            return self.getToken(PMLParser.TAG_END, 0)
 
-        def SLASH_CLOSE(self):
-            return self.getToken(PMLParser.SLASH_CLOSE, 0)
+        def TAG_SLASH_END(self):
+            return self.getToken(PMLParser.TAG_SLASH_END, 0)
 
         def attr(self, i:int=None):
             if i is None:
@@ -382,49 +393,49 @@ class PMLParser ( Parser ):
 
 
         def getRuleIndex(self):
-            return PMLParser.RULE_tagBegin
+            return PMLParser.RULE_tagOpen
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTagBegin" ):
-                listener.enterTagBegin(self)
+            if hasattr( listener, "enterTagOpen" ):
+                listener.enterTagOpen(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTagBegin" ):
-                listener.exitTagBegin(self)
+            if hasattr( listener, "exitTagOpen" ):
+                listener.exitTagOpen(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitTagBegin" ):
-                return visitor.visitTagBegin(self)
+            if hasattr( visitor, "visitTagOpen" ):
+                return visitor.visitTagOpen(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def tagBegin(self):
+    def tagOpen(self):
 
-        localctx = PMLParser.TagBeginContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 6, self.RULE_tagBegin)
+        localctx = PMLParser.TagOpenContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 6, self.RULE_tagOpen)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 57
-            self.match(PMLParser.OPEN_BEGIN)
-            self.state = 58
+            self.state = 60
+            self.match(PMLParser.TAG_OPEN)
+            self.state = 61
             self.match(PMLParser.NAME)
-            self.state = 62
+            self.state = 65
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==PMLParser.NAME:
-                self.state = 59
+                self.state = 62
                 self.attr()
-                self.state = 64
+                self.state = 67
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 65
+            self.state = 68
             _la = self._input.LA(1)
-            if not(_la==PMLParser.CLOSE or _la==PMLParser.SLASH_CLOSE):
+            if not(_la==PMLParser.TAG_END or _la==PMLParser.TAG_SLASH_END):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -438,54 +449,54 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class TagEndContext(ParserRuleContext):
+    class TagCloseContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def OPEN_END(self):
-            return self.getToken(PMLParser.OPEN_END, 0)
+        def TAG_CLOSE(self):
+            return self.getToken(PMLParser.TAG_CLOSE, 0)
 
         def NAME(self):
             return self.getToken(PMLParser.NAME, 0)
 
-        def CLOSE(self):
-            return self.getToken(PMLParser.CLOSE, 0)
+        def TAG_END(self):
+            return self.getToken(PMLParser.TAG_END, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_tagEnd
+            return PMLParser.RULE_tagClose
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterTagEnd" ):
-                listener.enterTagEnd(self)
+            if hasattr( listener, "enterTagClose" ):
+                listener.enterTagClose(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitTagEnd" ):
-                listener.exitTagEnd(self)
+            if hasattr( listener, "exitTagClose" ):
+                listener.exitTagClose(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitTagEnd" ):
-                return visitor.visitTagEnd(self)
+            if hasattr( visitor, "visitTagClose" ):
+                return visitor.visitTagClose(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def tagEnd(self):
+    def tagClose(self):
 
-        localctx = PMLParser.TagEndContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 8, self.RULE_tagEnd)
+        localctx = PMLParser.TagCloseContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 8, self.RULE_tagClose)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 67
-            self.match(PMLParser.OPEN_END)
-            self.state = 68
+            self.state = 70
+            self.match(PMLParser.TAG_CLOSE)
+            self.state = 71
             self.match(PMLParser.NAME)
-            self.state = 69
-            self.match(PMLParser.CLOSE)
+            self.state = 72
+            self.match(PMLParser.TAG_END)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -540,15 +551,15 @@ class PMLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 71
-            self.attrName()
             self.state = 74
+            self.attrName()
+            self.state = 77
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==PMLParser.EQ:
-                self.state = 72
+                self.state = 75
                 self.match(PMLParser.EQ)
-                self.state = 73
+                self.state = 76
                 self.attrValue()
 
 
@@ -607,17 +618,17 @@ class PMLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 76
+            self.state = 79
             self.match(PMLParser.NAME)
-            self.state = 81
+            self.state = 84
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==PMLParser.COLON:
-                self.state = 77
+                self.state = 80
                 self.match(PMLParser.COLON)
-                self.state = 78
+                self.state = 81
                 self.match(PMLParser.NAME)
-                self.state = 83
+                self.state = 86
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -639,6 +650,15 @@ class PMLParser ( Parser ):
 
         def STRING(self):
             return self.getToken(PMLParser.STRING, 0)
+
+        def EXPRESSION(self):
+            return self.getToken(PMLParser.EXPRESSION, 0)
+
+        def NUMBER(self):
+            return self.getToken(PMLParser.NUMBER, 0)
+
+        def BOOLEAN(self):
+            return self.getToken(PMLParser.BOOLEAN, 0)
 
         def getRuleIndex(self):
             return PMLParser.RULE_attrValue
@@ -664,10 +684,16 @@ class PMLParser ( Parser ):
 
         localctx = PMLParser.AttrValueContext(self, self._ctx, self.state)
         self.enterRule(localctx, 14, self.RULE_attrValue)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 84
-            self.match(PMLParser.STRING)
+            self.state = 87
+            _la = self._input.LA(1)
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << PMLParser.STRING) | (1 << PMLParser.EXPRESSION) | (1 << PMLParser.NUMBER) | (1 << PMLParser.BOOLEAN))) != 0)):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -684,12 +710,12 @@ class PMLParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def macroBegin(self):
-            return self.getTypedRuleContext(PMLParser.MacroBeginContext,0)
+        def macroOpen(self):
+            return self.getTypedRuleContext(PMLParser.MacroOpenContext,0)
 
 
-        def macroEnd(self):
-            return self.getTypedRuleContext(PMLParser.MacroEndContext,0)
+        def macroClose(self):
+            return self.getTypedRuleContext(PMLParser.MacroCloseContext,0)
 
 
         def getRuleIndex(self):
@@ -717,18 +743,18 @@ class PMLParser ( Parser ):
         localctx = PMLParser.MacroContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_macro)
         try:
-            self.state = 88
+            self.state = 91
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [PMLParser.OPEN_MACRO_BEGIN]:
+            if token in [PMLParser.MACRO_OPEN]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 86
-                self.macroBegin()
+                self.state = 89
+                self.macroOpen()
                 pass
-            elif token in [PMLParser.OPEN_MACRO_END]:
+            elif token in [PMLParser.MACRO_CLOSE]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 87
-                self.macroEnd()
+                self.state = 90
+                self.macroClose()
                 pass
             else:
                 raise NoViableAltException(self)
@@ -742,111 +768,55 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class MacroBeginContext(ParserRuleContext):
+    class MacroOpenContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def OPEN_MACRO_BEGIN(self):
-            return self.getToken(PMLParser.OPEN_MACRO_BEGIN, 0)
+        def MACRO_OPEN(self):
+            return self.getToken(PMLParser.MACRO_OPEN, 0)
 
-        def COMMAND(self):
-            return self.getToken(PMLParser.COMMAND, 0)
+        def macroCommand(self):
+            return self.getTypedRuleContext(PMLParser.MacroCommandContext,0)
 
-        def CLOSE_MACRO(self):
-            return self.getToken(PMLParser.CLOSE_MACRO, 0)
+
+        def MACRO_END(self):
+            return self.getToken(PMLParser.MACRO_END, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_macroBegin
+            return PMLParser.RULE_macroOpen
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterMacroBegin" ):
-                listener.enterMacroBegin(self)
+            if hasattr( listener, "enterMacroOpen" ):
+                listener.enterMacroOpen(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitMacroBegin" ):
-                listener.exitMacroBegin(self)
+            if hasattr( listener, "exitMacroOpen" ):
+                listener.exitMacroOpen(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitMacroBegin" ):
-                return visitor.visitMacroBegin(self)
+            if hasattr( visitor, "visitMacroOpen" ):
+                return visitor.visitMacroOpen(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def macroBegin(self):
+    def macroOpen(self):
 
-        localctx = PMLParser.MacroBeginContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 18, self.RULE_macroBegin)
+        localctx = PMLParser.MacroOpenContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 18, self.RULE_macroOpen)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 90
-            self.match(PMLParser.OPEN_MACRO_BEGIN)
-            self.state = 91
-            self.match(PMLParser.COMMAND)
-            self.state = 92
-            self.match(PMLParser.CLOSE_MACRO)
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-
-    class MacroEndContext(ParserRuleContext):
-        __slots__ = 'parser'
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def OPEN_MACRO_END(self):
-            return self.getToken(PMLParser.OPEN_MACRO_END, 0)
-
-        def COMMAND(self):
-            return self.getToken(PMLParser.COMMAND, 0)
-
-        def CLOSE_MACRO(self):
-            return self.getToken(PMLParser.CLOSE_MACRO, 0)
-
-        def getRuleIndex(self):
-            return PMLParser.RULE_macroEnd
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterMacroEnd" ):
-                listener.enterMacroEnd(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitMacroEnd" ):
-                listener.exitMacroEnd(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitMacroEnd" ):
-                return visitor.visitMacroEnd(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-
-
-    def macroEnd(self):
-
-        localctx = PMLParser.MacroEndContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 20, self.RULE_macroEnd)
-        try:
-            self.enterOuterAlt(localctx, 1)
+            self.state = 93
+            self.match(PMLParser.MACRO_OPEN)
             self.state = 94
-            self.match(PMLParser.OPEN_MACRO_END)
+            self.macroCommand()
             self.state = 95
-            self.match(PMLParser.COMMAND)
-            self.state = 96
-            self.match(PMLParser.CLOSE_MACRO)
+            self.match(PMLParser.MACRO_END)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -856,54 +826,267 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class InlineMacroContext(ParserRuleContext):
+    class MacroCloseContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def INLINE_MACRO(self):
-            return self.getToken(PMLParser.INLINE_MACRO, 0)
+        def MACRO_CLOSE(self):
+            return self.getToken(PMLParser.MACRO_CLOSE, 0)
 
-        def COMMAND(self):
-            return self.getToken(PMLParser.COMMAND, 0)
+        def macroCommand(self):
+            return self.getTypedRuleContext(PMLParser.MacroCommandContext,0)
 
-        def CLOSE_MACRO(self):
-            return self.getToken(PMLParser.CLOSE_MACRO, 0)
+
+        def MACRO_END(self):
+            return self.getToken(PMLParser.MACRO_END, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_inlineMacro
+            return PMLParser.RULE_macroClose
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterInlineMacro" ):
-                listener.enterInlineMacro(self)
+            if hasattr( listener, "enterMacroClose" ):
+                listener.enterMacroClose(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitInlineMacro" ):
-                listener.exitInlineMacro(self)
+            if hasattr( listener, "exitMacroClose" ):
+                listener.exitMacroClose(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitInlineMacro" ):
-                return visitor.visitInlineMacro(self)
+            if hasattr( visitor, "visitMacroClose" ):
+                return visitor.visitMacroClose(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def inlineMacro(self):
+    def macroClose(self):
 
-        localctx = PMLParser.InlineMacroContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 22, self.RULE_inlineMacro)
+        localctx = PMLParser.MacroCloseContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 20, self.RULE_macroClose)
         try:
             self.enterOuterAlt(localctx, 1)
+            self.state = 97
+            self.match(PMLParser.MACRO_CLOSE)
             self.state = 98
-            self.match(PMLParser.INLINE_MACRO)
+            self.macroCommand()
             self.state = 99
-            self.match(PMLParser.COMMAND)
-            self.state = 100
-            self.match(PMLParser.CLOSE_MACRO)
+            self.match(PMLParser.MACRO_END)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class ContentContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def macroInline(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(PMLParser.MacroInlineContext)
+            else:
+                return self.getTypedRuleContext(PMLParser.MacroInlineContext,i)
+
+
+        def text(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(PMLParser.TextContext)
+            else:
+                return self.getTypedRuleContext(PMLParser.TextContext,i)
+
+
+        def getRuleIndex(self):
+            return PMLParser.RULE_content
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterContent" ):
+                listener.enterContent(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitContent" ):
+                listener.exitContent(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitContent" ):
+                return visitor.visitContent(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def content(self):
+
+        localctx = PMLParser.ContentContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 22, self.RULE_content)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 103 
+            self._errHandler.sync(self)
+            _alt = 1
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
+                    self.state = 103
+                    self._errHandler.sync(self)
+                    token = self._input.LA(1)
+                    if token in [PMLParser.MACRO_INLINE]:
+                        self.state = 101
+                        self.macroInline()
+                        pass
+                    elif token in [PMLParser.TEXT, PMLParser.OTHER]:
+                        self.state = 102
+                        self.text()
+                        pass
+                    else:
+                        raise NoViableAltException(self)
+
+
+                else:
+                    raise NoViableAltException(self)
+                self.state = 105 
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,8,self._ctx)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class MacroInlineContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def MACRO_INLINE(self):
+            return self.getToken(PMLParser.MACRO_INLINE, 0)
+
+        def macroCommand(self):
+            return self.getTypedRuleContext(PMLParser.MacroCommandContext,0)
+
+
+        def MACRO_END(self):
+            return self.getToken(PMLParser.MACRO_END, 0)
+
+        def getRuleIndex(self):
+            return PMLParser.RULE_macroInline
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterMacroInline" ):
+                listener.enterMacroInline(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitMacroInline" ):
+                listener.exitMacroInline(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitMacroInline" ):
+                return visitor.visitMacroInline(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def macroInline(self):
+
+        localctx = PMLParser.MacroInlineContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 24, self.RULE_macroInline)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 107
+            self.match(PMLParser.MACRO_INLINE)
+            self.state = 108
+            self.macroCommand()
+            self.state = 109
+            self.match(PMLParser.MACRO_END)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class MacroCommandContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def MACRO_COMMAND(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.MACRO_COMMAND)
+            else:
+                return self.getToken(PMLParser.MACRO_COMMAND, i)
+
+        def MACRO_OTHER(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.MACRO_OTHER)
+            else:
+                return self.getToken(PMLParser.MACRO_OTHER, i)
+
+        def getRuleIndex(self):
+            return PMLParser.RULE_macroCommand
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterMacroCommand" ):
+                listener.enterMacroCommand(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitMacroCommand" ):
+                listener.exitMacroCommand(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitMacroCommand" ):
+                return visitor.visitMacroCommand(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def macroCommand(self):
+
+        localctx = PMLParser.MacroCommandContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 26, self.RULE_macroCommand)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 112 
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while True:
+                self.state = 111
+                _la = self._input.LA(1)
+                if not(_la==PMLParser.MACRO_COMMAND or _la==PMLParser.MACRO_OTHER):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 114 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if not (_la==PMLParser.MACRO_COMMAND or _la==PMLParser.MACRO_OTHER):
+                    break
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -920,8 +1103,17 @@ class PMLParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def TEXT(self):
-            return self.getToken(PMLParser.TEXT, 0)
+        def TEXT(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.TEXT)
+            else:
+                return self.getToken(PMLParser.TEXT, i)
+
+        def OTHER(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.OTHER)
+            else:
+                return self.getToken(PMLParser.OTHER, i)
 
         def getRuleIndex(self):
             return PMLParser.RULE_text
@@ -946,11 +1138,29 @@ class PMLParser ( Parser ):
     def text(self):
 
         localctx = PMLParser.TextContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 24, self.RULE_text)
+        self.enterRule(localctx, 28, self.RULE_text)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 102
-            self.match(PMLParser.TEXT)
+            self.state = 117 
+            self._errHandler.sync(self)
+            _alt = 1
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
+                    self.state = 116
+                    _la = self._input.LA(1)
+                    if not(_la==PMLParser.TEXT or _la==PMLParser.OTHER):
+                        self._errHandler.recoverInline(self)
+                    else:
+                        self._errHandler.reportMatch(self)
+                        self.consume()
+
+                else:
+                    raise NoViableAltException(self)
+                self.state = 119 
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,10,self._ctx)
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -960,86 +1170,86 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawBlockContext(ParserRuleContext):
+    class ScriptBlockContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def rawTag(self):
-            return self.getTypedRuleContext(PMLParser.RawTagContext,0)
+        def scriptTag(self):
+            return self.getTypedRuleContext(PMLParser.ScriptTagContext,0)
 
 
-        def RAW_CLOSE(self):
-            return self.getToken(PMLParser.RAW_CLOSE, 0)
+        def SCRIPT_END(self):
+            return self.getToken(PMLParser.SCRIPT_END, 0)
 
-        def rawCloseTag(self):
-            return self.getTypedRuleContext(PMLParser.RawCloseTagContext,0)
+        def scriptEnd(self):
+            return self.getTypedRuleContext(PMLParser.ScriptEndContext,0)
 
 
-        def rawAttr(self, i:int=None):
+        def scriptAttr(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(PMLParser.RawAttrContext)
+                return self.getTypedRuleContexts(PMLParser.ScriptAttrContext)
             else:
-                return self.getTypedRuleContext(PMLParser.RawAttrContext,i)
+                return self.getTypedRuleContext(PMLParser.ScriptAttrContext,i)
 
 
-        def rawText(self):
-            return self.getTypedRuleContext(PMLParser.RawTextContext,0)
+        def scriptText(self):
+            return self.getTypedRuleContext(PMLParser.ScriptTextContext,0)
 
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawBlock
+            return PMLParser.RULE_scriptBlock
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawBlock" ):
-                listener.enterRawBlock(self)
+            if hasattr( listener, "enterScriptBlock" ):
+                listener.enterScriptBlock(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawBlock" ):
-                listener.exitRawBlock(self)
+            if hasattr( listener, "exitScriptBlock" ):
+                listener.exitScriptBlock(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawBlock" ):
-                return visitor.visitRawBlock(self)
+            if hasattr( visitor, "visitScriptBlock" ):
+                return visitor.visitScriptBlock(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawBlock(self):
+    def scriptBlock(self):
 
-        localctx = PMLParser.RawBlockContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 26, self.RULE_rawBlock)
+        localctx = PMLParser.ScriptBlockContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 30, self.RULE_scriptBlock)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 104
-            self.rawTag()
-            self.state = 108
+            self.state = 121
+            self.scriptTag()
+            self.state = 125
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==PMLParser.RAW_NAME:
-                self.state = 105
-                self.rawAttr()
-                self.state = 110
+            while _la==PMLParser.SCRIPT_NAME:
+                self.state = 122
+                self.scriptAttr()
+                self.state = 127
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 111
-            self.match(PMLParser.RAW_CLOSE)
-            self.state = 113
+            self.state = 128
+            self.match(PMLParser.SCRIPT_END)
+            self.state = 130
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==PMLParser.RAW_TEXT:
-                self.state = 112
-                self.rawText()
+            if _la==PMLParser.SCRIPT_TEXT or _la==PMLParser.SCRIPT_OTHER:
+                self.state = 129
+                self.scriptText()
 
 
-            self.state = 115
-            self.rawCloseTag()
+            self.state = 132
+            self.scriptEnd()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1049,44 +1259,44 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawTagContext(ParserRuleContext):
+    class ScriptTagContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def RAW_TAG(self):
-            return self.getToken(PMLParser.RAW_TAG, 0)
+        def SCRIPT_TAG(self):
+            return self.getToken(PMLParser.SCRIPT_TAG, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawTag
+            return PMLParser.RULE_scriptTag
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawTag" ):
-                listener.enterRawTag(self)
+            if hasattr( listener, "enterScriptTag" ):
+                listener.enterScriptTag(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawTag" ):
-                listener.exitRawTag(self)
+            if hasattr( listener, "exitScriptTag" ):
+                listener.exitScriptTag(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawTag" ):
-                return visitor.visitRawTag(self)
+            if hasattr( visitor, "visitScriptTag" ):
+                return visitor.visitScriptTag(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawTag(self):
+    def scriptTag(self):
 
-        localctx = PMLParser.RawTagContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 28, self.RULE_rawTag)
+        localctx = PMLParser.ScriptTagContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 32, self.RULE_scriptTag)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 117
-            self.match(PMLParser.RAW_TAG)
+            self.state = 134
+            self.match(PMLParser.SCRIPT_TAG)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1096,61 +1306,61 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawAttrContext(ParserRuleContext):
+    class ScriptAttrContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def rawName(self):
-            return self.getTypedRuleContext(PMLParser.RawNameContext,0)
+        def scriptName(self):
+            return self.getTypedRuleContext(PMLParser.ScriptNameContext,0)
 
 
-        def RAW_EQ(self):
-            return self.getToken(PMLParser.RAW_EQ, 0)
+        def SCRIPT_EQ(self):
+            return self.getToken(PMLParser.SCRIPT_EQ, 0)
 
-        def rawValue(self):
-            return self.getTypedRuleContext(PMLParser.RawValueContext,0)
+        def scriptValue(self):
+            return self.getTypedRuleContext(PMLParser.ScriptValueContext,0)
 
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawAttr
+            return PMLParser.RULE_scriptAttr
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawAttr" ):
-                listener.enterRawAttr(self)
+            if hasattr( listener, "enterScriptAttr" ):
+                listener.enterScriptAttr(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawAttr" ):
-                listener.exitRawAttr(self)
+            if hasattr( listener, "exitScriptAttr" ):
+                listener.exitScriptAttr(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawAttr" ):
-                return visitor.visitRawAttr(self)
+            if hasattr( visitor, "visitScriptAttr" ):
+                return visitor.visitScriptAttr(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawAttr(self):
+    def scriptAttr(self):
 
-        localctx = PMLParser.RawAttrContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 30, self.RULE_rawAttr)
+        localctx = PMLParser.ScriptAttrContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 34, self.RULE_scriptAttr)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 119
-            self.rawName()
-            self.state = 122
+            self.state = 136
+            self.scriptName()
+            self.state = 139
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==PMLParser.RAW_EQ:
-                self.state = 120
-                self.match(PMLParser.RAW_EQ)
-                self.state = 121
-                self.rawValue()
+            if _la==PMLParser.SCRIPT_EQ:
+                self.state = 137
+                self.match(PMLParser.SCRIPT_EQ)
+                self.state = 138
+                self.scriptValue()
 
 
         except RecognitionException as re:
@@ -1162,44 +1372,44 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawNameContext(ParserRuleContext):
+    class ScriptNameContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def RAW_NAME(self):
-            return self.getToken(PMLParser.RAW_NAME, 0)
+        def SCRIPT_NAME(self):
+            return self.getToken(PMLParser.SCRIPT_NAME, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawName
+            return PMLParser.RULE_scriptName
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawName" ):
-                listener.enterRawName(self)
+            if hasattr( listener, "enterScriptName" ):
+                listener.enterScriptName(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawName" ):
-                listener.exitRawName(self)
+            if hasattr( listener, "exitScriptName" ):
+                listener.exitScriptName(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawName" ):
-                return visitor.visitRawName(self)
+            if hasattr( visitor, "visitScriptName" ):
+                return visitor.visitScriptName(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawName(self):
+    def scriptName(self):
 
-        localctx = PMLParser.RawNameContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 32, self.RULE_rawName)
+        localctx = PMLParser.ScriptNameContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 36, self.RULE_scriptName)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 124
-            self.match(PMLParser.RAW_NAME)
+            self.state = 141
+            self.match(PMLParser.SCRIPT_NAME)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1209,44 +1419,44 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawValueContext(ParserRuleContext):
+    class ScriptValueContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def RAW_STRING(self):
-            return self.getToken(PMLParser.RAW_STRING, 0)
+        def SCRIPT_STRING(self):
+            return self.getToken(PMLParser.SCRIPT_STRING, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawValue
+            return PMLParser.RULE_scriptValue
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawValue" ):
-                listener.enterRawValue(self)
+            if hasattr( listener, "enterScriptValue" ):
+                listener.enterScriptValue(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawValue" ):
-                listener.exitRawValue(self)
+            if hasattr( listener, "exitScriptValue" ):
+                listener.exitScriptValue(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawValue" ):
-                return visitor.visitRawValue(self)
+            if hasattr( visitor, "visitScriptValue" ):
+                return visitor.visitScriptValue(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawValue(self):
+    def scriptValue(self):
 
-        localctx = PMLParser.RawValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 34, self.RULE_rawValue)
+        localctx = PMLParser.ScriptValueContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 38, self.RULE_scriptValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 126
-            self.match(PMLParser.RAW_STRING)
+            self.state = 143
+            self.match(PMLParser.SCRIPT_STRING)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1256,44 +1466,69 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawTextContext(ParserRuleContext):
+    class ScriptTextContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def RAW_TEXT(self):
-            return self.getToken(PMLParser.RAW_TEXT, 0)
+        def SCRIPT_TEXT(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.SCRIPT_TEXT)
+            else:
+                return self.getToken(PMLParser.SCRIPT_TEXT, i)
+
+        def SCRIPT_OTHER(self, i:int=None):
+            if i is None:
+                return self.getTokens(PMLParser.SCRIPT_OTHER)
+            else:
+                return self.getToken(PMLParser.SCRIPT_OTHER, i)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawText
+            return PMLParser.RULE_scriptText
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawText" ):
-                listener.enterRawText(self)
+            if hasattr( listener, "enterScriptText" ):
+                listener.enterScriptText(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawText" ):
-                listener.exitRawText(self)
+            if hasattr( listener, "exitScriptText" ):
+                listener.exitScriptText(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawText" ):
-                return visitor.visitRawText(self)
+            if hasattr( visitor, "visitScriptText" ):
+                return visitor.visitScriptText(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawText(self):
+    def scriptText(self):
 
-        localctx = PMLParser.RawTextContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 36, self.RULE_rawText)
+        localctx = PMLParser.ScriptTextContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 40, self.RULE_scriptText)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 128
-            self.match(PMLParser.RAW_TEXT)
+            self.state = 146 
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while True:
+                self.state = 145
+                _la = self._input.LA(1)
+                if not(_la==PMLParser.SCRIPT_TEXT or _la==PMLParser.SCRIPT_OTHER):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 148 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if not (_la==PMLParser.SCRIPT_TEXT or _la==PMLParser.SCRIPT_OTHER):
+                    break
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1303,44 +1538,44 @@ class PMLParser ( Parser ):
         return localctx
 
 
-    class RawCloseTagContext(ParserRuleContext):
+    class ScriptEndContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def CLOSE_TAG(self):
-            return self.getToken(PMLParser.CLOSE_TAG, 0)
+        def SCRIPT_TEXT_END(self):
+            return self.getToken(PMLParser.SCRIPT_TEXT_END, 0)
 
         def getRuleIndex(self):
-            return PMLParser.RULE_rawCloseTag
+            return PMLParser.RULE_scriptEnd
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRawCloseTag" ):
-                listener.enterRawCloseTag(self)
+            if hasattr( listener, "enterScriptEnd" ):
+                listener.enterScriptEnd(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRawCloseTag" ):
-                listener.exitRawCloseTag(self)
+            if hasattr( listener, "exitScriptEnd" ):
+                listener.exitScriptEnd(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitRawCloseTag" ):
-                return visitor.visitRawCloseTag(self)
+            if hasattr( visitor, "visitScriptEnd" ):
+                return visitor.visitScriptEnd(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def rawCloseTag(self):
+    def scriptEnd(self):
 
-        localctx = PMLParser.RawCloseTagContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 38, self.RULE_rawCloseTag)
+        localctx = PMLParser.ScriptEndContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 42, self.RULE_scriptEnd)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 130
-            self.match(PMLParser.CLOSE_TAG)
+            self.state = 150
+            self.match(PMLParser.SCRIPT_TEXT_END)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)

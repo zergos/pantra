@@ -45,6 +45,14 @@ class NullContextShot:
         return self
 
 class ContextShot:
+    """Snapshot manager to update context changes
+
+    Attributes:
+        created (Queue[RenderNode]): nodes just created
+        updated (Queue[RenderNode]): nodes just updated
+        deleted (Queue[RenderNode]): nodes just deleted
+        flickering (Queue[RenderNode]): faster updated nodes
+    """
     __slots__ = ['created', 'updated', 'deleted', 'flickering']
 
     def __init__(self):
@@ -75,16 +83,20 @@ class ContextShot:
         return flickering, created, updated, deleted
 
     def __call__(self, node):
+        """put the node in "update" queue"""
         self.updated.put(node)
 
     def __add__(self, node):
+        """put the node to "create" queue"""
         self.created.put(node)
         return self
 
     def __sub__(self, other):
+        """put the node to "delete" queue"""
         self.deleted.put(other.oid)
         return self
 
     def flick(self, node):
+        """put the node to faster updated queue"""
         self.flickering.put(node)
         return self

@@ -5,7 +5,7 @@ from functools import lru_cache, wraps
 import traceback
 import logging
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import ast
 
 import sass
@@ -20,6 +20,7 @@ code_base: typing.Dict[str, CodeType] = {}
 
 @dataclass(slots=True)
 class CodeMetrics:
+    is_collected: bool = field(default=False, init=False)
     has_node_processor: bool = False
     has_init: bool = False
     has_on_restart: bool = False
@@ -34,6 +35,7 @@ class CodeMetrics:
             return None
 
         res = CodeMetrics()
+        res.is_collected = True
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 if node.name == 'node_processor':
@@ -67,18 +69,18 @@ class ContextInitFailed(Exception):
     pass
 
 
-def exec_includes(lst: str, rel_name: Path, ctx_locals: typing.Dict[str, typing.Any], code_metrics: Optional[CodeMetrics]) -> CodeMetrics:
+def exec_includes(lst: str, rel_name: Path, ctx_locals: typing.Dict[str, typing.Any], code_metrics: Optional[CodeMetrics]):
+    is_collected = code_metrics.is_collected
     path = rel_name.parent
     for name in lst.split(' '):
         if not name.strip(): continue
         filename = (path / name).with_suffix('.py')
         if str(filename) not in code_base:
             source = filename.read_text()
-            if code_metrics is not None:
+            if not is_collected:
                 code_metrics.add(CodeMetrics.collect(source))
             code_base[str(filename)] = compile(source, filename, 'exec')
         exec(code_base[str(filename)], ctx_locals)
-    return code_metrics
 
 
 def trace_exec(func):
@@ -102,22 +104,21 @@ def trace_exec(func):
 @trace_exec
 def compile_context_code(ctx: Context, template: HTMLTemplate):
     initial_values = {k:v for k,v in ctx.locals.items() if k not in ('init', 'on_restart', 'ctx', 'refs')}
-    common_locals = {'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.gettext, 'logger': logger}
+    common_locals = {'ctx': ctx, 'refs': ctx.refs, 'session': ctx.session, '_': ctx.session.zgettext, 'logger': logger}
     ctx.locals.update(common_locals)
-    code_metrics: CodeMetrics = CodeMetrics() if not template.code_metrics else None
+    is_collected = template.code_metrics.is_collected
     if 'use' in template.attributes:
-        exec_includes(template.attributes['use'].strip('" \''), template.filename, ctx.locals, code_metrics)
+        exec_includes(template.attributes['use'].strip('" \''), template.filename, ctx.locals, template.code_metrics)
     if template.content is not None:
         if not template.code:
             template.code = compile(template.content, template.filename, 'exec')
         # exec(template.code, common_globals(), self.ctx.locals)
         exec(template.code, ctx.locals)#, {'__name__': template.name})
-    if not template.code_metrics:
-        template.code_metrics = code_metrics.add(CodeMetrics.collect(template.content))
-    else:
-        code_metrics = template.code_metrics
+    if not is_collected:
+        template.code_metrics.add(CodeMetrics.collect(template.content))
 
     ctx.locals.update(initial_values)
+    code_metrics = template.code_metrics
     if code_metrics.has_init:
         if ctx.locals.call('init') is False:
             raise ContextInitFailed()
