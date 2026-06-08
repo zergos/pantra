@@ -15,11 +15,11 @@
 <python use="inputs">
 from pantra.ctx import *
 
-inline: bool = False
-multiple: bool = False
-wide: bool = False
-blank: bool = False
-action: ActionType = None
+inline: Property[bool] = False
+multiple: Property[bool] = False
+wide: Property[bool] = False
+blank: Property[bool] = False
+action: Property[ActionType] = None
 
 def render_select(node: HTMLElement):
     global value

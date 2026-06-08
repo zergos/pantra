@@ -7,10 +7,11 @@
 </svg>
 
 <python>
+from pantra.ctx import *
 from pantra.imports import NSType
 
 ns_type = NSType.SVG
-width: int = 1200
-height: int = 900
-viewBox: str = ""
+width: Property[int] = 1200
+height: Property[int] = 900
+viewBox: Property[str] = ""
 </python>

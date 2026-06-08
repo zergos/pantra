@@ -7,9 +7,12 @@
         class:error
 >
     {{#if caption}}<span>{{caption}}</span>{{/if}}
-    <scope radio_name="o{ctx.oid}" on_radio_change="@on_radio_change">
-    </scope>
-    <slot/>
+    {{#set:scope
+		radio_name = f"o{ctx.oid}"
+		on_radio_change = on_radio_change
+	}}
+		<slot/>
+    {{/set:scope}}
     <HelpMessage consume="help"/>
     <div ref:error class="message">!{{error}}</div>
 </div>
@@ -18,9 +21,9 @@
 <python use="inputs">
 from pantra.ctx import *
 
-on_change = EmptyCaller()
-inline: bool = False
-value = None
+on_change: Property[EmptyCaller] = None
+inline: Property[bool] = False
+value: Property[Any] = None
 
 def on_render():
     global value
@@ -36,6 +39,7 @@ def on_render():
 def on_radio_change(new_value):
     global value
     value = new_value
-    on_change()
+    if on_change:
+        on_change()
 
 </python>

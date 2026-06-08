@@ -18,13 +18,13 @@
 
 <python>
 from pantra.ctx import *
-values: dict[str, Any] = {}
+values: Property[dict[str, Any]] = {}
 field_value: str = None
-value: Any = None
-on_change: Callable[[Any], None] = EmptyCaller()
-required: bool = False
-width: str = ''
-focused: bool = False
+value: Property[Any] = None
+on_change: Property[Callable[[Any], None]] = EmptyCaller()
+required: Property[bool] = False
+width: Property[str] = ''
+focused: Property[bool] = False
 
 def on_render():
     if value:

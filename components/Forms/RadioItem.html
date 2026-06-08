@@ -14,11 +14,11 @@
 <python>
 from pantra.ctx import *
 
-checked: bool = False
+checked: Property[bool] = False
 checked_value: str = ''
-disabled: bool = False
-caption: str = ''
-value = None
+disabled: Property[bool] = False
+caption: Property[str] = ''
+value: Property[Any] = None
 
 def init():
     global checked_value

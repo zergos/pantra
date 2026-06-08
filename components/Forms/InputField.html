@@ -18,12 +18,14 @@
 </label>
 
 <python use="inputs">
-id: str = ''
-name: str = ''
-inline: bool = False
-type: str = 'text'
-placeholder: str = ''
-caption_width: int = ''
-width: str = ''
-spellcheck: bool = True
+from pantra.ctx import *
+
+id: Property[str] = ''
+name: Property[str] = ''
+inline: Property[bool] = False
+type: Property[str] = 'text'
+placeholder: Property[str] = ''
+caption_width: Property[int] = ''
+width: Property[str] = ''
+spellcheck: Property[bool] = True
 </python>

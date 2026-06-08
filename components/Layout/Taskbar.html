@@ -83,7 +83,7 @@ from pantra.ctx import *
 
 title: str = ''
 active: str = ''
-render_to: HTMLElement | None = None
+render_to: Property[HTMLElement | None] = None
 
 windows: Dict[str, 'Window'] = {}
 nodes: List[Context] = []
@@ -111,7 +111,7 @@ def add_window(code: str, wintitle: str, caller: Context = None) -> Tuple[HTMLEl
             view = HTMLElement('div', render_to)
             windows[code].view = view
             if caller:
-                view.set_scope('caller', caller)
+                view.scope['caller'] = caller
 
         refs['bars'].update_tree()
         new = True

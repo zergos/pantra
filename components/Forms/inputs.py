@@ -1,10 +1,10 @@
 from pantra.ctx import *
 
-caption: str = ''
-required: bool = False
-value: str = ''
-error: str = ''
-readonly: bool = False
+caption: Property[str] = ''
+required: Property[bool] = False
+value: Property[str] = ''
+error: Property[str] = ''
+readonly: Property[bool] = False
 
 validators = []
 

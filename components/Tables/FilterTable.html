@@ -91,10 +91,10 @@ except ImportError:
 from components.helpers.tables import Filter, FilterView, OPERATORS
 from pantra.ctx import *
 
-filters: List[Filter] = []
-search: bool = False
-callback: Callable[[], None] = lambda: None
-search_callback: Callable[[str], None] = lambda: None
+filters: Property[List[Filter]] = []
+search: Property[bool] = False
+callback: Property[Callable[[], None]] = lambda: None
+search_callback: Property[Callable[[str], None]] = EmptyCaller()
 
 filter_views: List[FilterView] = []
 
@@ -109,7 +109,6 @@ def init():
     width = 8
     for filter in filters:  # type: Filter
         col = filter.column
-        #attr = AttrInfo(name=col.name, type=col.type, is_id=False, is_prop=False, is_ref=False, title=col.title, width=width, blank=True, is_body=False, is_cid=False, readonly=False)
         if col.field.type in (int, float, Decimal):
             ops = OPERATORS['numbers']
         elif col.field.type in (str, dict):
@@ -118,7 +117,7 @@ def init():
             ops = OPERATORS['booleans']
         elif col.field.type in (date, datetime, time):
             ops = OPERATORS['dates']
-        elif isinstance(col.field.type, DBTable):
+        elif issubclass(col.field.type, DBTable):
             ops = OPERATORS['entities']
         else:
             continue

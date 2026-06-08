@@ -5,9 +5,9 @@ from pantra.ctx import *
 from pantra.workers.decorators import thread_worker
 from pantra.components.controllers import process_call
 
-enabled: bool = False
-action: Callable[[Context], bool] | None = None
-ms: int = 1000
+enabled: Property[bool] = False
+action: Property[Callable[[Context], bool] | None] = None
+ms: Property[int] = 1000
 
 @thread_worker
 def start():

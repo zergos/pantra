@@ -17,12 +17,15 @@
 </Field>
 
 <python>
-value: str = ''
-required: bool = ''
-readonly: bool = ''
-spellcheck: bool = True
-width: str = ''
-cols: int = 80
-rows: int = 5
-maxlength: int = ''
+from pantra.ctx import *
+
+value: Property[str] = ''
+required: Property[bool] = ''
+readonly: Property[bool] = ''
+spellcheck: Property[bool] = True
+width: Property[str] = ''
+cols: Property[int] = 80
+rows: Property[int] = 5
+maxlength: Property[int] = ''
+on_change: Property[ActionType] = None
 </python>

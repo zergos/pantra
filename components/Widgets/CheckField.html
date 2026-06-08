@@ -61,9 +61,11 @@
 </style>
 
 <python use="validators">
-value: bool = False
-caption: str = ''
-error: str = ''
-required: bool = False
-readonly: bool = False
+from pantra.ctx import *
+
+value: Property[bool] = False
+caption: Property[str] = ''
+error: Property[str] = ''
+required: Property[bool] = False
+readonly: Property[bool] = False
 </python>

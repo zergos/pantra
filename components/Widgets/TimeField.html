@@ -6,10 +6,11 @@
 from datetime import time, datetime
 from pantra.ctx import *
 
-value: time = time(0, 0, 1)
-required: bool = False
-readonly: bool = False
-focused: bool = False
+value: Property[time] = time(0, 0, 1)
+required: Property[bool] = False
+readonly: Property[bool] = False
+focused: Property[bool] = False
+on_change: Property[ActionType] = None
 
 def parse_input(node):
     global value

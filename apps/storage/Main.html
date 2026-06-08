@@ -1,9 +1,9 @@
 <GridR fullscreen fixed_header>
-    <header>
+    <section name="header">
         <SysTray caption="#Storage management"/>
         <Taskbar cref:taskbar/>
-    </header>
-    <leftcol>
+    </section>
+    <section name="leftcol">
         <SideMenu>
             <MenuGroup caption="#Catalogs">
                 {{#for cat in catalogs}}
@@ -16,24 +16,24 @@
                 <MenuItem caption="#Incomes"/>
             </MenuGroup>
         </SideMenu>
-    </leftcol>
-    <main>
+    </section>
+    <section name="main">
         <MDI/>
-    </main>
+    </section>
 </GridR>
 
 <python>
-    from components.DBTables import *
-    from pantra.ctx import *
+from components.helpers.db_tables import *
+from pantra.ctx import *
 
-    catalogs = ['Storage', 'Good', 'Unit']
-
-
-    def init():
-        session.set_title(_('Storage management'))
+catalogs = ['Storage', 'Good', 'Unit']
 
 
-    def open_catalog(node):
-        render_catalog_list(session, node['code'])
+def init():
+    session.set_title(_('Storage management'))
+
+
+def open_catalog(node):
+    render_list(session, node['code'])
 
 </python>

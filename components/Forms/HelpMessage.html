@@ -50,8 +50,8 @@
 <python>
 from pantra.ctx import *
 
-help_message: str = ''
-help_visible: bool = False
+help_message: Property[str] = ''
+help_visible: Property[bool] = False
 
 def toggle_help(node):
     ctx['help_visible'] = not help_visible

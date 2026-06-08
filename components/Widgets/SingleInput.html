@@ -74,22 +74,23 @@
 <python>
 from pantra.ctx import *
 
-type: str = 'text'
-value: str = ''
-placeholder: str = ''
-required: bool = False
-readonly: bool = False
-width: str = ''
-min_value: float = ''
-max_value: float = ''
-step: float = ''
-pattern: str = ''
-list: str = ''
-focused: bool = False
+type: Property[str] = 'text'
+value: Property[str] = ''
+on_change: Property[ActionType] = None
+placeholder: Property[str] = ''
+required: Property[bool] = False
+readonly: Property[bool] = False
+width: Property[str] = ''
+min_value: Property[float] = ''
+max_value: Property[float] = ''
+step: Property[float] = ''
+pattern: Property[str] = ''
+list: Property[str] = ''
+focused: Property[bool] = False
 
-buttons: str = ''  # '...,O'
+buttons: Property[str] = ''  # '...,O'
 
-button_padding: WebUnits = WebUnits(0, 'rem')
+button_padding: Property[WebUnits] = WebUnits(0, 'rem')
 button_nodes: List[Tuple[str, str]] = []
 
 BUTTONS_SYMBOLS = {

@@ -42,8 +42,8 @@ if False:
     _("OK"); _("Cancel")
     _("Close")
 
-buttons: str = 'Yes,No'
-callback: Callable[[str], None] = lambda s: None
+buttons: Property[str] = 'Yes,No'
+callback: Property[Callable[[str], None]] = lambda s: None
 
 class ButtonCommand(typing.NamedTuple):
     command: str

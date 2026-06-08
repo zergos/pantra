@@ -1,9 +1,7 @@
-<component>
-    <ToolBox>
-        <ToolButton caption="#Select" action="@select" default/>
-    </ToolBox>
-    <DBQueryTable cref:table entity="{entity}" not:editable selectable callback="@select_row"/>
-</component>
+<ToolBox>
+    <ToolButton caption="#Select" action="@select" default/>
+</ToolBox>
+<DBQueryTable cref:table table=@table not:editable selectable callback=@select_row />
 <python>
 from quazy import DBTable
 from pantra.models import expose_database

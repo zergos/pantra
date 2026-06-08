@@ -41,7 +41,8 @@ def render(node):
         predefined = dict(values)
         values = {}
         for attr_name, field in row.DB.fields.items():
-            values[attr_name] = make_widget(node, field.ux, predefined.get(attr_name) if is_new else getattr(row, attr_name), caption_width=WebUnits(max_len, 'em'))
+            if not field.ux.hidden:
+                values[attr_name] = make_widget(node, field.ux, predefined.get(attr_name) if is_new else getattr(row, attr_name), caption_width=WebUnits(max_len, 'em'))
 
 
 def close(node=None):

@@ -31,7 +31,7 @@ def find_template_by_name(session: Session, table_name: str, db_name: str, suffi
     return find_template(session, get_table_by_name(session, table_name, db_name), suffix)
 
 def render_list(session: Session, table_name: str, db_name: str = 'db') -> Context:
-    parent, new = add_window(session, f'{table_name}List', session.gettext(table_name, many=True))
+    parent, new = add_window(session, f'{table_name}List', session.zgettext(table_name, many=True))
     if not new:
         return parent
     list_template_name = find_template_by_name(session, table_name, db_name, 'List')
@@ -40,8 +40,8 @@ def render_list(session: Session, table_name: str, db_name: str = 'db') -> Conte
 
 
 def render_select(session: Session, table_name: str, callback: Callable[[Any], None], db_name: str = 'db') -> Context:
-    _ = session.gettext
-    parent, new = session['taskbar'].add_window(f'{table_name}Select', _('Select: {session.gettext(name)}'))
+    _ = session.zgettext
+    parent, new = session['taskbar'].call("add_window", f'{table_name}Select', _('Select: ') + _(table_name))
     if not new:
         return parent
     select_template_name = find_template_by_name(session, table_name, db_name, 'Select')
@@ -58,8 +58,8 @@ def render_form(session: Session, caller: Context, row: DBTable | type[DBTable],
         table = row
         title = ''
         code = ''
-    _ = session.gettext
-    parent, new = session['taskbar'].call("add_window", f'{table.__qualname__}#{code}', _('New: {_(table.__qualname__)}') if not code else f'{_(table.__qualname__)}: {title}', caller)
+    _ = session.zgettext
+    parent, new = session['taskbar'].call("add_window", f'{table.__qualname__}#{code}', _('New: {}', _(table.__qualname__)) if not code else f'{_(table.__qualname__)}: {title}', caller)
     if not new:
         return parent
     form_template_name = find_template(session, table, 'Form')

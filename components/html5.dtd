@@ -278,6 +278,7 @@
   src         %URI;          #IMPLIED
   defer       (defer)        #IMPLIED
   async       (async)        #IMPLIED
+  location    CDATA          #IMPLIED
   >
 
 <!ELEMENT noscript %Flow;>
@@ -1042,7 +1043,7 @@
 <!ATTLIST rp %attrs;>
 
 <!--SPECIAL-->
-<!ENTITY % special "component|python|react|event|scope|slot">
+<!ENTITY % special "component|python|react|event|slot">
 
 <!ELEMENT python EMPTY>
 <!ATTLIST python use CDATA #IMPLIED>
@@ -1050,10 +1051,10 @@
 <!ATTLIST component
 	render CDATA #IMPLIED
 >
-<!ELEMENT react EMPTY>
+<!ELEMENT react %Flow;>
 <!ATTLIST react
 	to CDATA #REQUIRED
-	action CDATA #REQUIRED
+	action CDATA #IMPLIED
 >
 <!ELEMENT event EMPTY>
 <!ATTLIST event
@@ -1080,8 +1081,6 @@
     on:select    CDATA          #IMPLIED
     on:change    CDATA          #IMPLIED
 >
-<!ELEMENT scope EMPTY>
-
 
 <!--COMPONENTS-->
 <!ENTITY % components "BaseTable|Button|CardForm|CellNumber|CellString|CheckField|DBField|DBQueryTable|DBTableForm|DBTableList|DBTableSelect|DataTable|DateField|DateTimeField|Dialog|EnumField|FBLoginButton|Field|FilterTable|FilterTableLine|Grid2|GridR|GridX|GridZ|HelpMessage|InlineGroup|InputBox|InputField|InputPassword|InputText|MDI|Main|MenuGroup|MenuItem|NumberField|PopupMenu|QuestionForm|QuestionList|RadioBox|RadioItem|SVG|Screen1|Screen2|Screen3|SelectBox|SelectField|SelectItem|SideMenu|SingleInput|SysTray|Taskbar|TextAreaField|TextField|TimeField|Timer|ToolBox|ToolButton|ToolSpace|UserForm|UserList">

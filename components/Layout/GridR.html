@@ -85,6 +85,7 @@ left_width: str = '10rem'
 fixed_header: bool = False
 fixed_leftcol: bool = False
 
+
 class HDragSplitter(DragController):
     drag_node: HTMLElement
     source_width: int
@@ -95,7 +96,7 @@ class HDragSplitter(DragController):
     def start(self, node) -> bool:
         if fixed_leftcol:
             return False
-        self.source_width = refs['leftcol'].metrics.width
+        self.source_width = refs['leftcol'].measures.width
         self.drag_node = ctx.div('moving h', node, from_x=self.from_x)
         return True
 
@@ -104,10 +105,11 @@ class HDragSplitter(DragController):
 
     def stop(self):
         self.drag_node.remove()
-        width = self.x # self.source_width + self.x - self.from_x
-        if width<100:
+        width = self.x  # self.source_width + self.x - self.from_x
+        if width < 100:
             width = 0
         ctx['left_width'] = WebUnits(width)
+
 
 class VDragSplitter(DragController):
     drag_node: HTMLElement
@@ -119,7 +121,7 @@ class VDragSplitter(DragController):
     def start(self, node) -> bool:
         if fixed_header:
             return False
-        self.source_height = refs['header'].metrics.height
+        self.source_height = refs['header'].measures.height
         self.drag_node = ctx.div('moving v', node, from_y=self.from_y)
         return True
 

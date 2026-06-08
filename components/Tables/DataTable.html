@@ -7,8 +7,8 @@
 from components.helpers.tables import Columns, ColumnInfo
 from pantra.ctx import *
 
-data: List[Dict[str, Any]]
-col_id: Optional[str] = None
+data: Property[List[Dict[str, Any]]]
+col_id: Property[Optional[str]] = None
 
 columns: Columns = {}
 

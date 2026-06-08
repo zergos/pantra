@@ -26,9 +26,9 @@
 <python>
 from pantra.ctx import *
 
-action: ActionType = None
-caption: str = ''
-code: str = ''
+action: Property[ActionType] = None
+caption: Property[str] = ''
+code: Property[str] = ''
 
 def init():
     global caption

@@ -18,7 +18,7 @@ from components.helpers.tables import FilterView
 from components.helpers.widgets import make_widget
 from pantra.ctx import *
 
-view: FilterView
+view: Property[FilterView]
 
 def render_widget(node):
     view.widget = make_widget(node, view.ux, view.filter.value, flat=True, on_change=change_value, caption="")

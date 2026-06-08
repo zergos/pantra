@@ -3,7 +3,7 @@
         on:click="action"
         class:default
         set:disabled="!{disabled}"
-        style:width="{width}">
+        css:width="{width}">
     !{{caption}}
 </button>
 
@@ -43,9 +43,11 @@
 </style>
 
 <python>
-caption: str = ''
-default: bool = False
-action: str = ''
-disabled: bool = False
-width: str = ''
+from pantra.ctx import *
+
+caption: Property[str] = ''
+default: Property[bool] = False
+action: Property[ActionType] = ''
+disabled: Property[bool] = False
+width: Property[str] = ''
 </python>

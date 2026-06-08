@@ -7,10 +7,10 @@
 from datetime import datetime, time
 from pantra.ctx import *
 
-value: datetime = datetime.fromordinal(1)
-required: bool = False
-readonly: bool = False
-focused: bool = False
+value: Property[datetime] = datetime.fromordinal(1)
+required: Property[bool] = False
+readonly: Property[bool] = False
+focused: Property[bool] = False
 
 def parse_input(node):
     global value

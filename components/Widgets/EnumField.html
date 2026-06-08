@@ -4,7 +4,7 @@
 from enum import Enum
 from pantra.ctx import *
 
-enum_type: type[Enum] | None = None
+enum_type: Property[type[Enum] | None] = None
 
 def init():
     if enum_type:

@@ -12,9 +12,9 @@ from quazy import DBQuery, DBTable
 from components.helpers.tables import Columns, DBColumnInfo, Filter, OPER_MAP
 from pantra.ctx import *
 
-query: DBQuery | None = None
-table: Type[DBTable]
-col_id: str = 'pk'
+query: Property[DBQuery | None] = None
+table: Property[Type[DBTable]]
+col_id: Property[str] = 'pk'
 
 original_query: DBQuery | None = None
 columns: Columns = {}
@@ -36,13 +36,16 @@ def init():
         col = DBColumnInfo(field.ux)
         col.title = _(col.title)
         if col.width:
-            col.style.width = WebUnits(col.width, 'em')
+            col.style['width'] = WebUnits(col.width, 'em')
+        if field.ref and any(f.name == f'{field.name}__view' for f in fields):
+            col.hidden = True
         columns[field.name] = col
         #if field.ref:
         #    columns[f'{field.name}_view'] = ColumnInfo(name=name, type=attr.type, hidden=True)
-        filters.append(Filter(col))
-        if field.type is str:
-            search_fields.append(field.name)
+        if not field.pk and not field.cid and not field.body and not field.name.endswith('__view'):
+            filters.append(Filter(col))
+            if field.type is str:
+                search_fields.append(field.name)
 
     original_query = query
 
@@ -76,7 +79,7 @@ def apply_filters():
         elif filter.operator == 'between':
             query.filter(lambda x: filter.value <= getattr(x, filter.column.field.name) <= filter.value2)
     if search_text and search_fields:
-        query = query.filter(lambda x: query.any(getattr(x, field).contains(search_text) for field in search_fields))
+        query.filter(lambda x: query.any(query[field].contains(search_text) for field in search_fields))
     ctx['refresh']()
 
 def apply_search(text: str):
