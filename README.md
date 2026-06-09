@@ -83,3 +83,7 @@ Everything is ready to start now::
     python pantra.py run
 
 Now, you can open your browser and check demo app by local address <http://localhost:8005/demo>
+
+# Documentation
+
+https://pantra.readthedocs.io/en/latest/
