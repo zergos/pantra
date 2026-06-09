@@ -1102,3 +1102,63 @@ It is also possible to mark content as non-collapsible with cell mark `#` at the
         This is             word
                 not related
     </div>
+
+.. _data nodes:
+
+Data nodes
+==========
+
+Every node could be converted to "data node", which means node is rendered as a data into memory. It helps to
+describe custom layout of a component, that rendered later.
+
+* node should be marked as `data-node="node-name"`
+* and then referenced as `ctx.data_nodes['node-name']` in a code
+
+Example::
+
+    <div data-node="datas">
+        <group>
+            ABC
+            <group>DEF</group>
+            GHI
+        </group>
+    </div>
+    <div ref:output class="magic-list"/>
+    <python>
+    def render_group(parent, datas):
+        for item in datas:
+            if isinstance(item, HTMLElement) and item.name == "group":
+                node = parent.add("ul")
+                render_text(node, item.text)
+                render_group(node, item)
+            elif isinstance(item, TextNode):
+                render_text(parent, item.text)
+
+    def render_text(parent, text):
+        if text:
+            for sym in text:
+                parent.add("li", text=sym)
+
+    def on_render():
+        datas = ctx.data_nodes["datas"]
+        render_group(ctx.refs["output"], datas.children[0])
+    </python>
+
+is rendered as::
+
+    <div class="magic-list">
+        <ul>
+            <li>A</li>
+            <li>B</li>
+            <li>C</li>
+            <ul>
+                <li>D</li>
+                <li>E</li>
+                <li>F</li>
+            </ul>
+            <li>G</li>
+            <li>H</li>
+            <li>I</li>
+        </ul>
+    </div>
+

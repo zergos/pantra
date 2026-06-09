@@ -15,7 +15,6 @@ GitHub project: https://github.com/zergos/pantra
     concept
     structure
     components
-    data_nodes
     protocol
     js_callback
     reactive

@@ -105,7 +105,7 @@ class Context(RenderNode):
           template (HTMLTemplate | CodeType): template to build component context
           ns_type (NSType): :ref:`namespace <namespaces>` ID
           code_metrics (CodeMetrics): code metrics of the Python script
-          data_nodes (dict[str, RenderNode]): collection of :doc:`data nodes <data_nodes>`
+          data_nodes (dict[str, RenderNode]): collection of :ref:`data nodes <data nodes>`
           renderer (RenderBase): associated :doc:`renderer <renderer>`
           allowed_call (set[str]): set of allowed function names
     """
