@@ -14,7 +14,7 @@ maintainers = [
 description = "Python Full-stack Web Framework"
 dependencies = [
 	'uvicorn==0.40.0',
-    'starlette==0.51.0',
+    'starlette==1.0.1',
     'websockets==16.0',
     'antlr4-python3-runtime==4.10',
     'cssutils>=2.3.0',
