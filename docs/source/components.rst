@@ -1116,13 +1116,11 @@ describe custom layout of a component, that rendered later.
 
 Example::
 
-    <div data-node="datas">
-        <group>
-            ABC
-            <group>DEF</group>
-            GHI
-        </group>
-    </div>
+    <group data-node="datas">
+        ABC
+        <group>DEF</group>
+        GHI
+    </group>
     <div ref:output class="magic-list"/>
     <python>
     def render_group(parent, datas):
@@ -1141,7 +1139,7 @@ Example::
 
     def on_render():
         datas = ctx.data_nodes["datas"]
-        render_group(ctx.refs["output"], datas.children[0])
+        render_group(ctx.refs["output"], datas)
     </python>
 
 is rendered as::
