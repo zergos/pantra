@@ -16,8 +16,7 @@ def web_app():
         routes = router.routes()
     app = Starlette(debug=not config.PRODUCTIVE,
                     routes=routes,
-                    on_startup=[router.startup],
-                    on_shutdown=[router.shutdown])
+                    lifespan=router.lifespan)
     return app
 
 def run(host=None, port=8005):

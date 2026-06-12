@@ -1,4 +1,6 @@
 """Web routes definitions"""
+from __future__ import annotations
+
 import asyncio
 import sys
 from importlib import import_module
@@ -6,9 +8,11 @@ from pathlib import Path
 import mimetypes
 import traceback
 from datetime import datetime
+from contextlib import asynccontextmanager
 
 import sass
 
+from starlette.applications import Starlette
 from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.requests import Request
 from starlette.responses import Response, HTMLResponse, JSONResponse, PlainTextResponse, FileResponse, RedirectResponse
@@ -20,7 +24,6 @@ from pantra.patching import wipe_logger
 from pantra.session import Session
 from pantra.settings import config, logger
 from pantra import jsmap
-
 
 def route(pattern: str, method: str = None):
     """The decorator to mark method as a router to specific regex pattern"""
@@ -64,7 +67,8 @@ class BaseRouter:
         self.bootstrap: str = config.BOOTSTRAP_FILENAME.read_text()
 
     @staticmethod
-    def startup():
+    @asynccontextmanager
+    async def lifespan(app: Starlette):
         logger.info("Starting up")
 
         # patch incorrect default python mime-types
@@ -79,8 +83,8 @@ class BaseRouter:
                 start_observer()
             asyncio.create_task(Session.run_server_worker())
 
-    @staticmethod
-    def shutdown():
+        yield
+
         logger.info("Shutting down")
         if not config.PRODUCTIVE and config.ENABLE_WATCHDOG:
             from pantra.watchers import stop_observer
