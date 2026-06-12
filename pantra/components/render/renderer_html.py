@@ -375,7 +375,7 @@ class RendererHTML(RendererBase):
         return node
 
     def _build_macro_if(self, template, parent):
-        node = ConditionNode(parent, template)
+        node = ConditionNode(parent, template, self)
         for child_template in template.children:  # type: HTMLTemplate
             if child_template.tag_name != '#else':
                 item = Condition(self.makeup_value(child_template.attributes['condition'], node), child_template)
@@ -388,7 +388,7 @@ class RendererHTML(RendererBase):
         return node
 
     def _build_macro_for(self, template, parent):
-        node: LoopNode = LoopNode(parent, template)
+        node: LoopNode = LoopNode(parent, template, self)
         loop_template = template[0]
         node.var_name = loop_template.attributes['var_name']
         node.iterator = self.makeup_value(loop_template.attributes['iter'], node)
@@ -404,7 +404,7 @@ class RendererHTML(RendererBase):
         return node
 
     def _build_macro_set(self, template, parent):
-        node: SetNode = SetNode(parent, template)
+        node: SetNode = SetNode(parent, template, self)
         for k, v in template.attributes.items():
             node.variables[k] = self.makeup_value(v, node)
         node.scoped = template.tag_name == '#set:scope'
@@ -573,7 +573,7 @@ class RendererHTML(RendererBase):
             if state == -1:
                 return False
 
-            self._build_group(condition.template, node)
+            node.renderer._build_group(condition.template, node)
 
             return False
         return recursive
@@ -592,7 +592,7 @@ class RendererHTML(RendererBase):
                     self.ctx.locals[node.var_name] = value
                     for_loop.counter = i + 1
                     for_loop.counter0 = i
-                    self._build_group(node.loop_template, node)
+                    node.renderer._build_group(node.loop_template, node)
                 if node.var_name in self.ctx.locals:
                     del self.ctx.locals[node.var_name]
                 if parentloop:
@@ -628,7 +628,7 @@ class RendererHTML(RendererBase):
                     else:
                         newmap[index] = []
                         for temp_child in node.loop_template:
-                            sub = self.build_node(temp_child, node)
+                            sub = node.renderer.build_node(temp_child, node)
                             sub.move(pos)
                             newmap[index].append(sub)
                             pos += 1
@@ -646,7 +646,7 @@ class RendererHTML(RendererBase):
 
         if empty and node.else_template:
             for temp_child in node.else_template.children:
-                self.build_node(temp_child, node)
+                node.renderer.build_node(temp_child, node)
 
         return False
 
@@ -658,7 +658,7 @@ class RendererHTML(RendererBase):
             self.ctx.locals.update(node.variables)
         if node.self_clear:
             node.empty()
-            self._build_group(node.template, node)
+            node.renderer._build_group(node.template, node)
             #del self.ctx.locals[node.var_name]
             return False
         else:

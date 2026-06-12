@@ -264,9 +264,10 @@ class DevRouter(BaseRouter):
         return self.css(styles)
 
     @get('/css/{app}.local.css')
+    @get('/css/.local.css')
     async def get_local_css(self, request: Request):
-        app = request.path_params['app']
-        logger.debug(f"[{app}] Collecting styles")
+        app = request.path_params.get('app', '')
+        logger.debug(f"[{app or config.DEFAULT_APP}] Collecting styles")
         if not app:
             if config.DEFAULT_APP == 'Core':
                 return self.css('')
